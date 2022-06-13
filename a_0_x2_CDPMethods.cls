@@ -1,0 +1,189 @@
+VERSION 1.0 CLASS
+BEGIN
+  MultiUse = -1  'True
+END
+Attribute VB_Name = "a_0_x2_CDPMethods"
+Attribute VB_GlobalNameSpace = False
+Attribute VB_Creatable = False
+Attribute VB_PredeclaredId = False
+Attribute VB_Exposed = False
+Option Explicit
+
+Private id_ As Long
+
+'TargetDomain*******************************************************************
+'pageDomainの通知を有効にする。
+Public Function PageEnable() As String
+    id_ = id_ + 1
+    Dim message As String
+    message = "{""id"": " & id_ & ",""method"": ""Page.enable""}"
+    PageEnable = message
+End Function
+
+Public Function SetDiscoverTargets(targetId As String) As String
+    id_ = id_ + 1
+    Dim message As String
+    message = "{""id"": " & id_ & ",""method"": ""Target.setDiscoverTargets""," & _
+                      """params"": {""discover"": true}}"
+    SetDiscoverTargets = message
+End Function
+
+Public Function AttachBrowser(targetId As String) As String
+    id_ = id_ + 1
+    Dim message As String
+    message = "{""id"": " & id_ & ",""method"": ""Target.attachToTarget""," & _
+                      """params"": {""targetId"": """ & targetId & """}}"
+    AttachBrowser = message
+End Function
+
+Public Function TargetClose(targetId As String) As String
+    id_ = id_ + 1
+    Dim message As String
+    message = "{""id"": " & id_ & ",""method"": ""Target.closeTarget""," & _
+                      """params"": {""targetId"": """ & targetId & """}}"
+    TargetClose = message
+End Function
+'利用可能なターゲットのリストを取得する。
+Public Function GetTargets() As String
+    id_ = id_ + 1
+    Dim message As String
+    message = "{""id"": " & id_ & ",""method"": ""Target.getTargets""}"
+    GetTargets = message
+End Function
+'*******************************************************************
+
+
+'BrowserDomain*******************************************************************
+Public Function SessionClose() As String
+    id_ = id_ + 1
+    Dim message As String
+    message = "{""id"": " & id_ & ",""method"": ""Browser.Close""}"
+    SessionClose = message
+End Function
+'*******************************************************************
+
+'PageDomain*******************************************************************
+Public Function URLOpen(url As String) As String
+    id_ = id_ + 1
+    Dim message As String
+    message = "{""id"": " & id_ & ",""method"": ""Page.navigate""," & _
+                      """params"": {""url"": """ & url & """}}"
+    URLOpen = message
+End Function
+
+Public Function handleJavaScriptDialog() As String
+    id_ = id_ + 1
+    Dim message As String
+    message = "{""id"": " & id_ & ",""method"": ""Page.handleJavaScriptDialog""," & _
+                     """params"": {""accept"": true}}"
+    handleJavaScriptDialog = message
+End Function
+'*******************************************************************
+
+'DOM Domain*******************************************************************
+'Domの有効化
+Public Function DOM_Enable()
+    id_ = id_ + 1
+    Dim message As String
+    message = "{""id"": " & id_ & ",""method"": ""DOM.enable""}"
+    DOM_Enable = message
+End Function
+
+'DocumentObjectのNodeIdを取得
+Public Function GetDocumentID() As String
+    id_ = id_ + 1
+    Dim message As String
+    message = "{""id"": " & id_ & ",""method"": ""DOM.getDocument""," & _
+                     """params"": {""depth"": " & -1 & "}}"
+    GetDocumentID = message
+End Function
+
+'CSSセレクタによりNode取得
+Public Function querySelector(Selector As String, Optional nodeId As Long = 1) As String
+    id_ = id_ + 1
+    Dim message As String
+    message = "{""id"": " & id_ & ",""method"": ""DOM.querySelector""," & _
+                      """params"": {""nodeId"":  " & nodeId & ",""selector"": """ & Selector & """}}"
+    querySelector = message
+End Function
+
+'objectIdからnodeId取得
+Public Function RequestNode(objectId As String)
+    id_ = id_ + 1
+    Dim message As String
+    message = "{""id"": " & id_ & ",""method"": ""DOM.requestNode""," & _
+                      """params"": {""objectId"":  """ & objectId & """}}"
+    RequestNode = message
+End Function
+
+'nodeIdからobjectId取得
+Public Function ResolveNode(nodeId As Long)
+    id_ = id_ + 1
+    Dim message As String
+    message = "{""id"": " & id_ & ",""method"": ""DOM.resolveNode""," & _
+                      """params"": {""nodeId"":  " & nodeId & "}}"
+    ResolveNode = message
+End Function
+'idで指定されたノードの属性情報を取得
+Public Function GetAttributes(nodeId As Long)
+    id_ = id_ + 1
+    Dim message As String
+    message = "{""id"": " & id_ & ",""method"": ""DOM.getAttributes""," & _
+                      """params"":{""nodeId"":  " & nodeId & "}}"
+    GetAttributes = message
+End Function
+
+'id で指定されたノード情報を叙述
+Public Function DescribeNodeBy_nodeId_or_objectId(IdName As String, Id As Variant)
+    id_ = id_ + 1
+    Dim message As String
+    If IdName = "nodeId" Then
+        message = "{""id"": " & id_ & ",""method"": ""DOM.describeNode""," & _
+                          """params"": {""nodeId"":  " & Id & ",""depth"": 0}}"
+    Else
+        message = "{""id"": " & id_ & ",""method"": ""DOM.describeNode""," & _
+                         """params"": {""objectId"":  """ & Id & """,""depth"": 0}}"
+    End If
+    DescribeNodeBy_nodeId_or_objectId = message
+End Function
+
+Public Function RequestChildNodes() As String
+    id_ = id_ + 1
+    Dim message As String
+    message = "{""id"": " & id_ & ",""method"": ""DOM.RequestChildNodes""," & _
+                      """params"": {""nodeId"":  " & id_ & ",""depth"":  -1}}"
+    RequestChildNodes = message
+End Function
+
+'*******************************************************************
+
+Public Function FindElementByID(documentId As String, Id As String)
+    id_ = id_ + 1
+    Dim message As String
+    message = "{""id"": " & id_ & ",""method"": ""DOM.querySelector""," & _
+                      """params"": {""nodeId"":  " & documentId & ",""selector"": ""#" & Id & """}}"
+    FindElementByID = message
+End Function
+
+'RunTime Domain*******************************************************************
+Public Function JavaScritpEvaluate(Script As String)
+    id_ = id_ + 1
+    Dim message As String
+    message = "{""id"": " & id_ & ",""method"": ""Runtime.evaluate""," & _
+                      """params"": {""expression"": """ & Script & """,""returnByValue"": false}}"
+    JavaScritpEvaluate = message
+End Function
+
+Public Function JavaScritpCallFunction(funcDeclear As String, objectId As String, argments As String)
+    id_ = id_ + 1
+    Dim JavaScriptObjectArgs As String
+    JavaScriptObjectArgs = "[{""value"": """ & argments & """}]"
+    
+    Dim message As String
+    message = "{""id"": " & id_ & ",""method"": ""Runtime.callFunctionOn""," & _
+                      """params"": " & _
+                     "{""functionDeclaration"": """ & funcDeclear & """,""arguments"": " & JavaScriptObjectArgs & _
+                     ",""objectId"": """ & objectId & """}}"
+    JavaScritpCallFunction = message
+End Function
+'*******************************************************************

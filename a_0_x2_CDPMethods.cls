@@ -78,6 +78,22 @@ Public Function handleJavaScriptDialog() As String
                      """params"": {""accept"": true}}"
     handleJavaScriptDialog = message
 End Function
+
+Public Function GetFrameTree() As String
+    id_ = id_ + 1
+    Dim message As String
+    message = "{""id"": " & id_ & ",""method"": ""Page.getFrameTree""}"
+    GetFrameTree = message
+End Function
+
+Public Function CreateIsolatedFrameWorld(frameId As String) As String
+    id_ = id_ + 1
+    Dim message As String
+    message = "{""id"": " & id_ & ",""method"": ""Page.createIsolatedWorld""," & _
+                     """params"": {""frameId"": """ & frameId & """}}"
+    CreateIsolatedFrameWorld = message
+End Function
+
 '*******************************************************************
 
 'DOM Domain*******************************************************************
@@ -174,7 +190,7 @@ Public Function JavaScritpEvaluate(Script As String)
     JavaScritpEvaluate = message
 End Function
 
-Public Function JavaScritpCallFunction(funcDeclear As String, objectId As String, argments As String)
+Public Function JavaScritpCallFunction(funcDeclear As String, objectId As Variant, argments As String)
     id_ = id_ + 1
     Dim JavaScriptObjectArgs As String
     JavaScriptObjectArgs = "[{""value"": """ & argments & """}]"
@@ -182,8 +198,12 @@ Public Function JavaScritpCallFunction(funcDeclear As String, objectId As String
     Dim message As String
     message = "{""id"": " & id_ & ",""method"": ""Runtime.callFunctionOn""," & _
                       """params"": " & _
-                     "{""functionDeclaration"": """ & funcDeclear & """,""arguments"": " & JavaScriptObjectArgs & _
-                     ",""objectId"": """ & objectId & """}}"
+                     "{""functionDeclaration"": """ & funcDeclear & """,""arguments"": " & JavaScriptObjectArgs
+    If IsNumeric(objectId) Then
+        message = message & ",""executionContextId"": " & objectId & "}}"
+    Else
+        message = message & ",""objectId"": """ & objectId & """}}"
+    End If
     JavaScritpCallFunction = message
 End Function
 '*******************************************************************

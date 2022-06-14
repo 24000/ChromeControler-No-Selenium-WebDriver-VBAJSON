@@ -21,7 +21,7 @@ Public Function GetElementByXpath(xpath As String) As IWebElement
 
 End Function
 
-Public Sub SwitchFrameByXpath(xpath As String)
+Public Sub SwitchFrameByNameOrURLOrIndex(value As Variant)
 
 End Sub
 

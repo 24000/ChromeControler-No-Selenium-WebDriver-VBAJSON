@@ -26,8 +26,8 @@ Private return_ As a_0_x3_ReturnInfos
 
 Private documentNodeId_ As Long
 Private documentObjectId_ As String
-Private frameId_ As String
-Private frameDocumentId_ As String
+
+Private executionContextId_ As Long
 
 Public Property Get WebSocketURL() As String
     WebSocketURL = return_.WebSocketURL
@@ -137,7 +137,7 @@ Private Function ExecuteJavaScript_Inner(Script As String) As String
 End Function
 
 'JavaScript_Function実行
-Public Function JavaScritpCallFunction(funcName As String, objectId As String, args As String) As String
+Public Function JavaScritpCallFunction(funcName As String, objectId As Variant, args As String) As String
     Dim jsonForSending  As String
     jsonForSending = CDPMethod_.JavaScritpCallFunction(funcName, objectId, args)
     JavaScritpCallFunction = webSocket_.ProcessMessage(jsonForSending, jsonHandler_)
@@ -163,7 +163,6 @@ Public Sub FindElementByQuerySelector(Selector As String)
     nodeInfoJson = DescribeNode("nodeId", nodeId)
 End Sub
 
-
 Public Function FindElementByID(Id As String) As String
     Dim jsonForSending  As String, responseJson As String
     jsonForSending = CDPMethod_.GetDocumentID
@@ -181,12 +180,28 @@ Public Function Click(objId As String) As String
 End Function
 '************************************************
 
-'Target系************************************************
+'Target:Page系************************************************
 Public Function PageEnable() As String
     Dim jsonForSending  As String, responseJson As String
     jsonForSending = CDPMethod_.PageEnable()
     responseJson = webSocket_.ProcessMessage(jsonForSending, jsonHandler_)
 End Function
+
+Public Function GetFrameTree() As String
+    Dim jsonForSending  As String, responseJson As String
+    jsonForSending = CDPMethod_.GetFrameTree()
+    responseJson = webSocket_.ProcessMessage(jsonForSending, jsonHandler_)
+    GetFrameTree = responseJson
+End Function
+
+Public Function CreateIsolatedFrameWorld(frameId As String) As Long
+    Dim jsonForSending  As String, responseJson As String
+    jsonForSending = CDPMethod_.CreateIsolatedFrameWorld(frameId)
+    responseJson = webSocket_.ProcessMessage(jsonForSending, jsonHandler_)
+    CreateIsolatedFrameWorld = _
+        jsonHandler_.GetValueFromJson(responseJson, Array("result", "executionContextId"))
+End Function
+
 Public Function SetDiscoverTargets() As String
     Dim jsonForSending  As String, responseJson As String
     jsonForSending = CDPMethod_.SetDiscoverTargets(return_.targetId)
@@ -219,7 +234,6 @@ Private Sub IWebDriver_URLOpen(url As String, Optional maxWaitTime_ms As Long = 
     responseJson = webSocket_.ProcessMessage(jsonForSending, jsonHandler_)
     If InStr(responseJson, "invalid URL") > 0 Then GoTo quit
     
-    frameId_ = jsonHandler_.GetValueFromJson(responseJson, Array("result", "frameId"))
     WaitingForWebPageDisplay (maxWaitTime_ms)
     
     SetDiscoverTargets
@@ -269,7 +283,7 @@ End Function
 'Xpathで要素を探し、オブジェクトIDを返す
 Private Function GetObjectIdOfElementByXpath(xpath As String) As String
     Dim javaScriptCode As String, responseJson As String
-    If frameDocumentId_ = "" Then
+    If executionContextId_ = 0 Then
         javaScriptCode = _
             "document.evaluate('" & xpath & "', document, null, " & _
                 "XPathResult.FIRST_ORDERED_NODE_TYPE, null ).singleNodeValue;"
@@ -277,10 +291,10 @@ Private Function GetObjectIdOfElementByXpath(xpath As String) As String
     Else
         javaScriptCode = _
             "function(xpath){" & _
-                "return  this.evaluate(xpath, this, null, " & _
+                "return  document.evaluate(xpath, document, null, " & _
                     "XPathResult.FIRST_ORDERED_NODE_TYPE, null ).singleNodeValue;" & _
             "}"
-        responseJson = JavaScritpCallFunction(javaScriptCode, frameDocumentId_, xpath)
+        responseJson = JavaScritpCallFunction(javaScriptCode, executionContextId_, xpath)
     End If
     
     GetObjectIdOfElementByXpath = _
@@ -301,28 +315,88 @@ End Function
 
 'Public
 '第1引数で指定されるXpathのフレーム要素にフレームを切替
-Private Sub IWebDriver_SwitchFrameByXpath(xPathOfFrame As String)
-    Dim frameObjId As String
-    frameObjId = GetObjectIdOfElementByXpath(xPathOfFrame)
-    If frameObjId = "" Then GoTo quit
+Private Sub IWebDriver_SwitchFrameByNameOrUrlOrIndex(value As Variant)
+    Dim frameInfos As Collection: Set frameInfos = GetFrameInfos
+    Dim frameId As String
+    If IsNumeric(value) Then
+        If frameInfos.count < value Then GoTo quit
+        frameId = jsonHandler_.GetValueFromJson(frameInfos(value), Array("id"))
+    Else
+        frameId = GetTargetFrameId(frameInfos, value)
+    End If
+    If frameId = "" Then GoTo quit
+    executionContextId_ = CreateIsolatedFrameWorld(frameId)
     
-    Dim javaScriptCode As String, responseJson As String
-    javaScriptCode = _
-    "function(value){ " & _
-        "return this.contentDocument;" & _
-    "}"
-    responseJson = JavaScritpCallFunction(javaScriptCode, frameObjId, "")
-    frameDocumentId_ = jsonhandler.GetValueFromJson(responseJson, Array("result", "result", "objectId"))
+'    Dim frameObjId As String
+'    frameObjId = GetObjectIdOfElementByXpath(xPathOfFrame)
+'    If frameObjId = "" Then GoTo quit
+'
+'    Dim javaScriptCode As String, responseJson As String
+'    javaScriptCode = _
+'    "function(value){ " & _
+'        "return this.contentDocument;" & _
+'    "}"
+'    responseJson = JavaScritpCallFunction(javaScriptCode, frameObjId, "")
+'    executionContextId_ = jsonhandler.GetValueFromJson(responseJson, Array("result", "result", "objectId"))
 Exit Sub
 
 quit:
-DisplayErrorAndEnd "指定された以下Xpathのframeは存在しませんでした。" & vbCrLf & xPathOfFrame
+DisplayErrorAndEnd "指定されたframeは存在しません。" & vbCrLf & value & vbCrLf & vbCrLf & _
+                              "※もしUrl指定の場合、Chromeが情報を返さないケースがあります。" & vbCrLf & _
+                              "   とれないようであればIndex、またはあればName指定を推奨します。"
 End Sub
+Private Function GetFrameInfos() As Collection
+    Dim collect As Collection: Set collect = New Collection
+    Dim json As String: json = GetFrameTree
+    collect.Add jsonHandler_.GetObjectFromJson(json, Array("result", "frameTree", "frame"))
+    
+    Dim frmInfo As String, frminfo2 As String
+    Dim count As Long
+    Do
+        frmInfo = jsonHandler_.GetObjectFromJson(json, _
+                        Array("result", "frameTree", "childFrames", count))
+        If frmInfo = "" Then Exit Do
+        frminfo2 = jsonHandler_.GetObjectFromJson(frmInfo, Array("frame"))
+        collect.Add frminfo2
+        If InStr(frmInfo, "childFrames") > 0 Then
+            GetChildInfo collect, frmInfo
+        End If
+        count = count + 1
+    Loop
+    Set GetFrameInfos = collect
+End Function
+Public Sub GetChildInfo(collect As Collection, json As String)
+    Dim frmInfo As String, frminfo2 As String
+    Dim count As Long
+    Do
+        frmInfo = jsonHandler_.GetObjectFromJson(json, _
+                        Array("childFrames", count))
+        If frmInfo = "" Then Exit Do
+        frminfo2 = jsonHandler_.GetObjectFromJson(frmInfo, Array("frame"))
+        collect.Add frminfo2
+        If InStr(frmInfo, "childFrames") > 0 Then
+            GetChildInfo collect, frmInfo
+        End If
+        count = count + 1
+    Loop
+End Sub
+Private Function GetTargetFrameId(frameInfos As Collection, value As Variant) As String
+    Dim frameInfo As Variant
+    Dim name As String, url As String
+    For Each frameInfo In frameInfos
+        name = jsonHandler_.GetValueFromJson(frameInfo, Array("name"))
+        url = jsonHandler_.GetValueFromJson(frameInfo, Array("url"))
+        If name = value Or url = value Then
+            GetTargetFrameId = jsonHandler_(frameInfo, Array("id"))
+            Exit Function
+        End If
+    Next
+End Function
 
 'Public
 'デフォルトのフレームに戻す
 Private Sub IWebDriver_SwitchFrameToDefault()
-    frameDocumentId_ = ""
+    executionContextId_ = ""
 End Sub
 
 'Public

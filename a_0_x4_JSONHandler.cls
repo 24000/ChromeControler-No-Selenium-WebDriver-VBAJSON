@@ -101,6 +101,25 @@ Public Function GetValueFromJson(ByVal json As String, argsArray As Variant) As 
     GetValueFromJson = result
 End Function
 
+Public Function GetObjectFromJson(ByVal json As String, argsArray As Variant) As String
+    Dim i As Long
+    Dim result As String
+    For i = LBound(argsArray) To UBound(argsArray)
+        If json = "" Then
+            GetObjectFromJson = json
+            Exit Function
+        End If
+     
+        If IsNumeric(argsArray(i)) Then
+            json = html.getObjectFromArrayBySetIndex(json, argsArray(i))
+        Else
+            json = html.getObjectFromObjectBySetKey(json, argsArray(i))
+        End If
+    Next
+    GetObjectFromJson = json
+End Function
+
+
 Public Function GetJsonLength(json As String) As Long
     GetJsonLength = html.GetJsonLength(json)
 End Function

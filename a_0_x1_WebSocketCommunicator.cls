@@ -85,10 +85,9 @@ End Function
 'WebSocket送信＆受信
 '受信時にはクロームからイベント発生が通知される場合があるので、idで送信に対する受信を判断
 '※イベント通知にはidが含まれない
-Public Function ProcessMessage(message As String, jsonhandler As a_0_x4_JSONHandler) As String
-    
-    Dim sendId As Long
-    sendId = jsonhandler.GetValueFromJson(message, Array("id"))
+Public Function ProcessMessage( _
+    sendId As Long, message As String, jsonhandler As a_0_x4_JSONHandler) As String
+
     If SendMessage(message) = False Then GoTo quit
 
     Dim responseJson As String, responseId As Variant

@@ -11,6 +11,10 @@ Option Explicit
 
 Private id_ As Long
 
+Public Property Get ID() As Long
+    ID = id_
+End Property
+
 'TargetDomain*******************************************************************
 'pageDomainの通知を有効にする。
 Public Function PageEnable() As String
@@ -150,15 +154,15 @@ Public Function GetAttributes(nodeId As Long)
 End Function
 
 'id で指定されたノード情報を叙述
-Public Function DescribeNodeBy_nodeId_or_objectId(IdName As String, Id As Variant)
+Public Function DescribeNodeBy_nodeId_or_objectId(IdName As String, ID As Variant)
     id_ = id_ + 1
     Dim message As String
     If IdName = "nodeId" Then
         message = "{""id"": " & id_ & ",""method"": ""DOM.describeNode""," & _
-                          """params"": {""nodeId"":  " & Id & ",""depth"": 0}}"
+                          """params"": {""nodeId"":  " & ID & ",""depth"": 0}}"
     Else
         message = "{""id"": " & id_ & ",""method"": ""DOM.describeNode""," & _
-                         """params"": {""objectId"":  """ & Id & """,""depth"": 0}}"
+                         """params"": {""objectId"":  """ & ID & """,""depth"": 0}}"
     End If
     DescribeNodeBy_nodeId_or_objectId = message
 End Function
@@ -173,11 +177,11 @@ End Function
 
 '*******************************************************************
 
-Public Function FindElementByID(documentId As String, Id As String)
+Public Function FindElementByID(documentId As String, ID As String)
     id_ = id_ + 1
     Dim message As String
     message = "{""id"": " & id_ & ",""method"": ""DOM.querySelector""," & _
-                      """params"": {""nodeId"":  " & documentId & ",""selector"": ""#" & Id & """}}"
+                      """params"": {""nodeId"":  " & documentId & ",""selector"": ""#" & ID & """}}"
     FindElementByID = message
 End Function
 

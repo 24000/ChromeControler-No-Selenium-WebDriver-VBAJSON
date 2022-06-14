@@ -55,10 +55,7 @@ Private Declare PtrSafe Function WinHttpWebSocketQueryCloseStatus Lib "WinHttp" 
    ByVal dwReasonLength As Long, _
    ByRef pdwReasonLengthConsumed As Long _
    ) As Long
-
-Public Http As a_0_x1_x1_HTTPCommunicator
-Public events_ As a_0_x1_x2_CDPEventHandler
-
+   
 'Websocket受信に使用(自作構造体)
 Private Type Response
     Buffer(32767) As Byte   '第1引数　'fragment発生時に戻ってくるbyteとして32768が最大の模様
@@ -70,50 +67,18 @@ Private Type Response
     collect As Collection
 End Type
 
+Public Http As a_0_x1_x1_HTTPCommunicator
+
+
 Public Function Init(Host As String, Path As String, port As Long) As Boolean
     Set Http = New a_0_x1_x1_HTTPCommunicator
     If Http.Connect(Host, Path, port) = False Then GoTo quit
     If Http.UpgradeToWebSocket() = False Then GoTo quit
     
-    Set events_ = New a_0_x1_x2_CDPEventHandler
     Init = True
 Exit Function
 quit:
     Init = False
-End Function
-
-'WebSocket送信＆受信
-'受信時にはクロームからイベント発生が通知される場合があるので、idで送信に対する受信を判断
-'※イベント通知にはidが含まれない
-Public Function ProcessMessage( _
-    sendId As Long, message As String, jsonhandler As a_0_x4_JSONHandler) As String
-
-    If SendMessage(message) = False Then GoTo quit
-
-    Dim responseJson As String, responseId As Variant
-    Do
-        responseJson = GetMessage
-        If responseJson = "受信エラー発生" Then GoTo quit
-            
-        responseId = jsonhandler.GetValueFromJson(responseJson, Array("id"))
-        If responseId = "" Then
-            If InStr(responseJson, "method") > 0 Then events_.GetInfo responseJson, jsonhandler
-        End If
-    Loop While (sendId <> responseId)
-    
-    ProcessMessage = responseJson
-Exit Function
-
-quit:
-Dim errMsg As String
-If responseJson = "" Then
-    errMsg = "送信エラー発生：イミディエイト参照"
-Else
-    errMsg = "受信エラー発生:イミディエイト参照"
-End If
-MsgBox errMsg, vbCritical, "エラー"
-Http.CloseHInternetHandles
-End
 End Function
 
 'クロームへメッセージ送信

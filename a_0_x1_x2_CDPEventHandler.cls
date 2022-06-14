@@ -18,20 +18,25 @@ Private Sub Class_Initialize()
     InitializeDialogInfo
     Set pageInfoDic = CreateObject("Scripting.Dictionary")
 End Sub
-Public Sub GetInfo(EventInfoJson As String, jsonhandler As a_0_x4_JSONHandler)
+
+Public Sub GetInfo(EventInfoJson As String, chrome As ChromeControler)
     Dim eventName As String
-    eventName = jsonhandler.GetValueFromJson(EventInfoJson, Array("method"))
+    eventName = chrome.jsonhandler.GetValueFromJson(EventInfoJson, Array("method"))
     Select Case eventName
         Case "Page.javascriptDialogOpening"
-            SetDialogInfo EventInfoJson, jsonhandler
+            SetDialogInfo EventInfoJson, chrome.jsonhandler
         Case "Page.javascriptDialogClosed"
             InitializeDialogInfo
         Case "Target.targetCreated"
-            AddTargetInfoIfPage EventInfoJson, jsonhandler
+            AddTargetInfoIfPage EventInfoJson, chrome.jsonhandler
         Case "Target.targetInfoChanged"
-        
+            ChangeTargetInfoIfPage EventInfoJson, chrome.jsonhandler
         Case "Target.targetDestroyed"
-            RemoveTargetInfoIfPage EventInfoJson, jsonhandler
+            RemoveTargetInfoIfPage EventInfoJson, chrome.jsonhandler
+        Case "Page.frameNavigated"
+            ReIsolatedFrameWorld_IfIsolatedFrameId EventInfoJson, chrome.jsonhandler
+        Case "Page.frameScheduledNavigation " 'îÒêÑèßÇ∆Ç»Ç¡ÇƒÇ¢ÇÈÇ™Ç±ÇÍÇ™ï‘Ç¡ÇƒÇ≠ÇÈÅB
+            ReIsolatedFrameWorld_IfIsolatedFrameId EventInfoJson, chrome.jsonhandler
     End Select
 End Sub
 
@@ -102,3 +107,23 @@ Private Sub RemoveTargetInfoIfPage(ByVal EventInfoJson As String, jsonhandler As
         End If
     Next
 End Sub
+
+Private Sub ReIsolatedFrameWorld_IfIsolatedFrameId( _
+                                        ByVal EventInfoJson As String, chrome As ChromeControler)
+    Dim frameId As String
+    frameId = chrome.jsonhandler.GetValueFromJson(EventInfoJson, Array("params", "frameId"))
+    If frameId <> chrome.isolatedFrameId_ Then Exit Sub
+    
+    Dim PreviousExecutionContextId As Long
+    PreviousExecutionContextId = chrome.executionContextId_
+    Dim isChange As Boolean
+    Dim failSafeCounter As Long
+    Do
+        chrome.executionContextId_ = chrome.CreateIsolatedFrameWorld(frameId)
+        isChange = PreviousExecutionContextId <> chrome.executionContextId_
+        failSafeCounter = failSafeCounter + 1
+        DoEvents
+    Loop While (isChange = False And failSafeCounter < 100)
+End Sub
+
+

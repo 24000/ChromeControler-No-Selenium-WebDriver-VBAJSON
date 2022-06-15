@@ -29,55 +29,19 @@ Public Sub Init(chrome As ChromeControler, objectId As String, _
     nodeId_ = nodeId
 End Sub
 
-'JavaScript_Functioné¿çs
-Public Function JavaScritpCallFunction(funcName As String, objectId As String, args As String) As String
-    Dim jsonForSending  As String
-    jsonForSending = CDPMethod_.JavaScritpCallFunction(funcName, objectId, args)
-    JavaScritpCallFunction = ProcessMessage(jsonForSending)
-End Function
 
-'WebSocketëóêMÅïéÛêM
-Public Function ProcessMessage(message As String) As String
-
-    Dim sendId As Long
-    sendId = jsonHandler_.GetValueFromJson(message, Array("id"))
-    
-    If webSocket_.SendMessage(message) = False Then
-        ProcessMessage = ""
-        Exit Function
-    End If
-    
-    Dim responseJson As String
-    Dim responseId As Variant
-    Do
-        responseJson = webSocket_.GetMessage
-        responseId = jsonHandler_.GetValueFromJson(responseJson, Array("id"))
-        If responseId = "" Then
-        Dim errorMessage As String
-        errorMessage = jsonHandler_.GetValueFromJson(responseJson, Array("error", "message"))
-            If errorMessage <> "" Then
-                Debug.Print errorMessage
-                Stop
-                GoTo exit_
-            End If
-        End If
-    Loop While (sendId <> responseId)
-
-exit_:
-    ProcessMessage = responseJson
-    
-End Function
 '***********************************************
 'Public
 Private Sub IWebElement_Click()
-    JavaScritpCallFunction "function(value){this.click();}", objectId_, ""
+    Dim chrome_inner As ChromeControler: Set chrome_inner = chrome_
+    chrome_inner.JavaScritpCallFunction "function(value){this.click();}", objectId_, ""
 End Sub
 
 'Public
 Private Sub IWebElement_SetText(text As String)
-    Dim encodingText As String
-    encodingText = jsonHandler_.EncodeURL(text)
-    JavaScritpCallFunction _
+    Dim encodingText As String: encodingText = jsonHandler_.EncodeURL(text)
+    Dim chrome_inner As ChromeControler: Set chrome_inner = chrome_
+    chrome_inner.JavaScritpCallFunction _
     "function(value){" & _
         "value = decodeURI(value);" & _
         "this.value = value;" & _
@@ -86,9 +50,9 @@ Private Sub IWebElement_SetText(text As String)
 End Sub
 'Public
 Private Sub IWebElement_SetTextContent(text As String)
-    Dim encodingText As String
-    encodingText = jsonHandler_.EncodeURL(text)
-    JavaScritpCallFunction _
+    Dim encodingText As String: encodingText = jsonHandler_.EncodeURL(text)
+    Dim chrome_inner As ChromeControler: Set chrome_inner = chrome_
+    chrome_inner.JavaScritpCallFunction _
     "function(value){" & _
         "value = decodeURI(value);" & _
         "this.textContent  = value;" & _
@@ -97,8 +61,7 @@ Private Sub IWebElement_SetTextContent(text As String)
 End Sub
 'Public
 Private Sub IWebElement_SelectItemByText(text As String)
-    Dim encodingText As String
-    encodingText = jsonHandler_.EncodeURL(text)
+    Dim encodingText As String: encodingText = jsonHandler_.EncodeURL(text)
     Dim javaScriptCode As String
     javaScriptCode = _
     "function(value){value = decodeURI(value);" & _
@@ -112,8 +75,11 @@ Private Sub IWebElement_SelectItemByText(text As String)
             "}" & _
         "}" & _
     "return false;}"
+    
     Dim responseJson As String
-    responseJson = JavaScritpCallFunction(javaScriptCode, objectId_, encodingText)
+    Dim chrome_inner As ChromeControler: Set chrome_inner = chrome_
+    responseJson = chrome_inner.JavaScritpCallFunction(javaScriptCode, objectId_, encodingText)
+    
     Dim IsSelect As Boolean
     IsSelect = jsonHandler_.GetValueFromJson(responseJson, Array("result", "result", "value"))
     
@@ -126,14 +92,15 @@ Private Sub IWebElement_SelectItemByText(text As String)
     
     javaScriptCode = _
     "function(value){this.onchange();}"
-    responseJson = JavaScritpCallFunction(javaScriptCode, objectId_, encodingText)
+    responseJson = chrome_inner.JavaScritpCallFunction(javaScriptCode, objectId_, encodingText)
+    
     If InStr(responseJson, "this.onchange is not a function") Then
         javaScriptCode = _
         "function(value){" & _
             "const event = new CustomEvent('change', {bubbles: false, cancelable: false});" & _
             "this.dispatchEvent(event);" & _
         "}"
-        responseJson = JavaScritpCallFunction(javaScriptCode, objectId_, encodingText)
+        responseJson = chrome_inner.JavaScritpCallFunction(javaScriptCode, objectId_, encodingText)
     End If
     
     chrome_.SleepByWindowsAPI 2000

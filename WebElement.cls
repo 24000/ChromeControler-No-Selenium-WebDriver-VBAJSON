@@ -103,7 +103,10 @@ Private Sub IWebElement_SelectItemByText(text As String)
     javaScriptCode = _
     "function(value){value = decodeURI(value);" & _
         "for(let i = 0; i < this.options.length; i++){" & _
-            "console.log(value);if(this.options[i].value === value){" & _
+            "let val1 = this.options[i].value.replace(/\\r?\\n/g,'');" & _
+            "let val2 = this.options[i].textContent.replace(/\\r?\\n/g,'');" & _
+            "console.log(value + ':' + val1 + ':'+ val2);" & _
+            "if(val1 === value || val2 === value){" & _
                 "this.options[i].selected = true;" & _
                 "return true;" & _
             "}" & _
@@ -120,6 +123,20 @@ Private Sub IWebElement_SelectItemByText(text As String)
         webSocket_.Http.CloseHInternetHandles
         End
     End If
+    
+    javaScriptCode = _
+    "function(value){this.onchange();}"
+    responseJson = JavaScritpCallFunction(javaScriptCode, objectId_, encodingText)
+    If InStr(responseJson, "this.onchange is not a function") Then
+        javaScriptCode = _
+        "function(value){" & _
+            "const event = new CustomEvent('change', {bubbles: false, cancelable: false});" & _
+            "this.dispatchEvent(event);" & _
+        "}"
+        responseJson = JavaScritpCallFunction(javaScriptCode, objectId_, encodingText)
+    End If
+    
+    chrome_.SleepByWindowsAPI 2000
 End Sub
 
 

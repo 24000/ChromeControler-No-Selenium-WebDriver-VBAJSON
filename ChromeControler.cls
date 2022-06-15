@@ -110,6 +110,7 @@ End
 End Function
 
 'ElementId系************************************************
+'CDPMethodにないのでJavascript実行
 Private Function GetDocumentObjectID() As String
     Dim responseJson  As String
     responseJson = ExecuteJavaScript_Inner("document;")
@@ -205,13 +206,8 @@ Public Sub FindElementByQuerySelector(Selector As String)
 End Sub
 
 Public Function FindElementByID(ID As String) As String
-    Dim jsonForSending  As String, responseJson As String
-    jsonForSending = CDPMethod_.GetDocumentID
-    responseJson = ProcessMessage(CDPMethod_.ID, jsonForSending, jsonHandler_)
-    If responseJson = "" Then Exit Function
-   
-    jsonForSending = CDPMethod_.FindElementByID(5, ID)
-    ProcessMessage CDPMethod_.ID, jsonForSending, jsonHandler_
+    
+    
 End Function
 '************************************************
 
@@ -265,6 +261,19 @@ Public Function GetTargetInfo() As String
     responseJson = ProcessMessage(CDPMethod_.ID, jsonForSending, jsonHandler_)
 End Function
 
+
+
+
+
+
+
+
+
+
+
+
+
+'以下､インターフェイス公開メソッドおよびその関連メソッド
 '************************************************
 
 'Public
@@ -303,15 +312,16 @@ End Function
 'Public
 '第1引数のJavaScriptコードの実行
 Private Function IWebDriver_ExecuteJavaScript(Script As String) As String
-    Dim jsonForSending  As String, responseJson As String
-    jsonForSending = CDPMethod_.JavaScritpEvaluate(Script)
-    responseJson = ProcessMessage(CDPMethod_.ID, jsonForSending, jsonHandler_)
+    Dim responseJson As String
+    responseJson = ExecuteJavaScript_Inner(Script)
     IWebDriver_ExecuteJavaScript = jsonHandler_.GetValueFromJson(responseJson, Array("result"))
 End Function
 
 'Public
 '第1引数で指定されるXpathの要素を取得し、エレメントObjectとして返却
 Private Function IWebDriver_GetElementByXpath(xpath As String) As IWebElement
+    ReCreateIsolatedFrameWorld_IfFlagOn
+    
     Dim objectId As String
     objectId = GetObjectIdOfElementByXpath(xpath)
     If objectId = "" Then GoTo quit
@@ -355,7 +365,7 @@ Private Function MakeElementObject(objectId As String) As IWebElement
 End Function
 
 'Public
-'第1引数で指定されるXpathのフレーム要素にフレームを切替
+'第1引数で指定される値のフレームにフレームを切替
 Private Sub IWebDriver_SwitchFrameByNameOrUrlOrIndex(value As Variant)
     Dim frameInfos As Collection: Set frameInfos = GetFrameInfos
     Dim frameId As String
@@ -369,17 +379,6 @@ Private Sub IWebDriver_SwitchFrameByNameOrUrlOrIndex(value As Variant)
     executionContextId_ = CreateIsolatedFrameWorld(frameId)
     isolatedFrameId_ = frameId
     
-'    Dim frameObjId As String
-'    frameObjId = GetObjectIdOfElementByXpath(xPathOfFrame)
-'    If frameObjId = "" Then GoTo quit
-'
-'    Dim javaScriptCode As String, responseJson As String
-'    javaScriptCode = _
-'    "function(value){ " & _
-'        "return this.contentDocument;" & _
-'    "}"
-'    responseJson = JavaScritpCallFunction(javaScriptCode, frameObjId, "")
-'    executionContextId_ = jsonhandler.GetValueFromJson(responseJson, Array("result", "result", "objectId"))
 Exit Sub
 
 quit:
@@ -387,6 +386,7 @@ DisplayErrorAndEnd "指定されたframeは存在しません。" & vbCrLf & value & vbCrLf &
                               "※もしUrl指定の場合、Chromeが情報を返さないケースがあります。" & vbCrLf & _
                               "   とれないようであればIndex、またはあればName指定を推奨します。"
 End Sub
+'frameツリーを取得し、各フレームの情報（JSONオブジェクト文字列）をコレクションとして集約
 Private Function GetFrameInfos() As Collection
     Dim collect As Collection: Set collect = New Collection
     Dim json As String: json = GetFrameTree
@@ -401,13 +401,14 @@ Private Function GetFrameInfos() As Collection
         frminfo2 = jsonHandler_.GetObjectFromJson(frmInfo, Array("frame"))
         collect.Add frminfo2
         If InStr(frmInfo, "childFrames") > 0 Then
-            GetChildInfo collect, frmInfo
+            GetChildFrameInfo collect, frmInfo
         End If
         count = count + 1
     Loop
     Set GetFrameInfos = collect
 End Function
-Public Sub GetChildInfo(collect As Collection, json As String)
+'childFrameがある場合、再帰処理
+Public Sub GetChildFrameInfo(collect As Collection, json As String)
     Dim frmInfo As String, frminfo2 As String
     Dim count As Long
     Do
@@ -417,11 +418,12 @@ Public Sub GetChildInfo(collect As Collection, json As String)
         frminfo2 = jsonHandler_.GetObjectFromJson(frmInfo, Array("frame"))
         collect.Add frminfo2
         If InStr(frmInfo, "childFrames") > 0 Then
-            GetChildInfo collect, frmInfo
+            GetChildFrameInfo collect, frmInfo
         End If
         count = count + 1
     Loop
 End Sub
+'各フレームのname,urlと指定された値を比較。一致するフレームのIdを返す。
 Private Function GetTargetFrameId(frameInfos As Collection, value As Variant) As String
     Dim frameInfo As Variant
     Dim name As String, url As String
@@ -445,6 +447,8 @@ End Sub
 'Public
 '第1引数で指定されるXpathの要素有無の確認
 Private Function IWebDriver_IsExistsElementByXpath(xpath As String) As Boolean
+    ReCreateIsolatedFrameWorld_IfFlagOn
+    
     Dim objectId As String
     objectId = GetObjectIdOfElementByXpath(xpath)
     If objectId = "" Then
@@ -457,6 +461,8 @@ End Function
 'Public
 'Xpath(第1引数)で指定されるの要素が出現するのを、最大待機時間(第2引数)待つ
 Private Sub IWebDriver_WaitForElementToAppearByXpath(xpath As String, maxWaitTime_ms As Long)
+    ReCreateIsolatedFrameWorld_IfFlagOn
+    
     Dim startTime As Date: startTime = Timer()
     Do
         If IWebDriver_IsExistsElementByXpath(xpath) Then
@@ -471,7 +477,7 @@ Private Sub IWebDriver_WaitForElementToAppearByXpath(xpath As String, maxWaitTim
 End Sub
 
 'Public
-'ダイアログのOKボタンを押して閉じる
+'AlertダイアログのOKボタンを押して閉じる
 Private Sub IWebDriver_PushOkButtonOnDialog()
     Dim jsonForSending  As String, responseJson As String
     'イベント受信するために一回無害なメソッドを送受信する。
@@ -501,23 +507,32 @@ Public Sub DisplayErrorAndEnd(displayText As String)
     End
 End Sub
 
+'共通対応。
+'IsolatedWorldしているフレームに更新が入る場合、イベントで検知してフラグが立つので、再度IsolatedWorldする処理。
+'【使用しているメソッド】
+'IWebDriver_GetElementByXpath
+'IWebDriver_WaitForElementToAppearByXpath
+'IWebDriver_IsExistsElementByXpath
+Public Sub ReCreateIsolatedFrameWorld_IfFlagOn()
+    DOMEnable '念のため一回無害なメソッドを投げてフレーム更新イベントの発生チェック。発生なし→終
+    If events_.IsIsolatedFrameScheduledNavigation = False Then Exit Sub
+    
+    '更新が終わるまでループ
+    If events_.IsIsolatedFrameScheduledNavigationEnd = False Then
+        Dim Counter As Long
+        Do
+            Sleep 1000
+            DOMEnable
+            Counter = Counter + 1
+            If Counter > 30 Then GoTo quit '最大約30秒待ってもダメだったら強制終了
+        Loop Until events_.IsIsolatedFrameScheduledNavigationEnd
+    End If
+    
+    executionContextId_ = CreateIsolatedFrameWorld(isolatedFrameId_)
+    events_.IsIsolatedFrameScheduledNavigation = False
+    events_.IsIsolatedFrameScheduledNavigationEnd = False
+Exit Sub
 
-
-'    javaScriptCode = _
-'        "let start = new Date();" & _
-'        "let end = 0;" & _
-'        "let millsec = 0;" & _
-'        "do {" & _
-'            "if(document.readyState === 'complete'){" & _
-'                "break;" & _
-'            "}else{" & _
-'                "end = new Date();" & _
-'                "millsec = end.getTime() - start.getTime();" & _
-'                "console.log(millsec);" & _
-'            "}" & _
-'        "} while(millsec <= " & maxWaitTime_ms & ");" & _
-'        "document.readyState;"
-'
-'    responseJson = ExecuteJavaScript_Inner(javaScriptCode)
-
-
+quit:
+DisplayErrorAndEnd "フレームの更新を検知しましたが、30秒経過しても更新が終わりませんでした。"
+End Sub

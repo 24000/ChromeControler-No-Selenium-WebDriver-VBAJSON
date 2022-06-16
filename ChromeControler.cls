@@ -461,7 +461,6 @@ End Function
 'Public
 'Xpath(第1引数)で指定されるの要素が出現するのを、最大待機時間(第2引数)待つ
 Private Sub IWebDriver_WaitForElementToAppearByXpath(xpath As String, maxWaitTime_ms As Long)
-    ReCreateIsolatedFrameWorld_IfFlagOn
     
     Dim startTime As Date: startTime = Timer()
     Do
@@ -472,6 +471,7 @@ Private Sub IWebDriver_WaitForElementToAppearByXpath(xpath As String, maxWaitTim
                                          "ミリ秒経過しても、指定の以下要素は現れませんでした。" & vbCrLf & _
                                           xpath
         End If
+        ReCreateIsolatedFrameWorld_IfFlagOn
         DoEvents: Sleep 500
     Loop
 End Sub
@@ -514,25 +514,31 @@ End Sub
 'IWebDriver_WaitForElementToAppearByXpath
 'IWebDriver_IsExistsElementByXpath
 Public Sub ReCreateIsolatedFrameWorld_IfFlagOn()
-    DOMEnable '念のため一回無害なメソッドを投げてフレーム更新イベントの発生チェック。発生なし→終
-    If events_.IsIsolatedFrameScheduledNavigation = False Then Exit Sub
-    
-    '更新が終わるまでループ
-    If events_.IsIsolatedFrameScheduledNavigationEnd = False Then
-        Dim Counter As Long
-        Do
-            Sleep 1000
-            DOMEnable
-            Counter = Counter + 1
-            If Counter > 30 Then GoTo quit '最大約30秒待ってもダメだったら強制終了
-        Loop Until events_.IsIsolatedFrameScheduledNavigationEnd
+'event検知がうまくいかないため、一旦DefaultFrame以外の操作継続時には毎回CreateIsolatedFrameWorldする
+    If isolatedFrameId_ <> "" Then
+        GetFrameTree '一旦無害なメソッドを投げてイベント発生チェック
+        executionContextId_ = CreateIsolatedFrameWorld(isolatedFrameId_)
     End If
     
-    executionContextId_ = CreateIsolatedFrameWorld(isolatedFrameId_)
+'    DOMEnable '念のため一回無害なメソッドを投げてフレーム更新イベントの発生チェック。発生なし→終
+'    If events_.IsIsolatedFrameScheduledNavigation = False Then Exit Sub
+'
+'    '更新が終わるまでループ
+'    If events_.IsIsolatedFrameScheduledNavigationEnd = False Then
+'        Dim Counter As Long
+'        Do
+'            Sleep 1000
+'            DOMEnable
+'            Counter = Counter + 1
+'            If Counter > 30 Then GoTo quit '最大約30秒待ってもダメだったら強制終了
+'        Loop Until events_.IsIsolatedFrameScheduledNavigationEnd
+'    End If
+'
+'    executionContextId_ = CreateIsolatedFrameWorld(isolatedFrameId_)
     events_.IsIsolatedFrameScheduledNavigation = False
     events_.IsIsolatedFrameScheduledNavigationEnd = False
 Exit Sub
 
-quit:
-DisplayErrorAndEnd "フレームの更新を検知しましたが、30秒経過しても更新が終わりませんでした。"
+'quit:
+'DisplayErrorAndEnd "フレームの更新を検知しましたが、30秒経過しても更新が終わりませんでした。"
 End Sub

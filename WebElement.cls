@@ -10,7 +10,7 @@ Attribute VB_Exposed = False
 Option Explicit
 Implements IWebElement
 
-Private chrome_ As IWebDriver
+Private chrome_ As ChromeControler
 Private webSocket_ As a_0_x1_WebSocketCommunicator
 Private CDPMethod_ As a_0_x2_CDPMethods
 Private jsonHandler_ As a_0_x4_JSONHandler
@@ -33,15 +33,13 @@ End Sub
 '***********************************************
 'Public
 Private Sub IWebElement_Click()
-    Dim chrome_inner As ChromeControler: Set chrome_inner = chrome_
-    chrome_inner.JavaScritpCallFunction "function(value){this.click();}", objectId_, ""
+    chrome_.JavaScritpCallFunction "function(value){this.click();}", objectId_, ""
 End Sub
 
 'Public
 Private Sub IWebElement_SetText(text As String)
     Dim encodingText As String: encodingText = jsonHandler_.EncodeURL(text)
-    Dim chrome_inner As ChromeControler: Set chrome_inner = chrome_
-    chrome_inner.JavaScritpCallFunction _
+    chrome_.JavaScritpCallFunction _
     "function(value){" & _
         "value = decodeURI(value);" & _
         "this.value = value;" & _
@@ -51,8 +49,7 @@ End Sub
 'Public
 Private Sub IWebElement_SetTextContent(text As String)
     Dim encodingText As String: encodingText = jsonHandler_.EncodeURL(text)
-    Dim chrome_inner As ChromeControler: Set chrome_inner = chrome_
-    chrome_inner.JavaScritpCallFunction _
+    chrome_.JavaScritpCallFunction _
     "function(value){" & _
         "value = decodeURI(value);" & _
         "this.textContent  = value;" & _
@@ -77,8 +74,7 @@ Private Sub IWebElement_SelectItemByText(text As String)
     "return false;}"
     
     Dim responseJson As String
-    Dim chrome_inner As ChromeControler: Set chrome_inner = chrome_
-    responseJson = chrome_inner.JavaScritpCallFunction(javaScriptCode, objectId_, encodingText)
+    responseJson = chrome_.JavaScritpCallFunction(javaScriptCode, objectId_, encodingText)
     
     Dim IsSelect As Boolean
     IsSelect = jsonHandler_.GetValueFromJson(responseJson, Array("result", "result", "value"))
@@ -92,7 +88,7 @@ Private Sub IWebElement_SelectItemByText(text As String)
     
     javaScriptCode = _
     "function(value){this.onchange();}"
-    responseJson = chrome_inner.JavaScritpCallFunction(javaScriptCode, objectId_, encodingText)
+    responseJson = chrome_.JavaScritpCallFunction(javaScriptCode, objectId_, encodingText)
     
     If InStr(responseJson, "this.onchange is not a function") Then
         javaScriptCode = _
@@ -100,7 +96,7 @@ Private Sub IWebElement_SelectItemByText(text As String)
             "const event = new CustomEvent('change', {bubbles: false, cancelable: false});" & _
             "this.dispatchEvent(event);" & _
         "}"
-        responseJson = chrome_inner.JavaScritpCallFunction(javaScriptCode, objectId_, encodingText)
+        responseJson = chrome_.JavaScritpCallFunction(javaScriptCode, objectId_, encodingText)
     End If
     
     chrome_.SleepByWindowsAPI 2000
@@ -110,15 +106,14 @@ Private Function IWebElement_GetElementByXpath(xpath As String) As IWebElement
 
 End Function
 'Public
-Private Function IWebElement_GetElementsByTagName(tagName As String) As Variant
+Private Function IWebElement_GetElementsByTagName(tagName As String) As IWebElements
 
 End Function
 'Public
 Private Function IWebElement_GetTextContent() As String
     Dim javaScriptCode As String, responseJson As String
     javaScriptCode = "function(value){return this.textContent;}"
-    Dim chrome_inner As ChromeControler: Set chrome_inner = chrome_
-    responseJson = chrome_inner.JavaScritpCallFunction(javaScriptCode, objectId_, "")
+    responseJson = chrome_.JavaScritpCallFunction(javaScriptCode, objectId_, "")
     
     Dim text As String
     text = jsonHandler_.GetValueFromJson(responseJson, Array("result", "result", "value"))

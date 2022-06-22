@@ -105,6 +105,23 @@ Private Sub IWebElement_SelectItemByText(text As String)
     
     chrome_.SleepByWindowsAPI 2000
 End Sub
+'Public
+Private Function IWebElement_GetElementByXpath(xpath As String) As IWebElement
 
+End Function
+'Public
+Private Function IWebElement_GetElementsByTagName(tagName As String) As Variant
 
-
+End Function
+'Public
+Private Function IWebElement_GetTextContent() As String
+    Dim javaScriptCode As String, responseJson As String
+    javaScriptCode = "function(value){return this.textContent;}"
+    Dim chrome_inner As ChromeControler: Set chrome_inner = chrome_
+    responseJson = chrome_inner.JavaScritpCallFunction(javaScriptCode, objectId_, "")
+    
+    Dim text As String
+    text = jsonHandler_.GetValueFromJson(responseJson, Array("result", "result", "value"))
+'    text = jsonHandler_.DecodeURL(text)
+    IWebElement_GetTextContent = text
+End Function

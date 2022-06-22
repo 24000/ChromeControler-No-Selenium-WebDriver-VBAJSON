@@ -43,10 +43,41 @@ End Sub
 Private Function GetTragetInfoJSON() As String
     Dim client As Object
     Set client = CreateObject("MSXML2.ServerXMLHTTP")
-    client.Open "GET", HTTP_SCHEMA & Host & ":" & DEBUGGING_PORT & RESOURCE_PATH
+    client.Open "GET", HTTP_SCHEMA & HOST_ & ":" & DEBUGGING_PORT & RESOURCE_PATH
     client.setRequestHeader "Content-Type", "application/json"
     client.send
     GetTragetInfoJSON = client.responsetext
 End Function
 
 
+Public Function Update(currentTargetId As String, jsonhandler As a_0_x4_JSONHandler) As Collection
+    targetId = currentTargetId
+    TargetInfoJSON = GetTragetInfoJSON
+    WebSocketURL = GetWebSocketDebuggerUrl(jsonhandler)
+    WebSocketUrlPath = Replace(WebSocketURL, WEBSOCKET_SCHEMA & HOST_ & ":" & DEBUGGING_PORT, "")
+    Context = Replace(WebSocketUrlPath, targetId, "")
+End Function
+
+Private Function GetWebSocketDebuggerUrl(jsonhandler As a_0_x4_JSONHandler) As String
+    Dim collect As Collection: Set collect = New Collection
+    Dim targetInfo As String
+    Dim Count As Long
+    Do
+        targetInfo = jsonhandler.GetObjectFromJson(TargetInfoJSON, Array(Count))
+        If targetInfo = "" Then Exit Do
+        collect.Add targetInfo
+        Count = Count + 1
+    Loop
+    
+    Dim i As Long
+    Dim targetType As String, id As String
+    For i = 1 To collect.Count
+            targetType = jsonhandler.GetValueFromJson(collect(i), Array("type"))
+            If targetType <> "page" Then GoTo next_
+            id = jsonhandler.GetValueFromJson(collect(i), Array("id"))
+            If id <> targetId Then GoTo next_
+            GetWebSocketDebuggerUrl = jsonhandler.GetValueFromJson(collect(i), Array(KEY_WEBSOCKETURL))
+            Exit Function
+next_:
+    Next
+End Function

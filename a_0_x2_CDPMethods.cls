@@ -11,8 +11,8 @@ Option Explicit
 
 Private id_ As Long
 
-Public Property Get ID() As Long
-    ID = id_
+Public Property Get id() As Long
+    id = id_
 End Property
 
 'TargetDomain*******************************************************************
@@ -32,12 +32,28 @@ Public Function SetDiscoverTargets(targetId As String) As String
     SetDiscoverTargets = message
 End Function
 
-Public Function AttachBrowser(targetId As String) As String
+Public Function AttachToTarget(targetId As String) As String
     id_ = id_ + 1
     Dim message As String
     message = "{""id"": " & id_ & ",""method"": ""Target.attachToTarget""," & _
                       """params"": {""targetId"": """ & targetId & """}}"
-    AttachBrowser = message
+    AttachToTarget = message
+End Function
+
+Public Function ActivateTarget(targetId As String) As String
+    id_ = id_ + 1
+    Dim message As String
+    message = "{""id"": " & id_ & ",""method"": ""Target.activateTarget""," & _
+                      """params"": {""targetId"": """ & targetId & """}}"
+    ActivateTarget = message
+End Function
+
+Public Function DetachFromTarget(targetId As String) As String
+    id_ = id_ + 1
+    Dim message As String
+    message = "{""id"": " & id_ & ",""method"": ""Target.detachFromTarget""," & _
+                      """params"": {""targetId"": """ & targetId & """}}"
+    DetachFromTarget = message
 End Function
 
 Public Function TargetClose(targetId As String) As String
@@ -154,15 +170,15 @@ Public Function GetAttributes(nodeId As Long)
 End Function
 
 'id で指定されたノード情報を叙述
-Public Function DescribeNodeBy_nodeId_or_objectId(IdName As String, ID As Variant)
+Public Function DescribeNodeBy_nodeId_or_objectId(IdName As String, id As Variant)
     id_ = id_ + 1
     Dim message As String
     If IdName = "nodeId" Then
         message = "{""id"": " & id_ & ",""method"": ""DOM.describeNode""," & _
-                          """params"": {""nodeId"":  " & ID & ",""depth"": 0}}"
+                          """params"": {""nodeId"":  " & id & ",""depth"": 0}}"
     Else
         message = "{""id"": " & id_ & ",""method"": ""DOM.describeNode""," & _
-                         """params"": {""objectId"":  """ & ID & """,""depth"": 0}}"
+                         """params"": {""objectId"":  """ & id & """,""depth"": 0}}"
     End If
     DescribeNodeBy_nodeId_or_objectId = message
 End Function
@@ -173,16 +189,6 @@ Public Function RequestChildNodes() As String
     message = "{""id"": " & id_ & ",""method"": ""DOM.RequestChildNodes""," & _
                       """params"": {""nodeId"":  " & id_ & ",""depth"":  -1}}"
     RequestChildNodes = message
-End Function
-
-'*******************************************************************
-
-Public Function FindElementByID(documentId As String, ID As String)
-    id_ = id_ + 1
-    Dim message As String
-    message = "{""id"": " & id_ & ",""method"": ""DOM.querySelector""," & _
-                      """params"": {""nodeId"":  " & documentId & ",""selector"": ""#" & ID & """}}"
-    FindElementByID = message
 End Function
 
 'RunTime Domain*******************************************************************

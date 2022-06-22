@@ -14,11 +14,13 @@ Public DialogInfoDic As Object
 Public pageInfoDic As Object
 Public IsIsolatedFrameScheduledNavigation As Boolean
 Public IsIsolatedFrameScheduledNavigationEnd As Boolean
+Public CurrentPageNo As Long
 
 Private Sub Class_Initialize()
     Set DialogInfoDic = CreateObject("Scripting.Dictionary")
     InitializeDialogInfo
     Set pageInfoDic = CreateObject("Scripting.Dictionary")
+    CurrentPageNo = 0
 End Sub
 
 Public Sub GetInfo(EventInfoJson As String, chrome As ChromeControler)
@@ -80,7 +82,7 @@ Private Sub AddTargetInfoIfPage(ByVal EventInfoJson As String, jsonhandler As a_
     tempDic.Add "url", jsonhandler.GetValueFromJson(EventInfoJson, Array("params", "targetInfo", "url"))
     tempDic.Add "browserContextId", jsonhandler.GetValueFromJson(EventInfoJson, Array("params", "targetInfo", "browserContextId"))
     
-    pageInfoDic.Add "page" & pageInfoDic.count, tempDic
+    pageInfoDic.Add "page" & pageInfoDic.Count, tempDic
 End Sub
 
 Private Sub ChangeTargetInfoIfPage(ByVal EventInfoJson As String, jsonhandler As a_0_x4_JSONHandler)

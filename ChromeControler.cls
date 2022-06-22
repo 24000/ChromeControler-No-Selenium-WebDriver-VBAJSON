@@ -125,14 +125,14 @@ End Function
 Private Function GetDocumentNodeID() As Long
     Dim jsonForSending  As String, responseJson As String
     jsonForSending = CDPMethod_.GetDocumentID
-    responseJson = ProcessMessage(CDPMethod_.ID, jsonForSending, jsonHandler_)
+    responseJson = ProcessMessage(CDPMethod_.id, jsonForSending, jsonHandler_)
     GetDocumentNodeID = jsonHandler_.GetValueFromJson(responseJson, Array("result", "root", "nodeId"))
 End Function
 
 Private Function ChangeObjectIdToNodeId(objectId As String) As String
     Dim jsonForSending  As String, responseJson As String
     jsonForSending = CDPMethod_.RequestNode(objectId)
-    responseJson = ProcessMessage(CDPMethod_.ID, jsonForSending, jsonHandler_)
+    responseJson = ProcessMessage(CDPMethod_.id, jsonForSending, jsonHandler_)
     
     Dim nodeId As String
     nodeId = jsonHandler_.GetValueFromJson(responseJson, Array("result", "nodeId"))
@@ -142,7 +142,7 @@ End Function
 Private Function ChangeNodeIdToObjectId(nodeId As Long) As String
     Dim jsonForSending  As String, responseJson As String
     jsonForSending = CDPMethod_.ResolveNode(nodeId)
-    responseJson = ProcessMessage(CDPMethod_.ID, jsonForSending, jsonHandler_)
+    responseJson = ProcessMessage(CDPMethod_.id, jsonForSending, jsonHandler_)
     
     Dim objectId As String
     objectId = jsonHandler_.GetValueFromJson(responseJson, Array("result", "objectId"))
@@ -154,18 +154,18 @@ End Function
 Private Function GetAttributes(nodeId As Long) As String
     Dim jsonForSending  As String, responseJson As String
     jsonForSending = CDPMethod_.GetAttributes(nodeId)
-    responseJson = ProcessMessage(CDPMethod_.ID, jsonForSending, jsonHandler_)
+    responseJson = ProcessMessage(CDPMethod_.id, jsonForSending, jsonHandler_)
     GetAttributes = responseJson
 End Function
 
-Private Function DescribeNode(IdName As String, ID As Variant) As Variant
+Private Function DescribeNode(IdName As String, id As Variant) As Variant
     If IdName <> "nodeId" And IdName <> "objectId" Then
         Err.Raise 10000, , "第一引数には""nodeId""か""objectId""のどちらか指定してください。"
     End If
     
     Dim jsonForSending  As String, responseJson As String
-    jsonForSending = CDPMethod_.DescribeNodeBy_nodeId_or_objectId(IdName, ID)
-    responseJson = ProcessMessage(CDPMethod_.ID, jsonForSending, jsonHandler_)
+    jsonForSending = CDPMethod_.DescribeNodeBy_nodeId_or_objectId(IdName, id)
+    responseJson = ProcessMessage(CDPMethod_.id, jsonForSending, jsonHandler_)
     Dim attributes As String
     attributes = jsonHandler_.GetValueFromJson(responseJson, Array("result", "node", "attributes"))
     DescribeNode = attributes
@@ -177,14 +177,14 @@ End Function
 Private Function ExecuteJavaScript_Inner(Script As String) As String
     Dim jsonForSending  As String
     jsonForSending = CDPMethod_.JavaScritpEvaluate(Script)
-    ExecuteJavaScript_Inner = ProcessMessage(CDPMethod_.ID, jsonForSending, jsonHandler_)
+    ExecuteJavaScript_Inner = ProcessMessage(CDPMethod_.id, jsonForSending, jsonHandler_)
 End Function
 
 'JavaScript_Function実行
 Public Function JavaScritpCallFunction(funcName As String, objectId As Variant, args As String) As String
     Dim jsonForSending  As String
     jsonForSending = CDPMethod_.JavaScritpCallFunction(funcName, objectId, args)
-    JavaScritpCallFunction = ProcessMessage(CDPMethod_.ID, jsonForSending, jsonHandler_)
+    JavaScritpCallFunction = ProcessMessage(CDPMethod_.id, jsonForSending, jsonHandler_)
 End Function
 '************************************************
 
@@ -193,13 +193,13 @@ End Function
 Public Sub DOMEnable()
     Dim jsonForSending  As String, responseJson As String
     jsonForSending = CDPMethod_.DOM_Enable()
-    responseJson = ProcessMessage(CDPMethod_.ID, jsonForSending, jsonHandler_)
+    responseJson = ProcessMessage(CDPMethod_.id, jsonForSending, jsonHandler_)
 End Sub
 
 Public Sub FindElementByQuerySelector(Selector As String)
     Dim jsonForSending  As String, responseJson As String
     jsonForSending = CDPMethod_.querySelector(Selector)
-    responseJson = ProcessMessage(CDPMethod_.ID, jsonForSending, jsonHandler_)
+    responseJson = ProcessMessage(CDPMethod_.id, jsonForSending, jsonHandler_)
     
     Dim nodeId As Long
     nodeId = jsonHandler_.GetValueFromJson(responseJson, Array("result", "nodeId"))
@@ -207,7 +207,7 @@ Public Sub FindElementByQuerySelector(Selector As String)
     nodeInfoJson = DescribeNode("nodeId", nodeId)
 End Sub
 
-Public Function FindElementByID(ID As String) As String
+Public Function FindElementByID(id As String) As String
     
     
 End Function
@@ -223,20 +223,20 @@ End Function
 Public Function PageEnable() As String
     Dim jsonForSending  As String, responseJson As String
     jsonForSending = CDPMethod_.PageEnable()
-    responseJson = ProcessMessage(CDPMethod_.ID, jsonForSending, jsonHandler_)
+    responseJson = ProcessMessage(CDPMethod_.id, jsonForSending, jsonHandler_)
 End Function
 
 Public Function GetFrameTree() As String
     Dim jsonForSending  As String, responseJson As String
     jsonForSending = CDPMethod_.GetFrameTree()
-    responseJson = ProcessMessage(CDPMethod_.ID, jsonForSending, jsonHandler_)
+    responseJson = ProcessMessage(CDPMethod_.id, jsonForSending, jsonHandler_)
     GetFrameTree = responseJson
 End Function
 
 Public Function CreateIsolatedFrameWorld(frameId As String) As Long
     Dim jsonForSending  As String, responseJson As String
     jsonForSending = CDPMethod_.CreateIsolatedFrameWorld(frameId)
-    responseJson = ProcessMessage(CDPMethod_.ID, jsonForSending, jsonHandler_)
+    responseJson = ProcessMessage(CDPMethod_.id, jsonForSending, jsonHandler_)
     CreateIsolatedFrameWorld = _
         jsonHandler_.GetValueFromJson(responseJson, Array("result", "executionContextId"))
 End Function
@@ -244,36 +244,36 @@ End Function
 Public Function SetDiscoverTargets() As String
     Dim jsonForSending  As String, responseJson As String
     jsonForSending = CDPMethod_.SetDiscoverTargets(basicInfo_.targetId)
-    responseJson = ProcessMessage(CDPMethod_.ID, jsonForSending, jsonHandler_)
+    responseJson = ProcessMessage(CDPMethod_.id, jsonForSending, jsonHandler_)
 End Function
 
 Public Function AttachToTarget(targetId As String) As String
     Dim jsonForSending  As String, responseJson As String
     jsonForSending = CDPMethod_.AttachToTarget(targetId)
-    responseJson = ProcessMessage(CDPMethod_.ID, jsonForSending, jsonHandler_)
+    responseJson = ProcessMessage(CDPMethod_.id, jsonForSending, jsonHandler_)
 End Function
 
 Public Function ActivateTarget(targetId As String) As String
     Dim jsonForSending  As String, responseJson As String
     jsonForSending = CDPMethod_.ActivateTarget(targetId)
-    responseJson = ProcessMessage(CDPMethod_.ID, jsonForSending, jsonHandler_)
+    responseJson = ProcessMessage(CDPMethod_.id, jsonForSending, jsonHandler_)
 End Function
 
 Public Function DetachFromTarget(targetId As String) As String
     Dim jsonForSending  As String, responseJson As String
     jsonForSending = CDPMethod_.DetachFromTarget(targetId)
-    responseJson = ProcessMessage(CDPMethod_.ID, jsonForSending, jsonHandler_)
+    responseJson = ProcessMessage(CDPMethod_.id, jsonForSending, jsonHandler_)
 End Function
 
 Public Function TargetClose() As String
     Dim jsonForSending  As String, responseJson As String
     jsonForSending = CDPMethod_.TargetClose(basicInfo_.targetId)
-    responseJson = ProcessMessage(CDPMethod_.ID, jsonForSending, jsonHandler_)
+    responseJson = ProcessMessage(CDPMethod_.id, jsonForSending, jsonHandler_)
 End Function
 Public Function GetTargetInfo() As String
     Dim jsonForSending  As String, responseJson As String
     jsonForSending = CDPMethod_.GetTargets()
-    responseJson = ProcessMessage(CDPMethod_.ID, jsonForSending, jsonHandler_)
+    responseJson = ProcessMessage(CDPMethod_.id, jsonForSending, jsonHandler_)
 End Function
 
 
@@ -315,7 +315,7 @@ End Property
 Private Sub IWebDriver_URLOpen(url As String, Optional maxWaitTime_ms As Long = 30000)
     Dim jsonForSending  As String, responseJson As String
     jsonForSending = CDPMethod_.URLOpen(url)
-    responseJson = ProcessMessage(CDPMethod_.ID, jsonForSending, jsonHandler_)
+    responseJson = ProcessMessage(CDPMethod_.id, jsonForSending, jsonHandler_)
     If InStr(responseJson, "invalid URL") > 0 Then GoTo quit
     
     WaitingForWebPageDisplay (maxWaitTime_ms)
@@ -571,10 +571,10 @@ Private Sub IWebDriver_PushOkButtonOnDialog()
     Dim jsonForSending  As String, responseJson As String
     'イベント受信するために一回無害なメソッドを送受信する。
     jsonForSending = CDPMethod_.GetTargets
-    responseJson = ProcessMessage(CDPMethod_.ID, jsonForSending, jsonHandler_)
+    responseJson = ProcessMessage(CDPMethod_.id, jsonForSending, jsonHandler_)
     
     jsonForSending = CDPMethod_.handleJavaScriptDialog()
-    responseJson = ProcessMessage(CDPMethod_.ID, jsonForSending, jsonHandler_)
+    responseJson = ProcessMessage(CDPMethod_.id, jsonForSending, jsonHandler_)
     If InStr(responseJson, "No dialog is showing") > 0 Then GoTo quit
 Exit Sub
 
@@ -632,13 +632,19 @@ Exit Sub
 'DisplayErrorAndEnd "フレームの更新を検知しましたが、30秒経過しても更新が終わりませんでした。"
 End Sub
 
+'右隣のタブへ移動
 Private Sub IWebDriver_SwitchToNextTab()
-    DetachFromTarget basicInfo_.targetId
     events_.CurrentPageNo = events_.CurrentPageNo + 1
-    basicInfo_.targetId = events_.pageInfoDic("page" & events_.CurrentPageNo)("targetId")
+    Dim currentTargetId As String
+    currentTargetId = events_.pageInfoDic("page" & events_.CurrentPageNo)("targetId")
+    basicInfo_.Update currentTargetId, jsonHandler_
+    
+    webSocket_.CloseWebSocket
+    Set webSocket_ = Nothing
+    Set webSocket_ = New a_0_x1_WebSocketCommunicator
+    If webSocket_.Init(basicInfo_.Host, basicInfo_.WebSocketUrlPath, basicInfo_.DebuggingPort) = False Then End
     
     ActivateTarget basicInfo_.targetId
-    AttachToTarget basicInfo_.targetId
     PageEnable
     DOMEnable
     

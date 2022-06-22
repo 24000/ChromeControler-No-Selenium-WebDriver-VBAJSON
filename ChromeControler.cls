@@ -369,7 +369,7 @@ Private Function MakeElementObject(objectId As String) As IWebElement
 End Function
 
 'Public
-Private Function IWebDriver_GetElementsByTagName(tagName As String) As Variant
+Private Function IWebDriver_GetElementsByTagName(tagName As String) As IWebElements
     
     Dim elemsCount As Long
     elemsCount = GetElementsCount(tagName)
@@ -380,8 +380,11 @@ Private Function IWebDriver_GetElementsByTagName(tagName As String) As Variant
     For index = 0 To elemsCount - 1
         elements.Add CreateElementsItemByIndex(tagName, index)
     Next
-
-    Set IWebDriver_GetElementsByTagName = elements
+    
+    Dim elems As WebElements: Set elems = New WebElements
+    elems.Init elements
+    
+    Set IWebDriver_GetElementsByTagName = elems
 Exit Function
 
 quit:

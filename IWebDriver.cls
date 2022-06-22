@@ -45,6 +45,6 @@ Public Sub SleepByWindowsAPI(milliSecond As Long)
 
 End Sub
 
-Public Function GetElementsByTagName(tagName As String) As Variant
+Public Function GetElementsByTagName(tagName As String) As IWebElements
 
 End Function

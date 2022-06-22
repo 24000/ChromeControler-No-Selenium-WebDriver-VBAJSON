@@ -11,19 +11,12 @@ Option Explicit
 Implements IWebElement
 
 Private chrome_ As ChromeControler
-Private webSocket_ As a_0_x1_WebSocketCommunicator
-Private CDPMethod_ As a_0_x2_CDPMethods
-Private jsonHandler_ As a_0_x4_JSONHandler
 
 Private objectId_ As String
 Private nodeId_ As Long
 
 Public Sub Init(chrome As ChromeControler, objectId As String, Optional nodeId As Long = 0)
     Set chrome_ = chrome
-    Set webSocket_ = chrome.WebSocket
-    Set CDPMethod_ = chrome.CDPMethod
-    Set jsonHandler_ = chrome.jsonhandler
-
     objectId_ = objectId
     nodeId_ = nodeId
 End Sub
@@ -37,7 +30,7 @@ End Sub
 
 'Public
 Private Sub IWebElement_SetText(text As String)
-    Dim encodingText As String: encodingText = jsonHandler_.EncodeURL(text)
+    Dim encodingText As String: encodingText = chrome_.jsonhandler.EncodeURL(text)
     chrome_.JavaScritpCallFunction _
     "function(value){" & _
         "value = decodeURI(value);" & _
@@ -47,7 +40,7 @@ Private Sub IWebElement_SetText(text As String)
 End Sub
 'Public
 Private Sub IWebElement_SetTextContent(text As String)
-    Dim encodingText As String: encodingText = jsonHandler_.EncodeURL(text)
+    Dim encodingText As String: encodingText = chrome_.jsonhandler.EncodeURL(text)
     chrome_.JavaScritpCallFunction _
     "function(value){" & _
         "value = decodeURI(value);" & _
@@ -57,7 +50,7 @@ Private Sub IWebElement_SetTextContent(text As String)
 End Sub
 'Public
 Private Sub IWebElement_SelectItemByText(text As String)
-    Dim encodingText As String: encodingText = jsonHandler_.EncodeURL(text)
+    Dim encodingText As String: encodingText = chrome_.jsonhandler.EncodeURL(text)
     Dim javaScriptCode As String
     javaScriptCode = _
     "function(value){value = decodeURI(value);" & _
@@ -76,12 +69,12 @@ Private Sub IWebElement_SelectItemByText(text As String)
     responseJson = chrome_.JavaScritpCallFunction(javaScriptCode, objectId_, encodingText)
     
     Dim IsSelect As Boolean
-    IsSelect = jsonHandler_.GetValueFromJson(responseJson, Array("result", "result", "value"))
+    IsSelect = chrome_.jsonhandler.GetValueFromJson(responseJson, Array("result", "result", "value"))
     
     If IsSelect = False Then
         MsgBox "「" & text & "」は選択肢の中に存在しません。" & vbCrLf & _
                     "処理を終了します。"
-        webSocket_.Http.CloseHInternetHandles
+        chrome_.WebSocket.Http.CloseHInternetHandles
         End
     End If
     
@@ -128,7 +121,7 @@ Private Function GetElementsCount(tagName As String) As Long
     javaScriptCode = _
     "function(tagName){return  this.getElementsByTagName('" & tagName & "').length;}"
     responseJson = chrome_.JavaScritpCallFunction(javaScriptCode, objectId_, tagName)
-    GetElementsCount = jsonHandler_.GetValueFromJson(responseJson, Array("result", "result", "value"))
+    GetElementsCount = chrome_.jsonhandler.GetValueFromJson(responseJson, Array("result", "result", "value"))
 End Function
 Private Function CreateElementsItemByIndex(tagName As String, index As Long) As IWebElement
     Dim javaScriptCode As String, responseJson As String
@@ -139,7 +132,7 @@ Private Function CreateElementsItemByIndex(tagName As String, index As Long) As 
     "function(tagName){return  this.getElementsByTagName(tagName)[" & index & "];}"
     responseJson = chrome_.JavaScritpCallFunction(javaScriptCode, objectId_, tagName)
 
-    objectId = jsonHandler_.GetValueFromJson(responseJson, Array("result", "result", "objectId"))
+    objectId = chrome_.jsonhandler.GetValueFromJson(responseJson, Array("result", "result", "objectId"))
     Set CreateElementsItemByIndex = chrome_.MakeElementObject(objectId)
 End Function
 
@@ -150,7 +143,7 @@ Private Function IWebElement_GetTextContent() As String
     responseJson = chrome_.JavaScritpCallFunction(javaScriptCode, objectId_, "")
     
     Dim text As String
-    text = jsonHandler_.GetValueFromJson(responseJson, Array("result", "result", "value"))
-'    text = jsonHandler_.DecodeURL(text)
+    text = chrome_.jsonhandler.GetValueFromJson(responseJson, Array("result", "result", "value"))
+'    text = chrome_.jsonhandler.DecodeURL(text)
     IWebElement_GetTextContent = text
 End Function

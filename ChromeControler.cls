@@ -323,24 +323,24 @@ End Function
 
 'Public
 '第1引数で指定されるXpathの要素を取得し、エレメントObjectとして返却
-Private Function IWebDriver_GetElementByXpath(xpath As String) As IWebElement
+Private Function IWebDriver_GetElementByXpath(xPath As String) As IWebElement
     ReCreateIsolatedFrameWorld_IfFlagOn
     
     Dim objectId As String
-    objectId = GetObjectIdOfElementByXpath(xpath)
+    objectId = GetObjectIdOfElementByXpath(xPath)
     If objectId = "" Then GoTo quit
     Set IWebDriver_GetElementByXpath = MakeElementObject(objectId)
 Exit Function
 
 quit:
-DisplayErrorAndEnd "指定された以下Xpathの要素は存在しませんでした。" & vbCrLf & xpath
+DisplayErrorAndEnd "指定された以下Xpathの要素は存在しませんでした。" & vbCrLf & xPath
 End Function
 'Xpathで要素を探し、オブジェクトIDを返す
-Private Function GetObjectIdOfElementByXpath(xpath As String) As String
+Private Function GetObjectIdOfElementByXpath(xPath As String) As String
     Dim javaScriptCode As String, responseJson As String
     If executionContextId_ = 0 Then
         javaScriptCode = _
-            "document.evaluate('" & xpath & "', document, null, " & _
+            "document.evaluate('" & xPath & "', document, null, " & _
                 "XPathResult.FIRST_ORDERED_NODE_TYPE, null ).singleNodeValue;"
         responseJson = ExecuteJavaScript_Inner(javaScriptCode)
     Else
@@ -349,7 +349,7 @@ Private Function GetObjectIdOfElementByXpath(xpath As String) As String
                 "return  document.evaluate(xpath, document, null, " & _
                     "XPathResult.FIRST_ORDERED_NODE_TYPE, null ).singleNodeValue;" & _
             "}"
-        responseJson = JavaScritpCallFunction(javaScriptCode, executionContextId_, xpath)
+        responseJson = JavaScritpCallFunction(javaScriptCode, executionContextId_, xPath)
     End If
     
     GetObjectIdOfElementByXpath = _
@@ -505,11 +505,11 @@ End Sub
 
 'Public
 '第1引数で指定されるXpathの要素有無の確認
-Private Function IWebDriver_IsExistsElementByXpath(xpath As String) As Boolean
+Private Function IWebDriver_IsExistsElementByXpath(xPath As String) As Boolean
     ReCreateIsolatedFrameWorld_IfFlagOn
     
     Dim objectId As String
-    objectId = GetObjectIdOfElementByXpath(xpath)
+    objectId = GetObjectIdOfElementByXpath(xPath)
     If objectId = "" Then
         IWebDriver_IsExistsElementByXpath = False
     Else
@@ -519,16 +519,16 @@ End Function
 
 'Public
 'Xpath(第1引数)で指定されるの要素が出現するのを、最大待機時間(第2引数)待つ
-Private Sub IWebDriver_WaitForElementToAppearByXpath(xpath As String, maxWaitTime_ms As Long)
+Private Sub IWebDriver_WaitForElementToAppearByXpath(xPath As String, maxWaitTime_ms As Long)
     
     Dim startTime As Date: startTime = Timer()
     Do
-        If IWebDriver_IsExistsElementByXpath(xpath) Then
+        If IWebDriver_IsExistsElementByXpath(xPath) Then
             Exit Sub
         ElseIf CInt((Timer() - startTime) * 1000) > maxWaitTime_ms Then
             DisplayErrorAndEnd maxWaitTime_ms & _
                                          "ミリ秒経過しても、指定の以下要素は現れませんでした。" & vbCrLf & _
-                                          xpath
+                                          xPath
         End If
         ReCreateIsolatedFrameWorld_IfFlagOn
         DoEvents: Sleep 500

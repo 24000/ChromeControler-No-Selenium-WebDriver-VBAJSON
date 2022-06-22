@@ -9,6 +9,10 @@ Attribute VB_PredeclaredId = False
 Attribute VB_Exposed = False
 Option Explicit
 
+Public Property Get CurrentURL() As String
+
+End Property
+
 Public Sub URLOpen(url As String, Optional maxWaitTime_ms As Long = 30000)
 
 End Sub
@@ -17,7 +21,7 @@ Public Function ExecuteJavaScript(Script As String) As String
 
 End Function
 
-Public Function GetElementByXpath(xpath As String) As IWebElement
+Public Function GetElementByXpath(xPath As String) As IWebElement
 
 End Function
 
@@ -29,11 +33,11 @@ Public Sub SwitchFrameToDefault()
 
 End Sub
 
-Public Function IsExistsElementByXpath(xpath As String) As Boolean
+Public Function IsExistsElementByXpath(xPath As String) As Boolean
 
 End Function
 
-Public Sub WaitForElementToAppearByXpath(xpath As String, maxWaitTime_ms As Long)
+Public Sub WaitForElementToAppearByXpath(xPath As String, maxWaitTime_ms As Long)
 
 End Sub
 

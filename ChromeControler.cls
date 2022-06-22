@@ -71,6 +71,8 @@ Private Sub Class_Initialize()
     
     Set CDPMethod_ = New a_0_x2_CDPMethods
     Set events_ = New a_0_x1_x2_CDPEventHandler
+    
+    SetDiscoverTargets
 End Sub
 
 'message処理送信＆受信
@@ -277,8 +279,22 @@ End Function
 
 
 
+
+
 '以下､インターフェイス公開メソッドおよびその関連メソッド
 '************************************************
+'Public
+'現在のページのURL
+Private Property Get IWebDriver_CurrentURL() As String
+    Dim i As Long
+    For i = 0 To events_.pageInfoDic.Count - 1
+        If events_.pageInfoDic("page" & i)("targetId") = return_.targetId Then
+            IWebDriver_CurrentURL = events_.pageInfoDic("page" & i)("url")
+            Exit Property
+        End If
+    Next
+End Property
+
 
 'Public
 '第1引数で指定のURLを開く

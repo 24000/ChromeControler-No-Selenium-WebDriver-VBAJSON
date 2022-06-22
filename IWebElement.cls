@@ -25,11 +25,7 @@ Public Sub SelectItemByText(text As String)
 
 End Sub
 
-Public Function GetElementByXpath(xpath As String) As IWebElement
-
-End Function
-
-Public Function GetElementsByTagName(tagName As String) As Variant
+Public Function GetElementsByTagName(tagName As String) As IWebElements
 
 End Function
 

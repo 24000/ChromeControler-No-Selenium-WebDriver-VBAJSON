@@ -356,7 +356,7 @@ Private Function GetObjectIdOfElementByXpath(xPath As String) As String
         jsonhandler.GetValueFromJson(responseJson, Array("result", "result", "objectId"))
 End Function
 'エレメントを作成し、戻り値として返却
-Private Function MakeElementObject(objectId As String) As IWebElement
+Public Function MakeElementObject(objectId As String) As IWebElement
 '    DOMEnable
     Dim nodeId As Long
 '    nodeId = ChangeObjectIdToNodeId(objectId)

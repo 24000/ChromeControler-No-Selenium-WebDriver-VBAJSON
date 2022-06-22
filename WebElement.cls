@@ -18,13 +18,12 @@ Private jsonHandler_ As a_0_x4_JSONHandler
 Private objectId_ As String
 Private nodeId_ As Long
 
-Public Sub Init(chrome As ChromeControler, objectId As String, _
-                        Optional nodeId As Long = 0)
+Public Sub Init(chrome As ChromeControler, objectId As String, Optional nodeId As Long = 0)
     Set chrome_ = chrome
     Set webSocket_ = chrome.WebSocket
     Set CDPMethod_ = chrome.CDPMethod
     Set jsonHandler_ = chrome.jsonhandler
-    
+
     objectId_ = objectId
     nodeId_ = nodeId
 End Sub
@@ -99,16 +98,51 @@ Private Sub IWebElement_SelectItemByText(text As String)
         responseJson = chrome_.JavaScritpCallFunction(javaScriptCode, objectId_, encodingText)
     End If
     
-    chrome_.SleepByWindowsAPI 2000
+    Dim chromeInterFace As IWebDriver
+    Set chromeInterFace = chrome_
+    chromeInterFace.SleepByWindowsAPI 2000
 End Sub
-'Public
-Private Function IWebElement_GetElementByXpath(xpath As String) As IWebElement
 
-End Function
 'Public
 Private Function IWebElement_GetElementsByTagName(tagName As String) As IWebElements
-
+    Dim elemsCount As Long
+    elemsCount = GetElementsCount(tagName)
+    If elemsCount = 0 Then GoTo quit
+    
+    Dim elements As Collection: Set elements = New Collection
+    Dim index As Long
+    For index = 0 To elemsCount - 1
+        elements.Add CreateElementsItemByIndex(tagName, index)
+    Next
+    
+    Dim elems As WebElements: Set elems = New WebElements
+    elems.Init elements
+    
+    Set IWebElement_GetElementsByTagName = elems
+Exit Function
+quit:
+chrome_.DisplayErrorAndEnd "éwíËÇ≥ÇÍÇΩà»â∫TagNameÇÃóvëfÇÕë∂ç›ÇµÇ‹ÇπÇÒÇ≈ÇµÇΩÅB" & vbCrLf & tagName
 End Function
+Private Function GetElementsCount(tagName As String) As Long
+    Dim javaScriptCode As String, responseJson As String
+    javaScriptCode = _
+    "function(tagName){return  this.getElementsByTagName('" & tagName & "').length;}"
+    responseJson = chrome_.JavaScritpCallFunction(javaScriptCode, objectId_, tagName)
+    GetElementsCount = jsonHandler_.GetValueFromJson(responseJson, Array("result", "result", "value"))
+End Function
+Private Function CreateElementsItemByIndex(tagName As String, index As Long) As IWebElement
+    Dim javaScriptCode As String, responseJson As String
+    Dim objectId As String
+    Dim elem As IWebElement
+
+    javaScriptCode = _
+    "function(tagName){return  this.getElementsByTagName(tagName)[" & index & "];}"
+    responseJson = chrome_.JavaScritpCallFunction(javaScriptCode, objectId_, tagName)
+
+    objectId = jsonHandler_.GetValueFromJson(responseJson, Array("result", "result", "objectId"))
+    Set CreateElementsItemByIndex = chrome_.MakeElementObject(objectId)
+End Function
+
 'Public
 Private Function IWebElement_GetTextContent() As String
     Dim javaScriptCode As String, responseJson As String

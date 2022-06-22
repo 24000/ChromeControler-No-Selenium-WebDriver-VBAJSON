@@ -273,6 +273,10 @@ End Function
 
 
 
+
+
+
+
 '以下､インターフェイス公開メソッドおよびその関連メソッド
 '************************************************
 
@@ -353,11 +357,11 @@ Private Function GetObjectIdOfElementByXpath(xpath As String) As String
 End Function
 'エレメントを作成し、戻り値として返却
 Private Function MakeElementObject(objectId As String) As IWebElement
-    DOMEnable
+'    DOMEnable
     Dim nodeId As Long
-    nodeId = ChangeObjectIdToNodeId(objectId)
-    Dim attributes As String
-    attributes = GetAttributes(nodeId)
+'    nodeId = ChangeObjectIdToNodeId(objectId)
+'    Dim attributes As String
+'    attributes = GetAttributes(nodeId)
     
     Dim element As WebElement: Set element = New WebElement
     element.Init Me, objectId, nodeId
@@ -365,12 +369,64 @@ Private Function MakeElementObject(objectId As String) As IWebElement
 End Function
 
 'Public
+Private Function IWebDriver_GetElementsByTagName(tagName As String) As Variant
+    
+    Dim elemsCount As Long
+    elemsCount = GetElementsCount(tagName)
+    If elemsCount = 0 Then GoTo quit
+    
+    Dim elements As Collection: Set elements = New Collection
+    Dim index As Long
+    For index = 0 To elemsCount - 1
+        elements.Add CreateElementsItemByIndex(tagName, index)
+    Next
+
+    Set IWebDriver_GetElementsByTagName = elements
+Exit Function
+
+quit:
+DisplayErrorAndEnd "指定された以下TagNameの要素は存在しませんでした。" & vbCrLf & tagName
+End Function
+
+Private Function GetElementsCount(tagName As String) As Long
+    Dim javaScriptCode As String, responseJson As String
+    If executionContextId_ = 0 Then
+        javaScriptCode = _
+        "document.getElementsByTagName('" & tagName & "').length;"
+        responseJson = ExecuteJavaScript_Inner(javaScriptCode)
+    Else
+        javaScriptCode = _
+        "function(tagName){return  document.getElementsByTagName('" & tagName & "').length;}"
+        responseJson = JavaScritpCallFunction(javaScriptCode, executionContextId_, tagName)
+    End If
+    GetElementsCount = jsonHandler_.GetValueFromJson(responseJson, Array("result", "result", "value"))
+End Function
+
+Private Function CreateElementsItemByIndex(tagName As String, index As Long) As IWebElement
+    Dim javaScriptCode As String, responseJson As String
+    Dim objectId As String
+    Dim elem As IWebElement
+    
+    If executionContextId_ = 0 Then
+        javaScriptCode = "document.getElementsByTagName('" & tagName & "')[" & index & "];"
+        responseJson = ExecuteJavaScript_Inner(javaScriptCode)
+    Else
+        javaScriptCode = _
+        "function(tagName){return  document.getElementsByTagName(tagName)[" & index & "];}"
+        responseJson = JavaScritpCallFunction(javaScriptCode, executionContextId_, tagName)
+    End If
+    objectId = jsonhandler.GetValueFromJson(responseJson, Array("result", "result", "objectId"))
+    Set CreateElementsItemByIndex = MakeElementObject(objectId)
+End Function
+
+
+'Public
 '第1引数で指定される値のフレームにフレームを切替
 Private Sub IWebDriver_SwitchFrameByNameOrUrlOrIndex(value As Variant)
     Dim frameInfos As Collection: Set frameInfos = GetFrameInfos
     Dim frameId As String
     If IsNumeric(value) Then
-        If frameInfos.count < value Then GoTo quit
+        If frameInfos.Count < value Then GoTo quit
         frameId = jsonHandler_.GetValueFromJson(frameInfos(value), Array("id"))
     Else
         frameId = GetTargetFrameId(frameInfos, value)
@@ -393,34 +449,34 @@ Private Function GetFrameInfos() As Collection
     collect.Add jsonHandler_.GetObjectFromJson(json, Array("result", "frameTree", "frame"))
     
     Dim frmInfo As String, frminfo2 As String
-    Dim count As Long
+    Dim Count As Long
     Do
         frmInfo = jsonHandler_.GetObjectFromJson(json, _
-                        Array("result", "frameTree", "childFrames", count))
+                        Array("result", "frameTree", "childFrames", Count))
         If frmInfo = "" Then Exit Do
         frminfo2 = jsonHandler_.GetObjectFromJson(frmInfo, Array("frame"))
         collect.Add frminfo2
         If InStr(frmInfo, "childFrames") > 0 Then
             GetChildFrameInfo collect, frmInfo
         End If
-        count = count + 1
+        Count = Count + 1
     Loop
     Set GetFrameInfos = collect
 End Function
 'childFrameがある場合、再帰処理
 Public Sub GetChildFrameInfo(collect As Collection, json As String)
     Dim frmInfo As String, frminfo2 As String
-    Dim count As Long
+    Dim Count As Long
     Do
         frmInfo = jsonHandler_.GetObjectFromJson(json, _
-                        Array("childFrames", count))
+                        Array("childFrames", Count))
         If frmInfo = "" Then Exit Do
         frminfo2 = jsonHandler_.GetObjectFromJson(frmInfo, Array("frame"))
         collect.Add frminfo2
         If InStr(frmInfo, "childFrames") > 0 Then
             GetChildFrameInfo collect, frmInfo
         End If
-        count = count + 1
+        Count = Count + 1
     Loop
 End Sub
 '各フレームのname,urlと指定された値を比較。一致するフレームのIdを返す。
@@ -542,3 +598,6 @@ Exit Sub
 'quit:
 'DisplayErrorAndEnd "フレームの更新を検知しましたが、30秒経過しても更新が終わりませんでした。"
 End Sub
+
+
+

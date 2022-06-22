@@ -22,7 +22,7 @@ Private userDataDir As String
 Private webSocket_ As a_0_x1_WebSocketCommunicator
 Private CDPMethod_ As a_0_x2_CDPMethods
 Private jsonHandler_ As a_0_x4_JSONHandler
-Private return_ As a_0_x3_ReturnInfos
+Private basicInfo_ As a_0_x3_BasicInfos
 Private events_ As a_0_x1_x2_CDPEventHandler
 
 Public documentNodeId_ As Long
@@ -32,10 +32,10 @@ Public isolatedFrameId_ As String
 Public executionContextId_ As Long
 
 Public Property Get WebSocketURL() As String
-    WebSocketURL = return_.WebSocketURL
+    WebSocketURL = basicInfo_.WebSocketURL
 End Property
 Public Property Get UrlPath() As String
-    UrlPath = return_.WebSocketUrlPath
+    UrlPath = basicInfo_.WebSocketUrlPath
 End Property
 
 Public Property Get WebSocket() As a_0_x1_WebSocketCommunicator
@@ -65,9 +65,9 @@ Private Sub Class_Initialize()
     Sleep 2000
     
     Set jsonHandler_ = New a_0_x4_JSONHandler
-    Set return_ = New a_0_x3_ReturnInfos: return_.Init jsonhandler
+    Set basicInfo_ = New a_0_x3_BasicInfos: basicInfo_.Init jsonhandler
     Set webSocket_ = New a_0_x1_WebSocketCommunicator
-    If webSocket_.Init(return_.Host, return_.WebSocketUrlPath, return_.DebuggingPort) = False Then End
+    If webSocket_.Init(basicInfo_.Host, basicInfo_.WebSocketUrlPath, basicInfo_.DebuggingPort) = False Then End
     
     Set CDPMethod_ = New a_0_x2_CDPMethods
     Set events_ = New a_0_x1_x2_CDPEventHandler
@@ -243,18 +243,31 @@ End Function
 
 Public Function SetDiscoverTargets() As String
     Dim jsonForSending  As String, responseJson As String
-    jsonForSending = CDPMethod_.SetDiscoverTargets(return_.targetId)
+    jsonForSending = CDPMethod_.SetDiscoverTargets(basicInfo_.targetId)
     responseJson = ProcessMessage(CDPMethod_.ID, jsonForSending, jsonHandler_)
 End Function
 
-Public Function AttachBrowser() As String
+Public Function AttachToTarget(targetId As String) As String
     Dim jsonForSending  As String, responseJson As String
-    jsonForSending = CDPMethod_.AttachBrowser(return_.targetId)
+    jsonForSending = CDPMethod_.AttachToTarget(targetId)
     responseJson = ProcessMessage(CDPMethod_.ID, jsonForSending, jsonHandler_)
 End Function
+
+Public Function ActivateTarget(targetId As String) As String
+    Dim jsonForSending  As String, responseJson As String
+    jsonForSending = CDPMethod_.ActivateTarget(targetId)
+    responseJson = ProcessMessage(CDPMethod_.ID, jsonForSending, jsonHandler_)
+End Function
+
+Public Function DetachFromTarget(targetId As String) As String
+    Dim jsonForSending  As String, responseJson As String
+    jsonForSending = CDPMethod_.DetachFromTarget(targetId)
+    responseJson = ProcessMessage(CDPMethod_.ID, jsonForSending, jsonHandler_)
+End Function
+
 Public Function TargetClose() As String
     Dim jsonForSending  As String, responseJson As String
-    jsonForSending = CDPMethod_.TargetClose(return_.targetId)
+    jsonForSending = CDPMethod_.TargetClose(basicInfo_.targetId)
     responseJson = ProcessMessage(CDPMethod_.ID, jsonForSending, jsonHandler_)
 End Function
 Public Function GetTargetInfo() As String
@@ -288,12 +301,13 @@ End Function
 Private Property Get IWebDriver_CurrentURL() As String
     Dim i As Long
     For i = 0 To events_.pageInfoDic.Count - 1
-        If events_.pageInfoDic("page" & i)("targetId") = return_.targetId Then
+        If events_.pageInfoDic("page" & i)("targetId") = basicInfo_.targetId Then
             IWebDriver_CurrentURL = events_.pageInfoDic("page" & i)("url")
             Exit Property
         End If
     Next
 End Property
+
 
 
 'Public
@@ -618,5 +632,18 @@ Exit Sub
 'DisplayErrorAndEnd "フレームの更新を検知しましたが、30秒経過しても更新が終わりませんでした。"
 End Sub
 
+Private Sub IWebDriver_SwitchToNextTab()
+    DetachFromTarget basicInfo_.targetId
+    events_.CurrentPageNo = events_.CurrentPageNo + 1
+    basicInfo_.targetId = events_.pageInfoDic("page" & events_.CurrentPageNo)("targetId")
+    
+    ActivateTarget basicInfo_.targetId
+    AttachToTarget basicInfo_.targetId
+    PageEnable
+    DOMEnable
+    
+    documentObjectId_ = GetDocumentObjectID
+    documentNodeId_ = GetDocumentNodeID
+End Sub
 
 

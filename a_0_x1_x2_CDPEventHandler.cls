@@ -23,7 +23,7 @@ Private Sub Class_Initialize()
     CurrentPageNo = 0
 End Sub
 
-Public Sub GetInfo(EventInfoJson As String, chrome As ChromeControler)
+Public Sub GetInfo(EventInfoJson As String, chrome As ChromeDriver)
     Dim eventName As String
     eventName = chrome.jsonhandler.GetValueFromJson(EventInfoJson, Array("method"))
     Select Case eventName
@@ -118,7 +118,7 @@ Private Sub RemoveTargetInfoIfPage(ByVal EventInfoJson As String, jsonhandler As
 End Sub
 
 Private Sub SetFlag_IfIsolatedFrameScheduledNavigation( _
-                    ByVal EventInfoJson As String, chrome As ChromeControler)
+                    ByVal EventInfoJson As String, chrome As ChromeDriver)
     Dim frameId As String
     frameId = chrome.jsonhandler.GetValueFromJson(EventInfoJson, Array("params", "frameId"))
     If frameId <> chrome.isolatedFrameId_ Then Exit Sub
@@ -127,7 +127,7 @@ Private Sub SetFlag_IfIsolatedFrameScheduledNavigation( _
 End Sub
 
 Private Sub SetFlag_IfIsolatedFrameScheduledNavigationEnd( _
-                    ByVal EventInfoJson As String, chrome As ChromeControler)
+                    ByVal EventInfoJson As String, chrome As ChromeDriver)
                     
     Dim methodName As String
     methodName = chrome.jsonhandler.GetValueFromJson(EventInfoJson, Array("method"))

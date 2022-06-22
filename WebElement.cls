@@ -10,12 +10,12 @@ Attribute VB_Exposed = False
 Option Explicit
 Implements IWebElement
 
-Private chrome_ As ChromeControler
+Private chrome_ As ChromeDriver
 
 Private objectId_ As String
 Private nodeId_ As Long
 
-Public Sub Init(chrome As ChromeControler, objectId As String, Optional nodeId As Long = 0)
+Public Sub Init(chrome As ChromeDriver, objectId As String, Optional nodeId As Long = 0)
     Set chrome_ = chrome
     objectId_ = objectId
     nodeId_ = nodeId

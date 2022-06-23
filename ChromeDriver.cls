@@ -299,6 +299,7 @@ End Function
 'Public
 '現在のページのURL
 Private Property Get IWebDriver_CurrentURL() As String
+    SetDiscoverTargets  'これを使ってPage情報最新化
     Dim i As Long
     For i = 1 To events_.pageInfos.Count
         If events_.pageInfos(i)("targetId") = basicInfo_.targetId Then
@@ -406,9 +407,9 @@ Private Function IWebDriver_GetElementsByTagName(tagName As String) As IWebEleme
     If elemsCount = 0 Then GoTo quit
     
     Dim elements As Collection: Set elements = New Collection
-    Dim index As Long
-    For index = 0 To elemsCount - 1
-        elements.Add CreateElementsItemByIndex(tagName, index)
+    Dim Index As Long
+    For Index = 0 To elemsCount - 1
+        elements.Add CreateElementsItemByIndex(tagName, Index)
     Next
     
     Dim elems As WebElements: Set elems = New WebElements
@@ -435,17 +436,17 @@ Private Function GetElementsCount(tagName As String) As Long
     GetElementsCount = jsonHandler_.GetValueFromJson(responseJson, Array("result", "result", "value"))
 End Function
 
-Private Function CreateElementsItemByIndex(tagName As String, index As Long) As IWebElement
+Private Function CreateElementsItemByIndex(tagName As String, Index As Long) As IWebElement
     Dim javaScriptCode As String, responseJson As String
     Dim objectId As String
     Dim elem As IWebElement
     
     If executionContextId_ = 0 Then
-        javaScriptCode = "document.getElementsByTagName('" & tagName & "')[" & index & "];"
+        javaScriptCode = "document.getElementsByTagName('" & tagName & "')[" & Index & "];"
         responseJson = ExecuteJavaScript_Inner(javaScriptCode)
     Else
         javaScriptCode = _
-        "function(tagName){return  document.getElementsByTagName(tagName)[" & index & "];}"
+        "function(tagName){return  document.getElementsByTagName(tagName)[" & Index & "];}"
         responseJson = JavaScritpCallFunction(javaScriptCode, executionContextId_, tagName)
     End If
     objectId = jsonhandler.GetValueFromJson(responseJson, Array("result", "result", "objectId"))
@@ -633,10 +634,9 @@ Exit Sub
 End Sub
 
 '右隣のタブへ移動
-Private Sub IWebDriver_SwitchToNextTab()
-    events_.CurrentPageNo = events_.CurrentPageNo + 1
+Private Sub IWebDriver_SwitchTabByIndex(Index As Long)
     Dim currentTargetId As String
-    currentTargetId = events_.pageInfos(events_.CurrentPageNo)("targetId")
+    currentTargetId = events_.pageInfos(Index)("targetId")
     basicInfo_.Update currentTargetId, jsonHandler_
     
     webSocket_.CloseWebSocket

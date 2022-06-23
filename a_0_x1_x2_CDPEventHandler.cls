@@ -14,13 +14,11 @@ Public DialogInfoDic As Object
 Public pageInfos As Collection
 Public IsIsolatedFrameScheduledNavigation As Boolean
 Public IsIsolatedFrameScheduledNavigationEnd As Boolean
-Public CurrentPageNo As Long
 
 Private Sub Class_Initialize()
     Set DialogInfoDic = CreateObject("Scripting.Dictionary")
     InitializeDialogInfo
     Set pageInfos = New Collection
-    CurrentPageNo = 1
 End Sub
 
 Public Sub GetInfo(EventInfo As String, chrome As ChromeDriver)
@@ -40,13 +38,13 @@ Public Sub GetInfo(EventInfo As String, chrome As ChromeDriver)
             RemoveTargetInfoIfPage EventInfo, chrome.jsonhandler
             
         Case "Page.frameScheduledNavigation" '非推奨となっているがこれが返ってくる。
-            If chrome.isolatedFrameId_ = 0 Then Exit Sub
+            If chrome.isolatedFrameId_ = "" Then Exit Sub
             SetFlag_IfIsolatedFrameScheduledNavigation EventInfo, chrome
         Case "Page.frameClearedScheduledNavigation" '非推奨となっているがこれが返ってくる。
-            If chrome.isolatedFrameId_ = 0 Then Exit Sub
+            If chrome.isolatedFrameId_ = "" Then Exit Sub
             SetFlag_IfIsolatedFrameScheduledNavigationEnd EventInfo, chrome
         Case "Page.frameNavigated"
-            If chrome.isolatedFrameId_ = 0 Then Exit Sub
+            If chrome.isolatedFrameId_ = "" Then Exit Sub
             SetFlag_IfIsolatedFrameScheduledNavigationEnd EventInfo, chrome
     End Select
 End Sub
@@ -84,7 +82,18 @@ Private Sub AddTargetInfoIfPage(ByVal EventInfo As String, jsonhandler As a_0_x4
     tempDic.Add "title", jsonhandler.GetValueFromJson(EventInfo, Array("params", "targetInfo", "title"))
     tempDic.Add "url", jsonhandler.GetValueFromJson(EventInfo, Array("params", "targetInfo", "url"))
     tempDic.Add "browserContextId", jsonhandler.GetValueFromJson(EventInfo, Array("params", "targetInfo", "browserContextId"))
-    
+    '本来targetInfoChangedで来るべき内容がtargetCreatedで来るケースあり。
+    'SetDiscoverTarget使用すると既に開かれているPageもCreateされる模様
+    Dim i As Long
+    For i = 1 To pageInfos.Count
+        If pageInfos(i)("targetId") = tempDic("targetId") Then
+            pageInfos(i)("title") = tempDic("targetId")
+            pageInfos(i)("url") = tempDic("url")
+            pageInfos(i)("browserContextId") = tempDic("browserContextId")
+            Exit Sub
+        End If
+    Next
+
     pageInfos.Add tempDic
 End Sub
 

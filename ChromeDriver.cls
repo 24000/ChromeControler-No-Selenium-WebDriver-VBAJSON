@@ -300,9 +300,9 @@ End Function
 'åªç›ÇÃÉyÅ[ÉWÇÃURL
 Private Property Get IWebDriver_CurrentURL() As String
     Dim i As Long
-    For i = 0 To events_.pageInfoDic.Count - 1
-        If events_.pageInfoDic("page" & i)("targetId") = basicInfo_.targetId Then
-            IWebDriver_CurrentURL = events_.pageInfoDic("page" & i)("url")
+    For i = 1 To events_.pageInfos.Count
+        If events_.pageInfos(i)("targetId") = basicInfo_.targetId Then
+            IWebDriver_CurrentURL = events_.pageInfos(i)("url")
             Exit Property
         End If
     Next
@@ -636,7 +636,7 @@ End Sub
 Private Sub IWebDriver_SwitchToNextTab()
     events_.CurrentPageNo = events_.CurrentPageNo + 1
     Dim currentTargetId As String
-    currentTargetId = events_.pageInfoDic("page" & events_.CurrentPageNo)("targetId")
+    currentTargetId = events_.pageInfos(events_.CurrentPageNo)("targetId")
     basicInfo_.Update currentTargetId, jsonHandler_
     
     webSocket_.CloseWebSocket

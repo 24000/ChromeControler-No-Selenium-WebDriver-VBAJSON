@@ -53,6 +53,6 @@ Public Function GetElementsByTagName(tagName As String) As IWebElements
 
 End Function
 
-Public Sub SwitchToNextTab()
+Public Sub SwitchTabByIndex(Index As Long)
     
 End Sub

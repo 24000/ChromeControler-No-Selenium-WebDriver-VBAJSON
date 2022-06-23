@@ -103,9 +103,9 @@ Private Function IWebElement_GetElementsByTagName(tagName As String) As IWebElem
     If elemsCount = 0 Then GoTo quit
     
     Dim elements As Collection: Set elements = New Collection
-    Dim index As Long
-    For index = 0 To elemsCount - 1
-        elements.Add CreateElementsItemByIndex(tagName, index)
+    Dim Index As Long
+    For Index = 0 To elemsCount - 1
+        elements.add CreateElementsItemByIndex(tagName, Index)
     Next
     
     Dim elems As WebElements: Set elems = New WebElements
@@ -123,13 +123,13 @@ Private Function GetElementsCount(tagName As String) As Long
     responseJson = chrome_.JavaScritpCallFunction(javaScriptCode, objectId_, tagName)
     GetElementsCount = chrome_.jsonhandler.GetValueFromJson(responseJson, Array("result", "result", "value"))
 End Function
-Private Function CreateElementsItemByIndex(tagName As String, index As Long) As IWebElement
+Private Function CreateElementsItemByIndex(tagName As String, Index As Long) As IWebElement
     Dim javaScriptCode As String, responseJson As String
     Dim objectId As String
     Dim elem As IWebElement
 
     javaScriptCode = _
-    "function(tagName){return  this.getElementsByTagName(tagName)[" & index & "];}"
+    "function(tagName){return  this.getElementsByTagName(tagName)[" & Index & "];}"
     responseJson = chrome_.JavaScritpCallFunction(javaScriptCode, objectId_, tagName)
 
     objectId = chrome_.jsonhandler.GetValueFromJson(responseJson, Array("result", "result", "objectId"))

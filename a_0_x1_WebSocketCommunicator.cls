@@ -114,7 +114,7 @@ Public Function GetMessage() As String
         If res.result <> NO_ERROR Then GoTo quit
 
         If res.Status = WINHTTP_WEB_SOCKET_UTF8_MESSAGE_BUFFER_TYPE Then
-            res.collect.Add res.Buffer
+            res.collect.add res.Buffer
             GetMessage = MakeResponseMessage(res.collect)
             Debug.Print "éÛêMÅF" & GetMessage
             Exit Function
@@ -122,7 +122,7 @@ Public Function GetMessage() As String
         
         UpdateBufferInfo res.CurrentPointer, res.BufferLength, res.ReceiveBytes
         If (res.BufferLength <= 0) Then
-            res.collect.Add res.Buffer
+            res.collect.add res.Buffer
             InitializeBuffer res.Buffer, res.CurrentPointer, res.BufferLength
         End If
     Loop

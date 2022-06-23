@@ -11,14 +11,17 @@ Option Explicit
 
 'ダイアログ情報
 Public DialogInfoDic As Object
-Public pageInfos As Collection
+Public PageInfos As Collection
+Public IframeInfos As Collection
+
 Public IsIsolatedFrameScheduledNavigation As Boolean
 Public IsIsolatedFrameScheduledNavigationEnd As Boolean
 
 Private Sub Class_Initialize()
     Set DialogInfoDic = CreateObject("Scripting.Dictionary")
     InitializeDialogInfo
-    Set pageInfos = New Collection
+    Set PageInfos = New Collection
+    Set IframeInfos = New Collection
 End Sub
 
 Public Sub GetInfo(EventInfo As String, chrome As ChromeDriver)
@@ -31,11 +34,11 @@ Public Sub GetInfo(EventInfo As String, chrome As ChromeDriver)
             InitializeDialogInfo
             
         Case "Target.targetCreated"
-            AddTargetInfoIfPage EventInfo, chrome.jsonhandler
+            AddTargetInfo EventInfo, chrome.jsonhandler
         Case "Target.targetInfoChanged"
-            ChangeTargetInfoIfPage EventInfo, chrome.jsonhandler
+            ChangeTargetInfo EventInfo, chrome.jsonhandler
         Case "Target.targetDestroyed"
-            RemoveTargetInfoIfPage EventInfo, chrome.jsonhandler
+            RemoveTargetInfo EventInfo, chrome.jsonhandler
             
         Case "Page.frameScheduledNavigation" '非推奨となっているがこれが返ってくる。
             If chrome.isolatedFrameId_ = "" Then Exit Sub
@@ -63,73 +66,101 @@ End Sub
 
 Private Sub InitializeDialogInfo()
     DialogInfoDic.RemoveAll
-    DialogInfoDic.Add "IsExistDialog", False
-    DialogInfoDic.Add "DialogMessage", ""
-    DialogInfoDic.Add "DialogType", ""
-    DialogInfoDic.Add "HasBrowserHandler", False
-    DialogInfoDic.Add "DefaultPrompt", ""
+    DialogInfoDic.add "IsExistDialog", False
+    DialogInfoDic.add "DialogMessage", ""
+    DialogInfoDic.add "DialogType", ""
+    DialogInfoDic.add "HasBrowserHandler", False
+    DialogInfoDic.add "DefaultPrompt", ""
 End Sub
 
-'Chrome上でPage(タブ)が追加されたら、Page情報を管理するCollectionにその情報をDictionaryとしてまとめて追加する。
-Private Sub AddTargetInfoIfPage(ByVal EventInfo As String, jsonhandler As a_0_x4_JSONHandler)
+'TargetのTypeにより､それぞれコレクションに情報を取得する｡
+Private Sub AddTargetInfo(ByVal EventInfo As String, jsonhandler As a_0_x4_JSONHandler)
+    Dim tempdic As Object
+    Set tempdic = CreateObject("Scripting.Dictionary")
+    tempdic.add "targetId", jsonhandler.GetValueFromJson(EventInfo, Array("params", "targetInfo", "targetId"))
+    tempdic.add "title", jsonhandler.GetValueFromJson(EventInfo, Array("params", "targetInfo", "title"))
+    tempdic.add "url", jsonhandler.GetValueFromJson(EventInfo, Array("params", "targetInfo", "url"))
+    tempdic.add "browserContextId", jsonhandler.GetValueFromJson(EventInfo, Array("params", "targetInfo", "browserContextId"))
+    
     Dim targetType As String
     targetType = jsonhandler.GetValueFromJson(EventInfo, Array("params", "targetInfo", "type"))
-    If targetType <> "page" Then Exit Sub
-    
-    Dim tempDic As Object
-    Set tempDic = CreateObject("Scripting.Dictionary")
-    tempDic.Add "targetId", jsonhandler.GetValueFromJson(EventInfo, Array("params", "targetInfo", "targetId"))
-    tempDic.Add "title", jsonhandler.GetValueFromJson(EventInfo, Array("params", "targetInfo", "title"))
-    tempDic.Add "url", jsonhandler.GetValueFromJson(EventInfo, Array("params", "targetInfo", "url"))
-    tempDic.Add "browserContextId", jsonhandler.GetValueFromJson(EventInfo, Array("params", "targetInfo", "browserContextId"))
+    Select Case targetType
+      Case "page"
+        AddInfoOf PageInfos, tempdic, EventInfo, jsonhandler
+      Case "iframe"
+        AddInfoOf IframeInfos, tempdic, EventInfo, jsonhandler
+    End Select
+End Sub
+'Chrome上でTargetが追加されたら、各TargetTypeの情報を管理するCollectionにその情報をDictionaryとしてまとめて追加する。
+Private Sub AddInfoOf(infos As Collection, tempdic As Object, _
+                                    ByVal EventInfo As String, jsonhandler As a_0_x4_JSONHandler)
+                                        
     '本来targetInfoChangedで来るべき内容がtargetCreatedで来るケースあり。
     'SetDiscoverTarget使用すると既に開かれているPageもCreateされる模様
     Dim i As Long
-    For i = 1 To pageInfos.Count
-        If pageInfos(i)("targetId") = tempDic("targetId") Then
-            pageInfos(i)("title") = tempDic("targetId")
-            pageInfos(i)("url") = tempDic("url")
-            pageInfos(i)("browserContextId") = tempDic("browserContextId")
+    For i = 1 To infos.Count
+        If infos(i)("targetId") = tempdic("targetId") Then
+            infos(i)("title") = tempdic("targetId")
+            infos(i)("url") = tempdic("url")
+            infos(i)("browserContextId") = tempdic("browserContextId")
             Exit Sub
         End If
     Next
-
-    pageInfos.Add tempDic
+    infos.add tempdic
 End Sub
 
 'Chrome上でPage(タブ)の情報が変更されたら、Page情報を管理するCollection内の該当Pageの情報を変更する。
-Private Sub ChangeTargetInfoIfPage(ByVal EventInfo As String, jsonhandler As a_0_x4_JSONHandler)
+Private Sub ChangeTargetInfo(ByVal EventInfo As String, jsonhandler As a_0_x4_JSONHandler)
     Dim targetType As String
     targetType = jsonhandler.GetValueFromJson(EventInfo, Array("params", "targetInfo", "type"))
-    If targetType <> "page" Then Exit Sub
     
+    Select Case targetType
+      Case "page"
+        ChangeInfoOf PageInfos, EventInfo, jsonhandler
+      Case "iframe"
+        ChangeInfoOf IframeInfos, EventInfo, jsonhandler
+    End Select
+End Sub
+Private Sub ChangeInfoOf(infos As Collection, _
+                                        ByVal EventInfo As String, jsonhandler As a_0_x4_JSONHandler)
     Dim targetId As String
     targetId = jsonhandler.GetValueFromJson(EventInfo, Array("params", "targetInfo", "targetId"))
-    Dim pageInfo As Variant
-    For Each pageInfo In pageInfos
-        If pageInfo("targetId") = targetId Then
-            pageInfo("title") = jsonhandler.GetValueFromJson(EventInfo, Array("params", "targetInfo", "title"))
-            pageInfo("url") = jsonhandler.GetValueFromJson(EventInfo, Array("params", "targetInfo", "url"))
-            pageInfo("browserContextId") = jsonhandler.GetValueFromJson(EventInfo, Array("params", "targetInfo", "browserContextId"))
+    Dim Info As Variant
+    For Each Info In infos
+        If Info("targetId") = targetId Then
+            Info("title") = jsonhandler.GetValueFromJson(EventInfo, Array("params", "targetInfo", "title"))
+            Info("url") = jsonhandler.GetValueFromJson(EventInfo, Array("params", "targetInfo", "url"))
+            Info("browserContextId") = jsonhandler.GetValueFromJson(EventInfo, Array("params", "targetInfo", "browserContextId"))
         End If
     Next
 End Sub
 
 'Chrome上でPage(タブ)が削除されたら、Page情報を管理するCollectionからその情報を削除する。
-Private Sub RemoveTargetInfoIfPage(ByVal EventInfo As String, jsonhandler As a_0_x4_JSONHandler)
+Private Sub RemoveTargetInfo(ByVal EventInfo As String, jsonhandler As a_0_x4_JSONHandler)
     Dim targetType As String
     targetType = jsonhandler.GetValueFromJson(EventInfo, Array("params", "targetInfo", "type"))
-    If targetType <> "page" Then Exit Sub
     
+    Select Case targetType
+      Case "page"
+        RemoveInfoOf PageInfos, EventInfo, jsonhandler
+      Case "iframe"
+        RemoveInfoOf IframeInfos, EventInfo, jsonhandler
+    End Select
+End Sub
+Private Sub RemoveInfoOf(infos As Collection, _
+                                        ByVal EventInfo As String, jsonhandler As a_0_x4_JSONHandler)
     Dim targetId As String
     targetId = jsonhandler.GetValueFromJson(EventInfo, Array("params", "targetInfo", "targetId"))
+    
     Dim i As Long
-    For i = 1 To pageInfos.Count
-        If pageInfos(i)("targetId") = targetId Then
-            pageInfos.Remove i
+    For i = 1 To infos.Count
+        If infos(i)("targetId") = targetId Then
+            infos.Remove i
         End If
     Next
 End Sub
+
+
 
 Private Sub SetFlag_IfIsolatedFrameScheduledNavigation( _
                     ByVal EventInfo As String, chrome As ChromeDriver)

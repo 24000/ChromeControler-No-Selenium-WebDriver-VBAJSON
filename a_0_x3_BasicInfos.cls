@@ -65,7 +65,7 @@ Private Function GetWebSocketDebuggerUrl(jsonhandler As a_0_x4_JSONHandler) As S
     Do
         targetInfo = jsonhandler.GetObjectFromJson(TargetInfoJSON, Array(Count))
         If targetInfo = "" Then Exit Do
-        collect.Add targetInfo
+        collect.add targetInfo
         Count = Count + 1
     Loop
     

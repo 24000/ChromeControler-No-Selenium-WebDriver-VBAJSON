@@ -301,9 +301,9 @@ End Function
 Private Property Get IWebDriver_CurrentURL() As String
     SetDiscoverTargets  'これを使ってPage情報最新化
     Dim i As Long
-    For i = 1 To events_.pageInfos.Count
-        If events_.pageInfos(i)("targetId") = basicInfo_.targetId Then
-            IWebDriver_CurrentURL = events_.pageInfos(i)("url")
+    For i = 1 To events_.PageInfos.Count
+        If events_.PageInfos(i)("targetId") = basicInfo_.targetId Then
+            IWebDriver_CurrentURL = events_.PageInfos(i)("url")
             Exit Property
         End If
     Next
@@ -409,7 +409,7 @@ Private Function IWebDriver_GetElementsByTagName(tagName As String) As IWebEleme
     Dim elements As Collection: Set elements = New Collection
     Dim Index As Long
     For Index = 0 To elemsCount - 1
-        elements.Add CreateElementsItemByIndex(tagName, Index)
+        elements.add CreateElementsItemByIndex(tagName, Index)
     Next
     
     Dim elems As WebElements: Set elems = New WebElements
@@ -480,7 +480,7 @@ End Sub
 Private Function GetFrameInfos() As Collection
     Dim collect As Collection: Set collect = New Collection
     Dim json As String: json = GetFrameTree
-    collect.Add jsonHandler_.GetObjectFromJson(json, Array("result", "frameTree", "frame"))
+    collect.add jsonHandler_.GetObjectFromJson(json, Array("result", "frameTree", "frame"))
     
     Dim frmInfo As String, frminfo2 As String
     Dim Count As Long
@@ -489,7 +489,7 @@ Private Function GetFrameInfos() As Collection
                         Array("result", "frameTree", "childFrames", Count))
         If frmInfo = "" Then Exit Do
         frminfo2 = jsonHandler_.GetObjectFromJson(frmInfo, Array("frame"))
-        collect.Add frminfo2
+        collect.add frminfo2
         If InStr(frmInfo, "childFrames") > 0 Then
             GetChildFrameInfo collect, frmInfo
         End If
@@ -506,7 +506,7 @@ Public Sub GetChildFrameInfo(collect As Collection, json As String)
                         Array("childFrames", Count))
         If frmInfo = "" Then Exit Do
         frminfo2 = jsonHandler_.GetObjectFromJson(frmInfo, Array("frame"))
-        collect.Add frminfo2
+        collect.add frminfo2
         If InStr(frmInfo, "childFrames") > 0 Then
             GetChildFrameInfo collect, frmInfo
         End If
@@ -636,7 +636,7 @@ End Sub
 '右隣のタブへ移動
 Private Sub IWebDriver_SwitchTabByIndex(Index As Long)
     Dim currentTargetId As String
-    currentTargetId = events_.pageInfos(Index)("targetId")
+    currentTargetId = events_.PageInfos(Index)("targetId")
     basicInfo_.Update currentTargetId, jsonHandler_
     
     webSocket_.CloseWebSocket

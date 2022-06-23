@@ -22,7 +22,14 @@ Private Sub Class_Initialize()
             "return encodeURI(s);" & vbCrLf & _
             "}" & vbCrLf & _
         "</script>"
-
+    
+    html.write _
+        "<script>" & vbCrLf & _
+            "document.DecodeURL = " & vbCrLf & _
+            "function(s){" & vbCrLf & _
+            "return decodeURI(s);" & vbCrLf & _
+            "}" & vbCrLf & _
+        "</script>"
 'JSON操作
 '============================
     '配列からオブジェクト取り出す
@@ -74,6 +81,10 @@ End Sub
 
 Public Function EncodeURL(json As String) As String
     EncodeURL = html.EncodeURL(json)
+End Function
+
+Public Function DecodeURL(json As String) As String
+    DecodeURL = html.DecodeURL(json)
 End Function
 
 Public Function GetValueFromJson(ByVal json As String, argsArray As Variant) As String

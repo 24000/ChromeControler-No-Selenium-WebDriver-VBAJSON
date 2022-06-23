@@ -20,6 +20,6 @@ Private Function IWebElements_Count() As Long
     IWebElements_Count = elements_.Count
 End Function
 
-Private Function IWebElements_Item(index As Variant) As IWebElement
-    Set IWebElements_Item = elements_.Item(index + 1)
+Private Function IWebElements_Item(Index As Variant) As IWebElement
+    Set IWebElements_Item = elements_.Item(Index + 1)
 End Function

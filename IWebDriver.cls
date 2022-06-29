@@ -25,7 +25,7 @@ Public Function GetElementByXpath(xPath As String) As IWebElement
 
 End Function
 
-Public Function GetElementByName(name As String) As IWebElement
+Public Function GetElementByName(Name As String) As IWebElement
 
 End Function
 
@@ -63,4 +63,8 @@ End Sub
 
 Public Sub DebugPrintAccessibleFrameInfo()
 
+End Sub
+
+Public Sub CloseWindow()
+    
 End Sub

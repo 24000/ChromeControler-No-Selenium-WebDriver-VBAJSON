@@ -227,10 +227,15 @@ Public Function JavaScritpEvaluate(script As String)
     JavaScritpEvaluate = message
 End Function
 
-Public Function JavaScritpCallFunction(funcDeclear As String, objectId As Variant, argments As String)
+Public Function JavaScritpCallFunction(funcDeclear As String, objectId As Variant, argments As Variant)
     id_ = id_ + 1
     Dim JavaScriptObjectArgs As String
-    JavaScriptObjectArgs = "[{""value"": """ & argments & """}]"
+    
+    If argments = "true" Or argments = "false" Then
+        JavaScriptObjectArgs = "[{""value"": " & argments & "}]"
+    Else
+        JavaScriptObjectArgs = "[{""value"": """ & argments & """}]"
+    End If
     
     Dim message As String
     message = "{""id"": " & id_ & ",""method"": ""Runtime.callFunctionOn""," & _

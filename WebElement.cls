@@ -22,7 +22,48 @@ Public Sub Init(chrome As ChromeDriver, objectId As String, Optional nodeId As L
 End Sub
 
 
+
 '***********************************************
+'Public
+Private Property Let IWebElement_Checked(RHS As Boolean)
+    Dim responseJson As String
+    'checkedプロパティを持っているか事前にチェック。持っていない場合はじく。
+    responseJson = chrome_.JavaScritpCallFunction( _
+        "function(value){return this.checked;}", objectId_, "")
+    If InStr(responseJson, """type"":""boolean""") = 0 Then GoTo quit
+    
+    Dim boolString As String
+    If RHS Then
+        boolString = "true"
+    Else
+        boolString = "false"
+    End If
+
+    responseJson = chrome_.JavaScritpCallFunction( _
+        "function(value){ this.checked = value;}", objectId_, boolString)
+
+Exit Property
+quit:
+chrome_.DisplayErrorAndEnd "このElementはCheckedを持ちません。" & vbCrLf & _
+                                            "※CheckedはCheckBoxで使用可能"
+End Property
+'Public
+Private Property Get IWebElement_Checked() As Boolean
+    Dim responseJson As String
+    responseJson = chrome_.JavaScritpCallFunction( _
+        "function(value){return this.checked;}", objectId_, "")
+    If InStr(responseJson, """type"":""boolean""") = 0 Then GoTo quit
+    
+    Dim Checked As Boolean
+    Checked = chrome_.jsonhandler.GetValueFromJson(responseJson, Array("result", "result", "value"))
+    IWebElement_Checked = Checked
+Exit Property
+
+quit:
+chrome_.DisplayErrorAndEnd "このElementはCheckedを持ちません。" & vbCrLf & _
+                                            "※CheckedはCheckBoxで使用可能"
+End Property
+
 'Public
 Private Sub IWebElement_Click()
     Dim responseJson As String

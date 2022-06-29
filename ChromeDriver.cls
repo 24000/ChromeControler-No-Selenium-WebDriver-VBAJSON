@@ -197,7 +197,7 @@ Private Function ExecuteJavaScript_Inner(script As String) As String
 End Function
 
 'JavaScript_Functioné¿çs
-Public Function JavaScritpCallFunction(funcName As String, objectId As Variant, args As String) As String
+Public Function JavaScritpCallFunction(funcName As String, objectId As Variant, args As Variant) As String
     Dim jsonForSending  As String
     jsonForSending = CDPMethod_.JavaScritpCallFunction(funcName, objectId, args)
     JavaScritpCallFunction = ProcessMessage(CDPMethod_.id, jsonForSending, jsonHandler_)

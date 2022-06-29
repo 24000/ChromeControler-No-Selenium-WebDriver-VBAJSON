@@ -14,7 +14,7 @@ Public Function Count() As Long
 End Function
 
 Public Function Item(Index) As IWebElement
-
+Attribute Item.VB_UserMemId = 0
 End Function
 
 Public Function NewEnum() As stdole.IUnknown

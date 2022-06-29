@@ -21,6 +21,7 @@ Private Function IWebElements_Count() As Long
 End Function
 
 Private Function IWebElements_Item(Index As Variant) As IWebElement
+Attribute Item.VB_UserMemId = 0
     Set IWebElements_Item = elements_.Item(Index + 1)
 End Function
 

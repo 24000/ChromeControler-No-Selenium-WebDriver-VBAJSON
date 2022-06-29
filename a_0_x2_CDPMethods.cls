@@ -77,7 +77,7 @@ End Function
 Public Function SessionClose() As String
     id_ = id_ + 1
     Dim message As String
-    message = "{""id"": " & id_ & ",""method"": ""Browser.Close""}"
+    message = "{""id"": " & id_ & ",""method"": ""Browser.close""}"
     SessionClose = message
 End Function
 '*******************************************************************

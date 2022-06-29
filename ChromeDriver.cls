@@ -111,6 +111,15 @@ webSocket_.Http.CloseHInternetHandles
 End
 End Function
 
+'Browserån************************************************
+Private Function SessionClose() As String
+    Dim jsonForSending  As String, responseJson As String
+    jsonForSending = CDPMethod_.SessionClose
+    responseJson = ProcessMessage(CDPMethod_.id, jsonForSending, jsonHandler_)
+End Function
+
+'************************************************
+
 'ElementIdån************************************************
 'CDPMethodÇ…Ç»Ç¢ÇÃÇ≈Javascripté¿çs
 Private Function GetDocumentObjectID() As String
@@ -296,6 +305,8 @@ Public Function GetTargetInfo() As String
     jsonForSending = CDPMethod_.GetTargets()
     responseJson = ProcessMessage(CDPMethod_.id, jsonForSending, jsonHandler_)
 End Function
+
+
 
 
 
@@ -713,4 +724,6 @@ Private Sub IWebDriver_SwitchTabByIndex(Index As Long)
     documentNodeId_ = GetDocumentNodeID
 End Sub
 
-
+Private Sub IWebDriver_CloseWindow()
+    SessionClose
+End Sub

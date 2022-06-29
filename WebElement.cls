@@ -25,8 +25,22 @@ End Sub
 '***********************************************
 'Public
 Private Sub IWebElement_Click()
-    chrome_.JavaScritpCallFunction "function(value){this.click();}", objectId_, ""
+    Dim responseJson As String
+    responseJson = chrome_.JavaScritpCallFunction("function(value){this.click();}", objectId_, "")
+    
+    If InStr(responseJson, "this.click is not a function") Then
+        Dim javaScriptCode As String
+        javaScriptCode = "function(value){this.dispatchEvent(new MouseEvent( 'click' ));}"
+        responseJson = chrome_.JavaScritpCallFunction(javaScriptCode, objectId_, "")
+    End If
+    
+    If InStr(responseJson, "this.dispatchEvent is not a function") Then
+        chrome_.Focus (objectId_)
+        chrome_.DispatchKeyEvent_DOMKeyCode "keyDown", "Enter"
+    End If
 End Sub
+
+
 
 'Public
 Private Sub IWebElement_SetText(text As String)
@@ -95,6 +109,23 @@ Private Sub IWebElement_SelectItemByText(text As String)
     Set chromeInterFace = chrome_
     chromeInterFace.SleepByWindowsAPI 2000
 End Sub
+
+'Public
+Private Function IWebElement_GetElementByName(Name As String) As IWebElement
+    Dim functionCode As String, responseJson As String
+    functionCode = "function(name){return  this.getElementsByName(name)[0];}"
+    responseJson = chrome_.JavaScritpCallFunction(functionCode, objectId_, Name)
+    
+    Dim findObjectId As String
+    findObjectId = chrome_.jsonhandler.GetValueFromJson( _
+                            responseJson, Array("result", "result", "objectId"))
+    If findObjectId = "" Then GoTo quit
+    Set IWebElement_GetElementByName = chrome_.MakeElementObject(findObjectId)
+Exit Function
+
+quit:
+chrome_.DisplayErrorAndEnd "éwíËÇ≥ÇÍÇΩà»â∫NameÇÃóvëfÇÕë∂ç›ÇµÇ‹ÇπÇÒÇ≈ÇµÇΩÅB" & vbCrLf & Name
+End Function
 
 'Public
 Private Function IWebElement_GetElementsByTagName(tagName As String) As IWebElements

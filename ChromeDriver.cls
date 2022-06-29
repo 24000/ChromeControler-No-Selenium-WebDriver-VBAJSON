@@ -173,10 +173,17 @@ End Function
 '************************************************
 
 'Runtime************************************************
+'executionContextCreated イベントによる実行コンテキスト生成の報告を有効にします。
+'レポートが有効になると、イベントは既存の実行コンテキストごとに直ちに送信されます。
+Public Sub RuntimeEnable()
+    Dim jsonForSending  As String, responseJson As String
+    jsonForSending = CDPMethod_.RunTime_Enable()
+    responseJson = ProcessMessage(CDPMethod_.id, jsonForSending, jsonHandler_)
+End Sub
 'JavaScriptコード実行
-Private Function ExecuteJavaScript_Inner(Script As String) As String
+Private Function ExecuteJavaScript_Inner(script As String) As String
     Dim jsonForSending  As String
-    jsonForSending = CDPMethod_.JavaScritpEvaluate(Script)
+    jsonForSending = CDPMethod_.JavaScritpEvaluate(script)
     ExecuteJavaScript_Inner = ProcessMessage(CDPMethod_.id, jsonForSending, jsonHandler_)
 End Function
 
@@ -187,12 +194,26 @@ Public Function JavaScritpCallFunction(funcName As String, objectId As Variant, 
     JavaScritpCallFunction = ProcessMessage(CDPMethod_.id, jsonForSending, jsonHandler_)
 End Function
 '************************************************
+'Input Domain*******************************************************************
+'キーイベントをページにディスパッチする。keyDown , keyUp, rawKeyDown, charのいずれか。
+Public Function DispatchKeyEvent_DOMKeyCode(eventType As String, code As String) As String
+    Dim jsonForSending  As String, responseJson As String
+    jsonForSending = CDPMethod_.DispatchKeyEvent_DOMKeyCode(eventType, code)
+    responseJson = ProcessMessage(CDPMethod_.id, jsonForSending, jsonHandler_)
+End Function
 
+'*******************************************************************
 
 'DOM操作系************************************************
 Public Sub DOMEnable()
     Dim jsonForSending  As String, responseJson As String
     jsonForSending = CDPMethod_.DOM_Enable()
+    responseJson = ProcessMessage(CDPMethod_.id, jsonForSending, jsonHandler_)
+End Sub
+
+Public Sub Focus(objectId As String)
+    Dim jsonForSending  As String, responseJson As String
+    jsonForSending = CDPMethod_.Focus(objectId)
     responseJson = ProcessMessage(CDPMethod_.id, jsonForSending, jsonHandler_)
 End Sub
 
@@ -310,7 +331,6 @@ Private Property Get IWebDriver_CurrentURL() As String
 End Property
 
 
-
 'Public
 '第1引数で指定のURLを開く
 Private Sub IWebDriver_URLOpen(url As String, Optional maxWaitTime_ms As Long = 30000)
@@ -346,9 +366,9 @@ End Function
 
 'Public
 '第1引数のJavaScriptコードの実行
-Private Function IWebDriver_ExecuteJavaScript(Script As String) As String
+Private Function IWebDriver_ExecuteJavaScript(script As String) As String
     Dim responseJson As String
-    responseJson = ExecuteJavaScript_Inner(Script)
+    responseJson = ExecuteJavaScript_Inner(script)
     IWebDriver_ExecuteJavaScript = jsonHandler_.GetValueFromJson(responseJson, Array("result"))
 End Function
 
@@ -357,8 +377,14 @@ End Function
 Private Function IWebDriver_GetElementByXpath(xPath As String) As IWebElement
     ReCreateIsolatedFrameWorld_IfFlagOn
     
+    Dim scriptCode As String, functionCode As String
+    scriptCode = "document.evaluate('" & xPath & "', document, null, " & _
+                        "XPathResult.FIRST_ORDERED_NODE_TYPE, null ).singleNodeValue;"
+    functionCode = "function(xpath){return  document.evaluate(xpath, document, null, " & _
+                            "XPathResult.FIRST_ORDERED_NODE_TYPE, null ).singleNodeValue;}"
+            
     Dim objectId As String
-    objectId = GetObjectIdOfElementByXpath(xPath)
+    objectId = GetObjectIdOfElementBy(xPath, scriptCode, functionCode)
     If objectId = "" Then GoTo quit
     Set IWebDriver_GetElementByXpath = MakeElementObject(objectId)
 Exit Function
@@ -367,23 +393,15 @@ quit:
 DisplayErrorAndEnd "指定された以下Xpathの要素は存在しませんでした。" & vbCrLf & xPath
 End Function
 'Xpathで要素を探し、オブジェクトIDを返す
-Private Function GetObjectIdOfElementByXpath(xPath As String) As String
-    Dim javaScriptCode As String, responseJson As String
+Private Function GetObjectIdOfElementBy(way As String, scriptCode As String, functionCode As String) As String
+    Dim responseJson As String
     If executionContextId_ = 0 Then
-        javaScriptCode = _
-            "document.evaluate('" & xPath & "', document, null, " & _
-                "XPathResult.FIRST_ORDERED_NODE_TYPE, null ).singleNodeValue;"
-        responseJson = ExecuteJavaScript_Inner(javaScriptCode)
+        responseJson = ExecuteJavaScript_Inner(scriptCode)
     Else
-        javaScriptCode = _
-            "function(xpath){" & _
-                "return  document.evaluate(xpath, document, null, " & _
-                    "XPathResult.FIRST_ORDERED_NODE_TYPE, null ).singleNodeValue;" & _
-            "}"
-        responseJson = JavaScritpCallFunction(javaScriptCode, executionContextId_, xPath)
+        responseJson = JavaScritpCallFunction(functionCode, executionContextId_, way)
     End If
     
-    GetObjectIdOfElementByXpath = _
+    GetObjectIdOfElementBy = _
         jsonhandler.GetValueFromJson(responseJson, Array("result", "result", "objectId"))
 End Function
 'エレメントを作成し、戻り値として返却
@@ -397,6 +415,24 @@ Public Function MakeElementObject(objectId As String) As IWebElement
     Dim element As WebElement: Set element = New WebElement
     element.Init Me, objectId, nodeId
     Set MakeElementObject = element
+End Function
+
+'Public
+Private Function IWebDriver_GetElementByName(Name As String) As IWebElement
+    ReCreateIsolatedFrameWorld_IfFlagOn
+    
+    Dim scriptCode As String, functionCode As String
+    scriptCode = "document.getElementsByName('" & Name & "')[0];"
+    functionCode = "function(name){return  document.getElementsByName(name)[0];}"
+    
+    Dim objectId As String
+    objectId = GetObjectIdOfElementBy(Name, scriptCode, functionCode)
+    If objectId = "" Then GoTo quit
+    Set IWebDriver_GetElementByName = MakeElementObject(objectId)
+Exit Function
+
+quit:
+DisplayErrorAndEnd "指定された以下Nameの要素は存在しませんでした。" & vbCrLf & Name
 End Function
 
 'Public
@@ -425,8 +461,7 @@ End Function
 Private Function GetElementsCount(tagName As String) As Long
     Dim javaScriptCode As String, responseJson As String
     If executionContextId_ = 0 Then
-        javaScriptCode = _
-        "document.getElementsByTagName('" & tagName & "').length;"
+        javaScriptCode = "document.getElementsByTagName('" & tagName & "').length;"
         responseJson = ExecuteJavaScript_Inner(javaScriptCode)
     Else
         javaScriptCode = _
@@ -476,20 +511,26 @@ DisplayErrorAndEnd "指定されたframeは存在しません。" & vbCrLf & value & vbCrLf &
                               "※もしUrl指定の場合、Chromeが情報を返さないケースがあります。" & vbCrLf & _
                               "   とれないようであればIndex、またはあればName指定を推奨します。"
 End Sub
+
 'frameツリーを取得し、各フレームの情報（JSONオブジェクト文字列）をコレクションとして集約
+'frameTreeはresult→frameTree
+'→frame(Pageの親フレーム)とChildFrames(配列の中にPageの子frame情報(オブジェクト)）の構成
 Private Function GetFrameInfos() As Collection
     Dim collect As Collection: Set collect = New Collection
     Dim json As String: json = GetFrameTree
-    collect.add jsonHandler_.GetObjectFromJson(json, Array("result", "frameTree", "frame"))
+'    collect.add jsonHandler_.GetObjectFromJson(json, Array("result", "frameTree", "frame"))
     
     Dim frmInfo As String, frminfo2 As String
     Dim Count As Long
     Do
+        'まずchildFramesから一つのFrame情報（オブジェクト）取得
         frmInfo = jsonHandler_.GetObjectFromJson(json, _
                         Array("result", "frameTree", "childFrames", Count))
         If frmInfo = "" Then Exit Do
+        'そのオブジェクトの中のframeプロパティ(オブジェクト)を取得し、コレクションに加える
         frminfo2 = jsonHandler_.GetObjectFromJson(frmInfo, Array("frame"))
         collect.add frminfo2
+        'childFramesプロパティがある場合、再帰構造なので再帰関数で同様の処理を回す
         If InStr(frmInfo, "childFrames") > 0 Then
             GetChildFrameInfo collect, frmInfo
         End If
@@ -516,16 +557,30 @@ End Sub
 '各フレームのname,urlと指定された値を比較。一致するフレームのIdを返す。
 Private Function GetTargetFrameId(frameInfos As Collection, value As Variant) As String
     Dim frameInfo As Variant
-    Dim name As String, url As String
+    Dim Name As String, url As String
     For Each frameInfo In frameInfos
-        name = jsonHandler_.GetValueFromJson(frameInfo, Array("name"))
+        Name = jsonHandler_.GetValueFromJson(frameInfo, Array("name"))
         url = jsonHandler_.GetValueFromJson(frameInfo, Array("url"))
-        If name = value Or url = value Then
+        If Name = value Or url = value Then
             GetTargetFrameId = jsonHandler_.GetValueFromJson(frameInfo, Array("id"))
             Exit Function
         End If
     Next
 End Function
+
+'Public
+'切り替え可能なフレームの情報をイミディエイトウィンドウに表示
+Private Sub IWebDriver_DebugPrintAccessibleFrameInfo()
+    PageEnable
+    RuntimeEnable
+    Dim frameInfos As Collection: Set frameInfos = GetFrameInfos
+    Dim i As Long
+    For i = 1 To frameInfos.Count
+        Debug.Print "index：" & i & _
+                           "　name：" & jsonHandler_.GetValueFromJson(frameInfos(i), Array("name")) & _
+                           "　url：" & jsonHandler_.GetValueFromJson(frameInfos(i), Array("url"))
+    Next
+End Sub
 
 'Public
 'デフォルトのフレームに戻す
@@ -539,8 +594,13 @@ End Sub
 Private Function IWebDriver_IsExistsElementByXpath(xPath As String) As Boolean
     ReCreateIsolatedFrameWorld_IfFlagOn
     
+    Dim scriptCode As String, functionCode As String
+    scriptCode = "document.evaluate('" & xPath & "', document, null, " & _
+                        "XPathResult.FIRST_ORDERED_NODE_TYPE, null ).singleNodeValue;"
+    functionCode = "function(xpath){return  document.evaluate(xpath, document, null, " & _
+                            "XPathResult.FIRST_ORDERED_NODE_TYPE, null ).singleNodeValue;}"
     Dim objectId As String
-    objectId = GetObjectIdOfElementByXpath(xPath)
+    objectId = GetObjectIdOfElementBy(xPath, scriptCode, functionCode)
     If objectId = "" Then
         IWebDriver_IsExistsElementByXpath = False
     Else
@@ -603,6 +663,7 @@ End Sub
 'IWebDriver_GetElementByXpath
 'IWebDriver_WaitForElementToAppearByXpath
 'IWebDriver_IsExistsElementByXpath
+'IWebDriver_GetElementsByTagName
 Public Sub ReCreateIsolatedFrameWorld_IfFlagOn()
 'event検知がうまくいかないため、一旦DefaultFrame以外の操作継続時には毎回CreateIsolatedFrameWorldする
     If isolatedFrameId_ <> "" Then

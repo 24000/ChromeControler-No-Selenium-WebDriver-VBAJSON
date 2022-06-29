@@ -17,11 +17,15 @@ Public Sub URLOpen(url As String, Optional maxWaitTime_ms As Long = 30000)
 
 End Sub
 
-Public Function ExecuteJavaScript(Script As String) As String
+Public Function ExecuteJavaScript(script As String) As String
 
 End Function
 
 Public Function GetElementByXpath(xPath As String) As IWebElement
+
+End Function
+
+Public Function GetElementByName(name As String) As IWebElement
 
 End Function
 
@@ -55,4 +59,8 @@ End Function
 
 Public Sub SwitchTabByIndex(Index As Long)
     
+End Sub
+
+Public Sub DebugPrintAccessibleFrameInfo()
+
 End Sub

@@ -115,7 +115,19 @@ Public Function CreateIsolatedFrameWorld(frameId As String) As String
 End Function
 
 '*******************************************************************
+'Input Domain*******************************************************************
+'キーイベントをページにディスパッチする。keyDown , keyUp, rawKeyDown, charのいずれか。
+Public Function DispatchKeyEvent_DOMKeyCode(eventType As String, code As String) As String
+    id_ = id_ + 1
+    Dim message As String
+    message = "{""id"": " & id_ & ",""method"": ""Input.dispatchKeyEvent""," & _
+                      """params"": {""type"":  " & eventType & ",""code"": """ & code & """}}"
+    DispatchKeyEvent_DOMKeyCode = message
+    
+'    windowsVirtualKeyCode
+End Function
 
+'*******************************************************************
 'DOM Domain*******************************************************************
 'Domの有効化
 Public Function DOM_Enable()
@@ -123,6 +135,15 @@ Public Function DOM_Enable()
     Dim message As String
     message = "{""id"": " & id_ & ",""method"": ""DOM.enable""}"
     DOM_Enable = message
+End Function
+
+'指定された要素にフォーカスを当てる。
+Public Function Focus(objectId As String) As String
+    id_ = id_ + 1
+    Dim message As String
+    message = "{""id"": " & id_ & ",""method"": ""DOM.focus""," & _
+                      """params"": {""objectId"":  """ & objectId & """}}"
+    Focus = message
 End Function
 
 'DocumentObjectのNodeIdを取得
@@ -144,7 +165,7 @@ Public Function querySelector(Selector As String, Optional nodeId As Long = 1) A
 End Function
 
 'objectIdからnodeId取得
-Public Function RequestNode(objectId As String)
+Public Function RequestNode(objectId As String) As String
     id_ = id_ + 1
     Dim message As String
     message = "{""id"": " & id_ & ",""method"": ""DOM.requestNode""," & _
@@ -192,11 +213,17 @@ Public Function RequestChildNodes() As String
 End Function
 
 'RunTime Domain*******************************************************************
-Public Function JavaScritpEvaluate(Script As String)
+Public Function RunTime_Enable()
+    id_ = id_ + 1
+    Dim message As String
+    message = "{""id"": " & id_ & ",""method"": ""Runtime.enable""}"
+    RunTime_Enable = message
+End Function
+Public Function JavaScritpEvaluate(script As String)
     id_ = id_ + 1
     Dim message As String
     message = "{""id"": " & id_ & ",""method"": ""Runtime.evaluate""," & _
-                      """params"": {""expression"": """ & Script & """,""returnByValue"": false}}"
+                      """params"": {""expression"": """ & script & """,""returnByValue"": false}}"
     JavaScritpEvaluate = message
 End Function
 

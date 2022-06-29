@@ -13,6 +13,6 @@ Public Function Count() As Long
 
 End Function
 
-Public Function Item(index) As IWebElement
+Public Function Item(Index) As IWebElement
 
 End Function

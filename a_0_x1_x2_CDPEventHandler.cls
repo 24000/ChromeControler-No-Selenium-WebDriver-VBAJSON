@@ -125,12 +125,12 @@ Private Sub ChangeInfoOf(infos As Collection, _
                                         ByVal EventInfo As String, jsonhandler As a_0_x4_JSONHandler)
     Dim targetId As String
     targetId = jsonhandler.GetValueFromJson(EventInfo, Array("params", "targetInfo", "targetId"))
-    Dim Info As Variant
-    For Each Info In infos
-        If Info("targetId") = targetId Then
-            Info("title") = jsonhandler.GetValueFromJson(EventInfo, Array("params", "targetInfo", "title"))
-            Info("url") = jsonhandler.GetValueFromJson(EventInfo, Array("params", "targetInfo", "url"))
-            Info("browserContextId") = jsonhandler.GetValueFromJson(EventInfo, Array("params", "targetInfo", "browserContextId"))
+    Dim info As Variant
+    For Each info In infos
+        If info("targetId") = targetId Then
+            info("title") = jsonhandler.GetValueFromJson(EventInfo, Array("params", "targetInfo", "title"))
+            info("url") = jsonhandler.GetValueFromJson(EventInfo, Array("params", "targetInfo", "url"))
+            info("browserContextId") = jsonhandler.GetValueFromJson(EventInfo, Array("params", "targetInfo", "browserContextId"))
         End If
     Next
 End Sub

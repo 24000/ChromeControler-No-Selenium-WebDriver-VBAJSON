@@ -16,3 +16,7 @@ End Function
 Public Function Item(Index) As IWebElement
 
 End Function
+
+Public Function NewEnum() As stdole.IUnknown
+Attribute NewEnum.VB_UserMemId = -4
+End Function

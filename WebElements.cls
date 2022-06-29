@@ -23,3 +23,7 @@ End Function
 Private Function IWebElements_Item(Index As Variant) As IWebElement
     Set IWebElements_Item = elements_.Item(Index + 1)
 End Function
+
+Private Function IWebElements_NewEnum() As stdole.IUnknown
+    Set IWebElements_NewEnum = elements_.[_NewEnum]
+End Function

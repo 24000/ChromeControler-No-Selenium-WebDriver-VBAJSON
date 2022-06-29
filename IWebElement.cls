@@ -9,6 +9,14 @@ Attribute VB_PredeclaredId = False
 Attribute VB_Exposed = False
 Option Explicit
 
+Public Property Get Checked() As Boolean
+
+End Property
+Public Property Let Checked(bool As Boolean)
+
+End Property
+
+
 Public Sub SetText(text As String)
 
 End Sub
@@ -24,6 +32,10 @@ End Sub
 Public Sub SelectItemByText(text As String)
 
 End Sub
+
+Public Function GetElementByName(Name As String) As IWebElement
+
+End Function
 
 Public Function GetElementsByTagName(tagName As String) As IWebElements
 

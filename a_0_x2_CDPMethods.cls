@@ -121,7 +121,7 @@ Public Function DispatchKeyEvent_DOMKeyCode(eventType As String, code As String)
     id_ = id_ + 1
     Dim message As String
     message = "{""id"": " & id_ & ",""method"": ""Input.dispatchKeyEvent""," & _
-                      """params"": {""type"":  " & eventType & ",""code"": """ & code & """}}"
+                      """params"": {""type"":  """ & eventType & """,""code"": """ & code & """}}"
     DispatchKeyEvent_DOMKeyCode = message
     
 '    windowsVirtualKeyCode

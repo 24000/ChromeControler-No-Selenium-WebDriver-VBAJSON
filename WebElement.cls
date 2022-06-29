@@ -66,6 +66,7 @@ End Property
 
 'Public
 Private Sub IWebElement_Click()
+    chrome_.Focus (objectId_)
     Dim responseJson As String
     responseJson = chrome_.JavaScritpCallFunction("function(value){this.click();}", objectId_, "")
     
@@ -77,7 +78,7 @@ Private Sub IWebElement_Click()
     
     If InStr(responseJson, "this.dispatchEvent is not a function") Then
         chrome_.Focus (objectId_)
-        chrome_.DispatchKeyEvent_DOMKeyCode "keyDown", "Enter"
+        chrome_.DispatchKeyEvent_DOMKeyCode "keyUp", "Enter"
     End If
 End Sub
 
@@ -85,6 +86,9 @@ End Sub
 
 'Public
 Private Sub IWebElement_SetText(text As String)
+    chrome_.Focus (objectId_)
+    chrome_.DispatchKeyEvent_DOMKeyCode "keyUp", "Enter"
+
     Dim encodingText As String: encodingText = chrome_.jsonhandler.EncodeURL(text)
     chrome_.JavaScritpCallFunction _
     "function(value){" & _

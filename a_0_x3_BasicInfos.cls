@@ -18,7 +18,7 @@ Private Const KEY_WEBSOCKETURL As String = "webSocketDebuggerUrl"
 
 Public TargetInfoJSON As String
 Public WebSocketURL As String
-Public targetId As String
+Public TargetId As String
 Public WebSocketUrlPath  As String
 Public Context As String
 
@@ -38,12 +38,12 @@ Public Sub Init(jsonhandler As a_0_x4_JSONHandler)
     WebSocketURL = jsonhandler.GetValueFromJson( _
                                 TargetInfoJSON, Array(0, KEY_WEBSOCKETURL))
                                 
-    targetId = jsonhandler.GetValueFromJson(TargetInfoJSON, Array(0, "id"))
+    TargetId = jsonhandler.GetValueFromJson(TargetInfoJSON, Array(0, "id"))
     
     WebSocketUrlPath = Replace(WebSocketURL, _
                                     WEBSOCKET_SCHEMA & HOST_ & ":" & DEBUGGING_PORT, "")
                                     
-    Context = Replace(WebSocketUrlPath, targetId, "")
+    Context = Replace(WebSocketUrlPath, TargetId, "")
 End Sub
 
 Private Function GetTragetInfoJSON() As String
@@ -56,12 +56,12 @@ Private Function GetTragetInfoJSON() As String
 End Function
 
 
-Public Function Update(CurrentTargetId As String, jsonhandler As a_0_x4_JSONHandler) As Collection
-    targetId = CurrentTargetId
+Public Function Update(newTargetId As String, jsonhandler As a_0_x4_JSONHandler) As Collection
+    TargetId = newTargetId
     TargetInfoJSON = GetTragetInfoJSON
     WebSocketURL = GetWebSocketDebuggerUrl(jsonhandler)
     WebSocketUrlPath = Replace(WebSocketURL, WEBSOCKET_SCHEMA & HOST_ & ":" & DEBUGGING_PORT, "")
-    Context = Replace(WebSocketUrlPath, targetId, "")
+    Context = Replace(WebSocketUrlPath, TargetId, "")
 End Function
 
 Private Function GetWebSocketDebuggerUrl(jsonhandler As a_0_x4_JSONHandler) As String
@@ -81,7 +81,7 @@ Private Function GetWebSocketDebuggerUrl(jsonhandler As a_0_x4_JSONHandler) As S
             targetType = jsonhandler.GetValueFromJson(collect(i), Array("type"))
             If targetType <> "page" Then GoTo next_
             id = jsonhandler.GetValueFromJson(collect(i), Array("id"))
-            If id <> targetId Then GoTo next_
+            If id <> TargetId Then GoTo next_
             GetWebSocketDebuggerUrl = jsonhandler.GetValueFromJson(collect(i), Array(KEY_WEBSOCKETURL))
             Exit Function
 next_:

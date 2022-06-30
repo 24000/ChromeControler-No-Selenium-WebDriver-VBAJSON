@@ -14,14 +14,15 @@ Public DialogInfoDic As Object
 Public PageInfos As Collection
 Public IframeInfos As Collection
 
-Public CurrentTargetId As String
 Public IsCurrentTargetScheduledNavigation As Boolean
 Public IsCurrentTargetStartedLoading As Boolean
 Public IsCurrentTargetClearedScheduledNavigation As Boolean
 Public IsCurrentTargetNavigated As Boolean
 
 Public IsIsolatedFrameScheduledNavigation As Boolean
-Public IsIsolatedFrameScheduledNavigationEnd As Boolean
+Public IsIsolatedFrameStartedLoading As Boolean
+Public IsIsolatedFrameClearedScheduledNavigation As Boolean
+Public IsIsolatedFrameNavigated As Boolean
 
 Private Sub Class_Initialize()
     Set DialogInfoDic = CreateObject("Scripting.Dictionary")
@@ -36,9 +37,15 @@ Public Sub GetInfo(EventInfo As String, chrome As ChromeDriver)
     
     If InStr(eventName, "frame") > 0 Then
         Dim id As String
-        id = chrome.jsonhandler.GetValueFromJson(EventInfo, Array("params", "frameId"))
+        If InStr(eventName, "Navigated") = 0 Then
+            id = chrome.jsonhandler.GetValueFromJson(EventInfo, Array("params", "frameId"))
+        Else
+            id = chrome.jsonhandler.GetValueFromJson(EventInfo, Array("params", "frame", "Id"))
+        End If
         Dim isCurrentTarget As Boolean
-        isCurrentTarget = (id = CurrentTargetId)
+        isCurrentTarget = (id = chrome.TargetId)
+        Dim isIsolatedFrameId
+        isIsolatedFrameId = (id = chrome.isolatedFrameId_)
     End If
     
     Select Case eventName
@@ -56,24 +63,17 @@ Public Sub GetInfo(EventInfo As String, chrome As ChromeDriver)
             
         Case "Page.frameScheduledNavigation" 'îÒêÑèßÇ∆Ç»Ç¡ÇƒÇ¢ÇÈÇ™Ç±ÇÍÇ™ï‘Ç¡ÇƒÇ≠ÇÈÅB
             If isCurrentTarget Then IsCurrentTargetScheduledNavigation = True
-            
-            If chrome.isolatedFrameId_ = "" Then Exit Sub
-            SetFlag_IfIsolatedFrameScheduledNavigation EventInfo, chrome
+            If isIsolatedFrameId Then IsIsolatedFrameScheduledNavigation = True
         Case "Page.frameStartedLoading"
             If isCurrentTarget Then IsCurrentTargetStartedLoading = True
-            
-            If chrome.isolatedFrameId_ = "" Then Exit Sub
-            SetFlag_IfIsolatedFrameScheduledNavigation EventInfo, chrome
+            If isIsolatedFrameId Then IsIsolatedFrameStartedLoading = True
         Case "Page.frameClearedScheduledNavigation" 'îÒêÑèßÇ∆Ç»Ç¡ÇƒÇ¢ÇÈÇ™Ç±ÇÍÇ™ï‘Ç¡ÇƒÇ≠ÇÈÅB
             If isCurrentTarget Then IsCurrentTargetClearedScheduledNavigation = True
-            
-            If chrome.isolatedFrameId_ = "" Then Exit Sub
-            SetFlag_IfIsolatedFrameScheduledNavigationEnd EventInfo, chrome
+            If isIsolatedFrameId Then IsIsolatedFrameClearedScheduledNavigation = True
         Case "Page.frameNavigated"
             If isCurrentTarget Then IsCurrentTargetNavigated = True
+            If isIsolatedFrameId Then IsIsolatedFrameNavigated = True
             
-            If chrome.isolatedFrameId_ = "" Then Exit Sub
-            SetFlag_IfIsolatedFrameScheduledNavigationEnd EventInfo, chrome
     End Select
 End Sub
 
@@ -148,11 +148,11 @@ Private Sub ChangeTargetInfo(ByVal EventInfo As String, jsonhandler As a_0_x4_JS
 End Sub
 Private Sub ChangeInfoOf(infos As Collection, _
                                         ByVal EventInfo As String, jsonhandler As a_0_x4_JSONHandler)
-    Dim targetId As String
-    targetId = jsonhandler.GetValueFromJson(EventInfo, Array("params", "targetInfo", "targetId"))
+    Dim TargetId As String
+    TargetId = jsonhandler.GetValueFromJson(EventInfo, Array("params", "targetInfo", "targetId"))
     Dim info As Variant
     For Each info In infos
-        If info("targetId") = targetId Then
+        If info("targetId") = TargetId Then
             info("title") = jsonhandler.GetValueFromJson(EventInfo, Array("params", "targetInfo", "title"))
             info("url") = jsonhandler.GetValueFromJson(EventInfo, Array("params", "targetInfo", "url"))
             info("browserContextId") = jsonhandler.GetValueFromJson(EventInfo, Array("params", "targetInfo", "browserContextId"))
@@ -174,43 +174,15 @@ Private Sub RemoveTargetInfo(ByVal EventInfo As String, jsonhandler As a_0_x4_JS
 End Sub
 Private Sub RemoveInfoOf(infos As Collection, _
                                         ByVal EventInfo As String, jsonhandler As a_0_x4_JSONHandler)
-    Dim targetId As String
-    targetId = jsonhandler.GetValueFromJson(EventInfo, Array("params", "targetInfo", "targetId"))
+    Dim TargetId As String
+    TargetId = jsonhandler.GetValueFromJson(EventInfo, Array("params", "targetInfo", "targetId"))
     
     Dim i As Long
     For i = 1 To infos.Count
-        If infos(i)("targetId") = targetId Then
+        If infos(i)("targetId") = TargetId Then
             infos.Remove i
         End If
     Next
 End Sub
 
-
-
-Private Sub SetFlag_IfIsolatedFrameScheduledNavigation( _
-                    ByVal EventInfo As String, chrome As ChromeDriver)
-    Dim frameId As String
-    frameId = chrome.jsonhandler.GetValueFromJson(EventInfo, Array("params", "frameId"))
-    If frameId <> chrome.isolatedFrameId_ Then Exit Sub
-
-    IsIsolatedFrameScheduledNavigation = True
-End Sub
-
-Private Sub SetFlag_IfIsolatedFrameScheduledNavigationEnd( _
-                    ByVal EventInfo As String, chrome As ChromeDriver)
-                    
-    Dim methodName As String
-    methodName = chrome.jsonhandler.GetValueFromJson(EventInfo, Array("method"))
-
-    Dim frameId As String
-    If methodName = "Page.frameNavigated" Then
-        frameId = chrome.jsonhandler.GetValueFromJson(EventInfo, Array("params", "frame", "id"))
-    ElseIf methodName = "Page.frameClearedScheduledNavigation" Then
-        frameId = chrome.jsonhandler.GetValueFromJson(EventInfo, Array("params", "frameId"))
-    End If
-
-    If frameId <> chrome.isolatedFrameId_ Then Exit Sub
-
-    IsIsolatedFrameScheduledNavigationEnd = True
-End Sub
 

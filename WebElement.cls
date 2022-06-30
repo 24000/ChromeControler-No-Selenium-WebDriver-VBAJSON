@@ -82,7 +82,7 @@ Private Sub IWebElement_Click()
     End If
     
     If IsPageChanging Then WaitPageChangeToComplete
-        
+    If IsIsolatedFrameChanging Then WaitIsolatedFrameChangeToComplete
     
 End Sub
 Private Function IsPageChanging() As Boolean
@@ -113,6 +113,41 @@ Private Sub WaitPageChangeToComplete()
             chrome_.CDPEvents.IsCurrentTargetStartedLoading = False
             chrome_.CDPEvents.IsCurrentTargetClearedScheduledNavigation = False
             chrome_.CDPEvents.IsCurrentTargetNavigated = False
+            Exit Do
+        End If
+        
+        chromeInterFace.SleepByWindowsAPI 1000
+    Loop While (isEndChane = False)
+End Sub
+
+Private Function IsIsolatedFrameChanging() As Boolean
+    '一回無害なメソッドを投げて、イベント発生状況更新
+    chrome_.PageEnable
+    
+    If chrome_.CDPEvents.IsIsolatedFrameScheduledNavigation _
+    Or chrome_.CDPEvents.IsIsolatedFrameStartedLoading Then
+        IsIsolatedFrameChanging = True
+    Else
+        IsIsolatedFrameChanging = False
+    End If
+End Function
+Private Sub WaitIsolatedFrameChangeToComplete()
+    Dim chromeInterFace As IWebDriver
+    Set chromeInterFace = chrome_
+    
+    Dim isEndChane As Boolean
+    Do
+        '一回無害なメソッドを投げて、イベント発生状況更新
+        chrome_.PageEnable
+        isEndChane = _
+            chrome_.CDPEvents.IsIsolatedFrameClearedScheduledNavigation _
+            Or chrome_.CDPEvents.IsIsolatedFrameNavigated
+            
+        If isEndChane Then
+            chrome_.CDPEvents.IsIsolatedFrameScheduledNavigation = False
+            chrome_.CDPEvents.IsIsolatedFrameStartedLoading = False
+            chrome_.CDPEvents.IsIsolatedFrameClearedScheduledNavigation = False
+            chrome_.CDPEvents.IsIsolatedFrameNavigated = False
             Exit Do
         End If
         

@@ -37,6 +37,11 @@ End Property
 Public Property Get UrlPath() As String
     UrlPath = basicInfo_.WebSocketUrlPath
 End Property
+Public Property Get TargetId() As String
+    TargetId = basicInfo_.TargetId
+End Property
+
+
 
 Public Property Get WebSocket() As a_0_x1_WebSocketCommunicator
     Set WebSocket = webSocket_
@@ -71,10 +76,9 @@ Private Sub Class_Initialize()
     
     Set CDPMethod_ = New a_0_x2_CDPMethods
     Set events_ = New a_0_x1_x2_CDPEventHandler
-    events_.CurrentTargetId = basicInfo_.targetId
     
     SetDiscoverTargets
-    AttachToTarget basicInfo_.targetId
+    AttachToTarget basicInfo_.TargetId
     
 End Sub
 
@@ -277,31 +281,31 @@ End Function
 
 Public Function SetDiscoverTargets() As String
     Dim jsonForSending  As String, responseJson As String
-    jsonForSending = CDPMethod_.SetDiscoverTargets(basicInfo_.targetId)
+    jsonForSending = CDPMethod_.SetDiscoverTargets(basicInfo_.TargetId)
     responseJson = ProcessMessage(CDPMethod_.id, jsonForSending, jsonHandler_)
 End Function
 
-Public Function AttachToTarget(targetId As String) As String
+Public Function AttachToTarget(TargetId As String) As String
     Dim jsonForSending  As String, responseJson As String
-    jsonForSending = CDPMethod_.AttachToTarget(targetId)
+    jsonForSending = CDPMethod_.AttachToTarget(TargetId)
     responseJson = ProcessMessage(CDPMethod_.id, jsonForSending, jsonHandler_)
 End Function
 
-Public Function ActivateTarget(targetId As String) As String
+Public Function ActivateTarget(TargetId As String) As String
     Dim jsonForSending  As String, responseJson As String
-    jsonForSending = CDPMethod_.ActivateTarget(targetId)
+    jsonForSending = CDPMethod_.ActivateTarget(TargetId)
     responseJson = ProcessMessage(CDPMethod_.id, jsonForSending, jsonHandler_)
 End Function
 
-Public Function DetachFromTarget(targetId As String) As String
+Public Function DetachFromTarget(TargetId As String) As String
     Dim jsonForSending  As String, responseJson As String
-    jsonForSending = CDPMethod_.DetachFromTarget(targetId)
+    jsonForSending = CDPMethod_.DetachFromTarget(TargetId)
     responseJson = ProcessMessage(CDPMethod_.id, jsonForSending, jsonHandler_)
 End Function
 
 Public Function TargetClose() As String
     Dim jsonForSending  As String, responseJson As String
-    jsonForSending = CDPMethod_.TargetClose(basicInfo_.targetId)
+    jsonForSending = CDPMethod_.TargetClose(basicInfo_.TargetId)
     responseJson = ProcessMessage(CDPMethod_.id, jsonForSending, jsonHandler_)
 End Function
 Public Function GetTargetInfo() As String
@@ -338,7 +342,7 @@ Private Property Get IWebDriver_CurrentURL() As String
     SetDiscoverTargets  'これを使ってPage情報最新化
     Dim i As Long
     For i = 1 To events_.PageInfos.Count
-        If events_.PageInfos(i)("targetId") = basicInfo_.targetId Then
+        If events_.PageInfos(i)("targetId") = basicInfo_.TargetId Then
             IWebDriver_CurrentURL = events_.PageInfos(i)("url")
             Exit Property
         End If
@@ -518,6 +522,7 @@ Private Sub IWebDriver_SwitchFrameByNameOrUrlOrIndex(value As Variant)
         frameId = GetTargetFrameId(frameInfos, value)
     End If
     If frameId = "" Then GoTo quit
+    
     executionContextId_ = CreateIsolatedFrameWorld(frameId)
     isolatedFrameId_ = frameId
     
@@ -703,8 +708,8 @@ Public Sub ReCreateIsolatedFrameWorld_IfFlagOn()
 '    End If
 '
 '    executionContextId_ = CreateIsolatedFrameWorld(isolatedFrameId_)
-    events_.IsIsolatedFrameScheduledNavigation = False
-    events_.IsIsolatedFrameScheduledNavigationEnd = False
+''    events_.IsIsolatedFrameScheduledNavigation = False
+''    events_.IsIsolatedFrameScheduledNavigation = False
 Exit Sub
 
 'quit:
@@ -713,16 +718,17 @@ End Sub
 
 '右隣のタブへ移動
 Private Sub IWebDriver_SwitchTabByIndex(index As Long)
-    events_.CurrentTargetId = events_.PageInfos(index)("targetId")
-    basicInfo_.Update events_.CurrentTargetId, jsonHandler_
+    Dim newTargetId As String
+    newTargetId = events_.PageInfos(index)("targetId")
+    basicInfo_.Update newTargetId, jsonHandler_
     
     webSocket_.CloseWebSocket
     Set webSocket_ = Nothing
     Set webSocket_ = New a_0_x1_WebSocketCommunicator
     If webSocket_.Init(basicInfo_.Host, basicInfo_.WebSocketUrlPath, basicInfo_.DebuggingPort) = False Then End
     
-    ActivateTarget basicInfo_.targetId
-    AttachToTarget basicInfo_.targetId
+    ActivateTarget basicInfo_.TargetId
+    AttachToTarget basicInfo_.TargetId
     PageEnable
     DOMEnable
     

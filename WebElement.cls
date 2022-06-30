@@ -80,8 +80,45 @@ Private Sub IWebElement_Click()
         chrome_.Focus (objectId_)
         chrome_.DispatchKeyEvent_DOMKeyCode "keyUp", "Enter"
     End If
+    
+    If IsPageChanging Then WaitPageChangeToComplete
+        
+    
 End Sub
-
+Private Function IsPageChanging() As Boolean
+    '一回無害なメソッドを投げて、イベント発生状況更新
+    chrome_.PageEnable
+    
+    If chrome_.CDPEvents.IsCurrentTargetScheduledNavigation _
+    Or chrome_.CDPEvents.IsCurrentTargetStartedLoading Then
+        IsPageChanging = True
+    Else
+        IsPageChanging = False
+    End If
+End Function
+Private Sub WaitPageChangeToComplete()
+    Dim chromeInterFace As IWebDriver
+    Set chromeInterFace = chrome_
+    
+    Dim isEndChane As Boolean
+    Do
+        '一回無害なメソッドを投げて、イベント発生状況更新
+        chrome_.PageEnable
+        isEndChane = _
+            chrome_.CDPEvents.IsCurrentTargetClearedScheduledNavigation _
+            Or chrome_.CDPEvents.IsCurrentTargetNavigated
+            
+        If isEndChane Then
+            chrome_.CDPEvents.IsCurrentTargetScheduledNavigation = False
+            chrome_.CDPEvents.IsCurrentTargetStartedLoading = False
+            chrome_.CDPEvents.IsCurrentTargetClearedScheduledNavigation = False
+            chrome_.CDPEvents.IsCurrentTargetNavigated = False
+            Exit Do
+        End If
+        
+        chromeInterFace.SleepByWindowsAPI 1000
+    Loop While (isEndChane = False)
+End Sub
 
 
 'Public

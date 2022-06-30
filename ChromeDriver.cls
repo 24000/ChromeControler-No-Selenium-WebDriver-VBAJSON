@@ -272,6 +272,7 @@ Public Function CreateIsolatedFrameWorld(frameId As String) As Long
     responseJson = ProcessMessage(CDPMethod_.id, jsonForSending, jsonHandler_)
     CreateIsolatedFrameWorld = _
         jsonHandler_.GetValueFromJson(responseJson, Array("result", "executionContextId"))
+    Sleep 1000
 End Function
 
 Public Function SetDiscoverTargets() As String
@@ -390,6 +391,8 @@ End Function
 '第1引数で指定されるXpathの要素を取得し、エレメントObjectとして返却
 Private Function IWebDriver_GetElementByXpath(xPath As String) As IWebElement
     ReCreateIsolatedFrameWorld_IfFlagOn
+    
+    If InStr(xPath, """") > 0 Then xPath = Replace(xPath, """", "\""")
     
     Dim scriptCode As String, functionCode As String
     scriptCode = "document.evaluate('" & xPath & "', document, null, " & _

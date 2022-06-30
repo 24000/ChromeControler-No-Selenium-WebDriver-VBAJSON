@@ -34,9 +34,15 @@ End Property
 
 Public Sub Init(jsonhandler As a_0_x4_JSONHandler)
     TargetInfoJSON = GetTragetInfoJSON
-    WebSocketURL = jsonhandler.GetValueFromJson(TargetInfoJSON, Array(0, KEY_WEBSOCKETURL))
+    
+    WebSocketURL = jsonhandler.GetValueFromJson( _
+                                TargetInfoJSON, Array(0, KEY_WEBSOCKETURL))
+                                
     targetId = jsonhandler.GetValueFromJson(TargetInfoJSON, Array(0, "id"))
-    WebSocketUrlPath = Replace(WebSocketURL, WEBSOCKET_SCHEMA & HOST_ & ":" & DEBUGGING_PORT, "")
+    
+    WebSocketUrlPath = Replace(WebSocketURL, _
+                                    WEBSOCKET_SCHEMA & HOST_ & ":" & DEBUGGING_PORT, "")
+                                    
     Context = Replace(WebSocketUrlPath, targetId, "")
 End Sub
 
@@ -50,8 +56,8 @@ Private Function GetTragetInfoJSON() As String
 End Function
 
 
-Public Function Update(currentTargetId As String, jsonhandler As a_0_x4_JSONHandler) As Collection
-    targetId = currentTargetId
+Public Function Update(CurrentTargetId As String, jsonhandler As a_0_x4_JSONHandler) As Collection
+    targetId = CurrentTargetId
     TargetInfoJSON = GetTragetInfoJSON
     WebSocketURL = GetWebSocketDebuggerUrl(jsonhandler)
     WebSocketUrlPath = Replace(WebSocketURL, WEBSOCKET_SCHEMA & HOST_ & ":" & DEBUGGING_PORT, "")

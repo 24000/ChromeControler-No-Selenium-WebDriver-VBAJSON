@@ -14,6 +14,12 @@ Public DialogInfoDic As Object
 Public PageInfos As Collection
 Public IframeInfos As Collection
 
+Public CurrentTargetId As String
+Public IsCurrentTargetScheduledNavigation As Boolean
+Public IsCurrentTargetStartedLoading As Boolean
+Public IsCurrentTargetClearedScheduledNavigation As Boolean
+Public IsCurrentTargetNavigated As Boolean
+
 Public IsIsolatedFrameScheduledNavigation As Boolean
 Public IsIsolatedFrameScheduledNavigationEnd As Boolean
 
@@ -27,6 +33,14 @@ End Sub
 Public Sub GetInfo(EventInfo As String, chrome As ChromeDriver)
     Dim eventName As String
     eventName = chrome.jsonhandler.GetValueFromJson(EventInfo, Array("method"))
+    
+    If InStr(eventName, "frame") > 0 Then
+        Dim id As String
+        id = chrome.jsonhandler.GetValueFromJson(EventInfo, Array("params", "frameId"))
+        Dim isCurrentTarget As Boolean
+        isCurrentTarget = (id = CurrentTargetId)
+    End If
+    
     Select Case eventName
         Case "Page.javascriptDialogOpening"
             SetDialogInfo EventInfo, chrome.jsonhandler
@@ -41,12 +55,23 @@ Public Sub GetInfo(EventInfo As String, chrome As ChromeDriver)
             RemoveTargetInfo EventInfo, chrome.jsonhandler
             
         Case "Page.frameScheduledNavigation" '”ñ„§‚Æ‚È‚Á‚Ä‚¢‚é‚ª‚±‚ê‚ª•Ô‚Á‚Ä‚­‚éB
+            If isCurrentTarget Then IsCurrentTargetScheduledNavigation = True
+            
+            If chrome.isolatedFrameId_ = "" Then Exit Sub
+            SetFlag_IfIsolatedFrameScheduledNavigation EventInfo, chrome
+        Case "Page.frameStartedLoading"
+            If isCurrentTarget Then IsCurrentTargetStartedLoading = True
+            
             If chrome.isolatedFrameId_ = "" Then Exit Sub
             SetFlag_IfIsolatedFrameScheduledNavigation EventInfo, chrome
         Case "Page.frameClearedScheduledNavigation" '”ñ„§‚Æ‚È‚Á‚Ä‚¢‚é‚ª‚±‚ê‚ª•Ô‚Á‚Ä‚­‚éB
+            If isCurrentTarget Then IsCurrentTargetClearedScheduledNavigation = True
+            
             If chrome.isolatedFrameId_ = "" Then Exit Sub
             SetFlag_IfIsolatedFrameScheduledNavigationEnd EventInfo, chrome
         Case "Page.frameNavigated"
+            If isCurrentTarget Then IsCurrentTargetNavigated = True
+            
             If chrome.isolatedFrameId_ = "" Then Exit Sub
             SetFlag_IfIsolatedFrameScheduledNavigationEnd EventInfo, chrome
     End Select

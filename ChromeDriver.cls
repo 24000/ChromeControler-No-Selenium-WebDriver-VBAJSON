@@ -71,8 +71,11 @@ Private Sub Class_Initialize()
     
     Set CDPMethod_ = New a_0_x2_CDPMethods
     Set events_ = New a_0_x1_x2_CDPEventHandler
+    events_.CurrentTargetId = basicInfo_.targetId
     
     SetDiscoverTargets
+    AttachToTarget basicInfo_.targetId
+    
 End Sub
 
 'message処理送信＆受信
@@ -454,9 +457,9 @@ Private Function IWebDriver_GetElementsByTagName(tagName As String) As IWebEleme
     If elemsCount = 0 Then GoTo quit
     
     Dim elements As Collection: Set elements = New Collection
-    Dim Index As Long
-    For Index = 0 To elemsCount - 1
-        elements.add CreateElementsItemByIndex(tagName, Index)
+    Dim index As Long
+    For index = 0 To elemsCount - 1
+        elements.add CreateElementsItemByIndex(tagName, index)
     Next
     
     Dim elems As WebElements: Set elems = New WebElements
@@ -482,17 +485,17 @@ Private Function GetElementsCount(tagName As String) As Long
     GetElementsCount = jsonHandler_.GetValueFromJson(responseJson, Array("result", "result", "value"))
 End Function
 
-Private Function CreateElementsItemByIndex(tagName As String, Index As Long) As IWebElement
+Private Function CreateElementsItemByIndex(tagName As String, index As Long) As IWebElement
     Dim javaScriptCode As String, responseJson As String
     Dim objectId As String
     Dim elem As IWebElement
     
     If executionContextId_ = 0 Then
-        javaScriptCode = "document.getElementsByTagName('" & tagName & "')[" & Index & "];"
+        javaScriptCode = "document.getElementsByTagName('" & tagName & "')[" & index & "];"
         responseJson = ExecuteJavaScript_Inner(javaScriptCode)
     Else
         javaScriptCode = _
-        "function(tagName){return  document.getElementsByTagName(tagName)[" & Index & "];}"
+        "function(tagName){return  document.getElementsByTagName(tagName)[" & index & "];}"
         responseJson = JavaScritpCallFunction(javaScriptCode, executionContextId_, tagName)
     End If
     objectId = jsonhandler.GetValueFromJson(responseJson, Array("result", "result", "objectId"))
@@ -706,10 +709,9 @@ Exit Sub
 End Sub
 
 '右隣のタブへ移動
-Private Sub IWebDriver_SwitchTabByIndex(Index As Long)
-    Dim currentTargetId As String
-    currentTargetId = events_.PageInfos(Index)("targetId")
-    basicInfo_.Update currentTargetId, jsonHandler_
+Private Sub IWebDriver_SwitchTabByIndex(index As Long)
+    events_.CurrentTargetId = events_.PageInfos(index)("targetId")
+    basicInfo_.Update events_.CurrentTargetId, jsonHandler_
     
     webSocket_.CloseWebSocket
     Set webSocket_ = Nothing
@@ -717,6 +719,7 @@ Private Sub IWebDriver_SwitchTabByIndex(Index As Long)
     If webSocket_.Init(basicInfo_.Host, basicInfo_.WebSocketUrlPath, basicInfo_.DebuggingPort) = False Then End
     
     ActivateTarget basicInfo_.targetId
+    AttachToTarget basicInfo_.targetId
     PageEnable
     DOMEnable
     

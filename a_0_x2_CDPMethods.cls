@@ -24,7 +24,7 @@ Public Function PageEnable() As String
     PageEnable = message
 End Function
 
-Public Function SetDiscoverTargets(targetId As String) As String
+Public Function SetDiscoverTargets(TargetId As String) As String
     id_ = id_ + 1
     Dim message As String
     message = "{""id"": " & id_ & ",""method"": ""Target.setDiscoverTargets""," & _
@@ -32,35 +32,35 @@ Public Function SetDiscoverTargets(targetId As String) As String
     SetDiscoverTargets = message
 End Function
 
-Public Function AttachToTarget(targetId As String) As String
+Public Function AttachToTarget(TargetId As String) As String
     id_ = id_ + 1
     Dim message As String
     message = "{""id"": " & id_ & ",""method"": ""Target.attachToTarget""," & _
-                      """params"": {""targetId"": """ & targetId & """}}"
+                      """params"": {""targetId"": """ & TargetId & """}}"
     AttachToTarget = message
 End Function
 
-Public Function ActivateTarget(targetId As String) As String
+Public Function ActivateTarget(TargetId As String) As String
     id_ = id_ + 1
     Dim message As String
     message = "{""id"": " & id_ & ",""method"": ""Target.activateTarget""," & _
-                      """params"": {""targetId"": """ & targetId & """}}"
+                      """params"": {""targetId"": """ & TargetId & """}}"
     ActivateTarget = message
 End Function
 
-Public Function DetachFromTarget(targetId As String) As String
+Public Function DetachFromTarget(TargetId As String) As String
     id_ = id_ + 1
     Dim message As String
     message = "{""id"": " & id_ & ",""method"": ""Target.detachFromTarget""," & _
-                      """params"": {""targetId"": """ & targetId & """}}"
+                      """params"": {""targetId"": """ & TargetId & """}}"
     DetachFromTarget = message
 End Function
 
-Public Function TargetClose(targetId As String) As String
+Public Function TargetClose(TargetId As String) As String
     id_ = id_ + 1
     Dim message As String
     message = "{""id"": " & id_ & ",""method"": ""Target.closeTarget""," & _
-                      """params"": {""targetId"": """ & targetId & """}}"
+                      """params"": {""targetId"": """ & TargetId & """}}"
     TargetClose = message
 End Function
 '利用可能なターゲットのリストを取得する。
@@ -191,17 +191,17 @@ Public Function GetAttributes(nodeId As Long)
 End Function
 
 'id で指定されたノード情報を叙述
-Public Function DescribeNodeBy_nodeId_or_objectId(IdName As String, id As Variant)
+Public Function DescribeNode(id As Variant) As Variant
     id_ = id_ + 1
     Dim message As String
-    If IdName = "nodeId" Then
+    If IsNumeric(id) Then
         message = "{""id"": " & id_ & ",""method"": ""DOM.describeNode""," & _
                           """params"": {""nodeId"":  " & id & ",""depth"": 0}}"
     Else
         message = "{""id"": " & id_ & ",""method"": ""DOM.describeNode""," & _
                          """params"": {""objectId"":  """ & id & """,""depth"": 0}}"
     End If
-    DescribeNodeBy_nodeId_or_objectId = message
+    DescribeNode = message
 End Function
 
 Public Function RequestChildNodes() As String

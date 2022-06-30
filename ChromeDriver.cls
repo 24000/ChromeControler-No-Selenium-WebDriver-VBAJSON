@@ -174,17 +174,10 @@ Private Function GetAttributes(nodeId As Long) As String
     GetAttributes = responseJson
 End Function
 
-Private Function DescribeNode(IdName As String, id As Variant) As Variant
-    If IdName <> "nodeId" And IdName <> "objectId" Then
-        Err.Raise 10000, , "第一引数には""nodeId""か""objectId""のどちらか指定してください。"
-    End If
-    
-    Dim jsonForSending  As String, responseJson As String
-    jsonForSending = CDPMethod_.DescribeNodeBy_nodeId_or_objectId(IdName, id)
-    responseJson = ProcessMessage(CDPMethod_.id, jsonForSending, jsonHandler_)
-    Dim attributes As String
-    attributes = jsonHandler_.GetValueFromJson(responseJson, Array("result", "node", "attributes"))
-    DescribeNode = attributes
+Private Function DescribeNode(id As Variant) As Variant
+    Dim jsonForSending  As String
+    jsonForSending = CDPMethod_.DescribeNode(id)
+    DescribeNode = ProcessMessage(CDPMethod_.id, jsonForSending, jsonHandler_)
 End Function
 '************************************************
 
@@ -241,7 +234,7 @@ Public Sub FindElementByQuerySelector(Selector As String)
     Dim nodeId As Long
     nodeId = jsonHandler_.GetValueFromJson(responseJson, Array("result", "nodeId"))
     Dim nodeInfoJson As String
-    nodeInfoJson = DescribeNode("nodeId", nodeId)
+    nodeInfoJson = DescribeNode(nodeId)
 End Sub
 
 Public Function FindElementByID(id As String) As String
@@ -427,15 +420,36 @@ Private Function GetObjectIdOfElementBy(way As String, scriptCode As String, fun
 End Function
 'エレメントを作成し、戻り値として返却
 Public Function MakeElementObject(objectId As String) As IWebElement
-'    DOMEnable
+    DOMEnable
+    
+    
+    Dim info  As String
+    info = DescribeNode(objectId)
+    If InStr(info, "attributes") > 0 Then
+        Dim attributes As Object
+        Set attributes = GetAttributesDic( _
+                                jsonHandler_.GetValueFromJson(info, Array("result", "node", "attributes")))
+    End If
+    If InStr(info, "frameId") > 0 Then
+        Dim frameId As String
+        frameId = jsonHandler_.GetValueFromJson(info, Array("result", "node", "frameId"))
+    End If
     Dim nodeId As Long
-'    nodeId = ChangeObjectIdToNodeId(objectId)
-'    Dim attributes As String
-'    attributes = GetAttributes(nodeId)
+    nodeId = 1
+    
     
     Dim element As WebElement: Set element = New WebElement
-    element.Init Me, objectId, nodeId
+    element.Init Me, objectId, nodeId, attributes
     Set MakeElementObject = element
+End Function
+Private Function GetAttributesDic(attributes As String) As Object
+    Dim ary As Variant: ary = Split(attributes, ",")
+    Dim attributesDic As Object: Set attributesDic = CreateObject("Scripting.Dictionary")
+    Dim i As Long
+    For i = LBound(ary) To UBound(ary) - 1 Step 2
+        attributesDic.add ary(i), ary(i + 1)
+    Next
+    Set GetAttributesDic = attributesDic
 End Function
 
 'Public

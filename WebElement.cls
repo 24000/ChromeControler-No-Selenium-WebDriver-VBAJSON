@@ -14,11 +14,18 @@ Private chrome_ As ChromeDriver
 
 Private objectId_ As String
 Private nodeId_ As Long
+Private attributes_ As Object
+Private frameId_ As String
 
-Public Sub Init(chrome As ChromeDriver, objectId As String, Optional nodeId As Long = 0)
+
+Public Sub Init(chrome As ChromeDriver, _
+                        objectId As String, Optional nodeId As Long = 0, _
+                        Optional attributes As Object = Nothing, Optional frameId As String)
     Set chrome_ = chrome
     objectId_ = objectId
     nodeId_ = nodeId
+    Set attributes_ = attributes
+    frameId_ = frameId
 End Sub
 
 

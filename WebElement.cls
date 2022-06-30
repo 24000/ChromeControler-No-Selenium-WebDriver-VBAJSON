@@ -287,11 +287,10 @@ End Function
 'Public
 Private Function IWebElement_GetTextContent() As String
     Dim javaScriptCode As String, responseJson As String
-    javaScriptCode = "function(value){return this.textContent;}"
+    javaScriptCode = "function(value){return this.textContent.replace(/\\s/g, ' ');}"
     responseJson = chrome_.JavaScritpCallFunction(javaScriptCode, objectId_, "")
     
     Dim text As String
     text = chrome_.jsonhandler.GetValueFromJson(responseJson, Array("result", "result", "value"))
-'    text = chrome_.jsonhandler.DecodeURL(text)
     IWebElement_GetTextContent = text
 End Function

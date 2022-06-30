@@ -13,7 +13,7 @@ Public Property Get CurrentURL() As String
 
 End Property
 
-Public Sub URLOpen(url As String, Optional maxWaitTime_ms As Long = 30000)
+Public Sub URLOpen(url As String)
 
 End Sub
 
@@ -41,7 +41,7 @@ Public Function IsExistsElementByXpath(xPath As String) As Boolean
 
 End Function
 
-Public Sub WaitForElementToAppearByXpath(xPath As String, maxWaitTime_ms As Long)
+Public Sub WaitForElementToAppearByXpath(xPath As String, maxWaitTime_sec As Long)
 
 End Sub
 
@@ -57,7 +57,7 @@ Public Function GetElementsByTagName(tagName As String) As IWebElements
 
 End Function
 
-Public Sub SwitchTabByIndex(Index As Long)
+Public Sub SwitchTabByIndex(index As Long)
     
 End Sub
 

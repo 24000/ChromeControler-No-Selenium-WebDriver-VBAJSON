@@ -352,13 +352,13 @@ End Property
 
 'Public
 '第1引数で指定のURLを開く
-Private Sub IWebDriver_URLOpen(url As String, Optional maxWaitTime_ms As Long = 30000)
+Private Sub IWebDriver_URLOpen(url As String)
     Dim jsonForSending  As String, responseJson As String
     jsonForSending = CDPMethod_.URLOpen(url)
     responseJson = ProcessMessage(CDPMethod_.id, jsonForSending, jsonHandler_)
     If InStr(responseJson, "invalid URL") > 0 Then GoTo quit
     
-    WaitingForWebPageDisplay (maxWaitTime_ms)
+    WaitingForWebPageDisplay
     
     SetDiscoverTargets
     PageEnable
@@ -372,7 +372,7 @@ DisplayErrorAndEnd "指定された以下URLは無効なURLです。" & vbCrLf & url
 End Sub
 
 'ページ表示待ちループ
-Private Function WaitingForWebPageDisplay(maxWaitTime_ms As Long)
+Private Function WaitingForWebPageDisplay()
     Dim javaScriptCode As String, responseJson As String, state As String
     Do
         javaScriptCode = "document.readyState;"
@@ -632,15 +632,15 @@ End Function
 
 'Public
 'Xpath(第1引数)で指定されるの要素が出現するのを、最大待機時間(第2引数)待つ
-Private Sub IWebDriver_WaitForElementToAppearByXpath(xPath As String, maxWaitTime_ms As Long)
+Private Sub IWebDriver_WaitForElementToAppearByXpath(xPath As String, maxWaitTime_sec As Long)
     
     Dim startTime As Date: startTime = Timer()
     Do
         If IWebDriver_IsExistsElementByXpath(xPath) Then
             Exit Sub
-        ElseIf CInt((Timer() - startTime) * 1000) > maxWaitTime_ms Then
-            DisplayErrorAndEnd maxWaitTime_ms & _
-                                         "ミリ秒経過しても、指定の以下要素は現れませんでした。" & vbCrLf & _
+        ElseIf CInt((Timer() - startTime)) > maxWaitTime_sec Then
+            DisplayErrorAndEnd maxWaitTime_sec & _
+                                         "秒経過しても、指定の以下要素は現れませんでした。" & vbCrLf & _
                                           xPath
         End If
         ReCreateIsolatedFrameWorld_IfFlagOn

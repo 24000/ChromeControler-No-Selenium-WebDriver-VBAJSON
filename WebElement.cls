@@ -93,6 +93,8 @@ Private Sub IWebElement_Click()
         chrome_.DispatchKeyEvent_DOMKeyCode "keyUp", "Enter"
     End If
     
+    If chrome_.CDPEvents.DialogInfoDic("IsExistDialog") Then Exit Sub
+    
     If IsPageChanging Then WaitPageChangeToComplete
     If IsIsolatedFrameChanging Then WaitIsolatedFrameChangeToComplete
     
@@ -242,7 +244,7 @@ Private Sub IWebElement_SelectItemByText(text As String)
     
     Dim chromeInterFace As IWebDriver
     Set chromeInterFace = chrome_
-    chromeInterFace.SleepByWindowsAPI 2000
+    chromeInterFace.SleepByWindowsAPI 500
 End Sub
 
 'Public

@@ -185,4 +185,15 @@ Private Sub RemoveInfoOf(infos As Collection, _
     Next
 End Sub
 
-
+Public Sub ForDebug_ShowtargetInfo()
+    Dim i  As Long
+    Debug.Print "PageInfosÅ´==============="
+    For i = 1 To PageInfos.Count
+        Debug.Print i & "ÅF" & PageInfos(i)("targetId")
+    Next
+    Debug.Print "IframeInfosÅ´==============="
+    For i = 1 To IframeInfos.Count
+        Debug.Print i & "ÅF" & IframeInfos(i)("targetId")
+    Next
+    Debug.Print "========================"
+End Sub

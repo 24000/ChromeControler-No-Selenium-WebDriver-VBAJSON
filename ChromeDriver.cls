@@ -99,6 +99,12 @@ Public Function ProcessMessage( _
         If responseId = "" Then
             If InStr(responseJson, "method") > 0 Then
                 events_.GetInfo responseJson, Me
+                
+                'ダイアログ出現時にのみ特殊対応、利用者はダイアログが出現したら
+                '次はPushOkButtonOnDialogを使用し、ダイアログを消す前提で抜ける。（他の操作をされるとアウト）
+                'ダイアログ出現時に処理をしないと、それ以降クロームがメッセージを返さず、受信⇒返信なしでStopするケースあるため
+                If events_.DialogInfoDic("IsExistDialog") Then Exit Function
+                
             ElseIf InStr(responseJson, "error") > 0 Then
                 GoTo quit
             End If
@@ -752,11 +758,17 @@ End Sub
 
 'Public
 'AlertダイアログのOKボタンを押して閉じる
+'★events_.DialogInfoDic("IsExistDialog")の判定、特殊対応を入れている箇所★
+'①ProcessMessage②これ③WebElemets：Click
+'制御を奪うDialogの場合、Dialog出現以降に、このCDPメソッド以外のCDPメソッドを投げると、
+'制御が奪われているため、返信がなく詰む。
 Private Sub IWebDriver_PushOkButtonOnDialog()
     Dim jsonForSending  As String, responseJson As String
-    'イベント受信するために一回無害なメソッドを送受信する。
-    jsonForSending = CDPMethod_.GetTargets
-    responseJson = ProcessMessage(CDPMethod_.id, jsonForSending, jsonHandler_)
+    If events_.DialogInfoDic("IsExistDialog") = False Then
+        'イベント受信するために一回無害なメソッドを送受信する。
+        jsonForSending = CDPMethod_.GetTargets
+        responseJson = ProcessMessage(CDPMethod_.id, jsonForSending, jsonHandler_)
+    End If
     
     jsonForSending = CDPMethod_.handleJavaScriptDialog()
     responseJson = ProcessMessage(CDPMethod_.id, jsonForSending, jsonHandler_)

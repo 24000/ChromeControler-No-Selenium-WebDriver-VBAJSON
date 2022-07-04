@@ -16,6 +16,8 @@ Private Const WEBSOCKET_SCHEMA As String = "ws://"
 
 Private Const KEY_WEBSOCKETURL As String = "webSocketDebuggerUrl"
 
+Public PageDefaultTargetId As String
+
 Public TargetInfoJSON As String
 Public WebSocketURL As String
 Public TargetId As String
@@ -40,6 +42,8 @@ Public Sub Init(jsonhandler As a_0_x4_JSONHandler)
                                 
     TargetId = jsonhandler.GetValueFromJson(TargetInfoJSON, Array(0, "id"))
     
+    PageDefaultTargetId = TargetId
+    
     WebSocketUrlPath = Replace(WebSocketURL, _
                                     WEBSOCKET_SCHEMA & HOST_ & ":" & DEBUGGING_PORT, "")
                                     
@@ -56,7 +60,10 @@ Private Function GetTragetInfoJSON() As String
 End Function
 
 
-Public Function Update(newTargetId As String, jsonhandler As a_0_x4_JSONHandler) As Collection
+Public Function Update(newTargetId As String, jsonhandler As a_0_x4_JSONHandler, _
+                                    isPageSwitch As Boolean) As Collection
+    If isPageSwitch Then PageDefaultTargetId = newTargetId
+    
     TargetId = newTargetId
     TargetInfoJSON = GetTragetInfoJSON
     WebSocketURL = GetWebSocketDebuggerUrl(jsonhandler)
@@ -86,4 +93,13 @@ Private Function GetWebSocketDebuggerUrl(jsonhandler As a_0_x4_JSONHandler) As S
             Exit Function
 next_:
     Next
+End Function
+
+
+Public Function IsTargetPageDefault() As Boolean
+    If TargetId = PageDefaultTargetId Then
+        IsTargetPageDefault = True
+    Else
+        IsTargetPageDefault = False
+    End If
 End Function

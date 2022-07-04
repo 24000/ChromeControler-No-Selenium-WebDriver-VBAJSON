@@ -19,16 +19,21 @@ Private frameId_ As String
 
 
 Public Sub Init(chrome As ChromeDriver, _
-                        objectId As String, Optional nodeId As Long = 0, _
-                        Optional attributes As Object = Nothing, Optional frameId As String)
+                        ObjectId As String, Optional nodeId As Long = 0, _
+                        Optional attributes As Object = Nothing, Optional FrameId As String)
     Set chrome_ = chrome
-    objectId_ = objectId
+    objectId_ = ObjectId
     nodeId_ = nodeId
     Set attributes_ = attributes
-    frameId_ = frameId
+    frameId_ = FrameId
 End Sub
 
-
+Public Property Get ObjectId() As String
+    ObjectId = objectId_
+End Property
+Public Property Get FrameId() As String
+    FrameId = frameId_
+End Property
 
 '***********************************************
 'Public
@@ -115,16 +120,19 @@ Private Sub WaitPageChangeToComplete()
             chrome_.CDPEvents.IsCurrentTargetClearedScheduledNavigation _
             Or chrome_.CDPEvents.IsCurrentTargetNavigated
             
-        If isEndChane Then
-            chrome_.CDPEvents.IsCurrentTargetScheduledNavigation = False
-            chrome_.CDPEvents.IsCurrentTargetStartedLoading = False
-            chrome_.CDPEvents.IsCurrentTargetClearedScheduledNavigation = False
-            chrome_.CDPEvents.IsCurrentTargetNavigated = False
-            Exit Do
-        End If
+        If isEndChane Then Exit Do
         
         chromeInterFace.SleepByWindowsAPI 1000
     Loop While (isEndChane = False)
+    
+    If chrome_.CDPEvents.IsCurrentTargetNavigated = False Then
+        chrome_.GetFrameTree '適当なメソッドを投げて、イベント発生状況更新
+    End If
+    
+    chrome_.CDPEvents.IsCurrentTargetScheduledNavigation = False
+    chrome_.CDPEvents.IsCurrentTargetStartedLoading = False
+    chrome_.CDPEvents.IsCurrentTargetClearedScheduledNavigation = False
+    chrome_.CDPEvents.IsCurrentTargetNavigated = False
 End Sub
 
 Private Function IsIsolatedFrameChanging() As Boolean
@@ -150,16 +158,19 @@ Private Sub WaitIsolatedFrameChangeToComplete()
             chrome_.CDPEvents.IsIsolatedFrameClearedScheduledNavigation _
             Or chrome_.CDPEvents.IsIsolatedFrameNavigated
             
-        If isEndChane Then
-            chrome_.CDPEvents.IsIsolatedFrameScheduledNavigation = False
-            chrome_.CDPEvents.IsIsolatedFrameStartedLoading = False
-            chrome_.CDPEvents.IsIsolatedFrameClearedScheduledNavigation = False
-            chrome_.CDPEvents.IsIsolatedFrameNavigated = False
-            Exit Do
-        End If
+        If isEndChane Then Exit Do
         
         chromeInterFace.SleepByWindowsAPI 1000
     Loop While (isEndChane = False)
+    
+    If chrome_.CDPEvents.IsIsolatedFrameNavigated = False Then
+        chrome_.GetFrameTree '適当なメソッドを投げて、イベント発生状況更新
+    End If
+    
+    chrome_.CDPEvents.IsIsolatedFrameScheduledNavigation = False
+    chrome_.CDPEvents.IsIsolatedFrameStartedLoading = False
+    chrome_.CDPEvents.IsIsolatedFrameClearedScheduledNavigation = False
+    chrome_.CDPEvents.IsIsolatedFrameNavigated = False
 End Sub
 
 
@@ -280,15 +291,15 @@ Private Function GetElementsCount(tagName As String) As Long
 End Function
 Private Function CreateElementsItemByIndex(tagName As String, index As Long) As IWebElement
     Dim javaScriptCode As String, responseJson As String
-    Dim objectId As String
+    Dim ObjectId As String
     Dim elem As IWebElement
 
     javaScriptCode = _
     "function(tagName){return  this.getElementsByTagName(tagName)[" & index & "];}"
     responseJson = chrome_.JavaScritpCallFunction(javaScriptCode, objectId_, tagName)
 
-    objectId = chrome_.jsonhandler.GetValueFromJson(responseJson, Array("result", "result", "objectId"))
-    Set CreateElementsItemByIndex = chrome_.MakeElementObject(objectId)
+    ObjectId = chrome_.jsonhandler.GetValueFromJson(responseJson, Array("result", "result", "objectId"))
+    Set CreateElementsItemByIndex = chrome_.MakeElementObject(ObjectId)
 End Function
 
 'Public

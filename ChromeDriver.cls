@@ -94,11 +94,13 @@ Public Function ProcessMessage( _
     Do
         responseJson = webSocket_.GetMessage
         If responseJson = "受信エラー発生" Then GoTo quit
-            
+        
         responseId = jsonhandler.GetValueFromJson(responseJson, Array("id"))
         If responseId = "" Then
             If InStr(responseJson, "method") > 0 Then
                 events_.GetInfo responseJson, Me
+            ElseIf InStr(responseJson, "error") > 0 Then
+                GoTo quit
             End If
         End If
     Loop While (sendId <> responseId)
@@ -110,8 +112,10 @@ quit:
 Dim errMsg As String
 If responseJson = "" Then
     errMsg = "送信エラー発生：イミディエイト参照"
-Else
+ElseIf responseJson = "受信エラー発生" Then
     errMsg = "受信エラー発生:イミディエイト参照"
+Else
+    errMsg = "クロームからのエラー通知あり:イミディエイト参照"
 End If
 MsgBox errMsg, vbCritical, "エラー"
 webSocket_.Http.CloseHInternetHandles
@@ -145,9 +149,9 @@ Private Function GetDocumentNodeID() As Long
     GetDocumentNodeID = jsonHandler_.GetValueFromJson(responseJson, Array("result", "root", "nodeId"))
 End Function
 
-Private Function ChangeObjectIdToNodeId(objectId As String) As String
+Private Function ChangeObjectIdToNodeId(ObjectId As String) As String
     Dim jsonForSending  As String, responseJson As String
-    jsonForSending = CDPMethod_.RequestNode(objectId)
+    jsonForSending = CDPMethod_.RequestNode(ObjectId)
     responseJson = ProcessMessage(CDPMethod_.id, jsonForSending, jsonHandler_)
     
     Dim nodeId As String
@@ -160,9 +164,9 @@ Private Function ChangeNodeIdToObjectId(nodeId As Long) As String
     jsonForSending = CDPMethod_.ResolveNode(nodeId)
     responseJson = ProcessMessage(CDPMethod_.id, jsonForSending, jsonHandler_)
     
-    Dim objectId As String
-    objectId = jsonHandler_.GetValueFromJson(responseJson, Array("result", "objectId"))
-    ChangeNodeIdToObjectId = objectId
+    Dim ObjectId As String
+    ObjectId = jsonHandler_.GetValueFromJson(responseJson, Array("result", "objectId"))
+    ChangeNodeIdToObjectId = ObjectId
 End Function
 '************************************************
 
@@ -197,9 +201,9 @@ Private Function ExecuteJavaScript_Inner(script As String) As String
 End Function
 
 'JavaScript_Function実行
-Public Function JavaScritpCallFunction(funcName As String, objectId As Variant, args As Variant) As String
+Public Function JavaScritpCallFunction(funcName As String, ObjectId As Variant, args As Variant) As String
     Dim jsonForSending  As String
-    jsonForSending = CDPMethod_.JavaScritpCallFunction(funcName, objectId, args)
+    jsonForSending = CDPMethod_.JavaScritpCallFunction(funcName, ObjectId, args)
     JavaScritpCallFunction = ProcessMessage(CDPMethod_.id, jsonForSending, jsonHandler_)
 End Function
 '************************************************
@@ -220,9 +224,9 @@ Public Sub DOMEnable()
     responseJson = ProcessMessage(CDPMethod_.id, jsonForSending, jsonHandler_)
 End Sub
 
-Public Sub Focus(objectId As String)
+Public Sub Focus(ObjectId As String)
     Dim jsonForSending  As String, responseJson As String
-    jsonForSending = CDPMethod_.Focus(objectId)
+    jsonForSending = CDPMethod_.Focus(ObjectId)
     responseJson = ProcessMessage(CDPMethod_.id, jsonForSending, jsonHandler_)
 End Sub
 
@@ -263,13 +267,17 @@ Public Function GetFrameTree() As String
     GetFrameTree = responseJson
 End Function
 
-Public Function CreateIsolatedFrameWorld(frameId As String) As Long
+Public Function CreateIsolatedFrameWorld(FrameId As String) As Long
     Dim jsonForSending  As String, responseJson As String
-    jsonForSending = CDPMethod_.CreateIsolatedFrameWorld(frameId)
+    jsonForSending = CDPMethod_.CreateIsolatedFrameWorld(FrameId)
     responseJson = ProcessMessage(CDPMethod_.id, jsonForSending, jsonHandler_)
-    CreateIsolatedFrameWorld = _
-        jsonHandler_.GetValueFromJson(responseJson, Array("result", "executionContextId"))
-    Sleep 1000
+    If InStr(responseJson, "error") > 0 Then
+        CreateIsolatedFrameWorld = 0
+    Else
+        CreateIsolatedFrameWorld = _
+            jsonHandler_.GetValueFromJson(responseJson, Array("result", "executionContextId"))
+        Sleep 1000
+    End If
 End Function
 
 Public Function SetDiscoverTargets() As String
@@ -343,6 +351,7 @@ Private Property Get IWebDriver_CurrentURL() As String
 End Property
 
 
+
 'Public
 '第1引数で指定のURLを開く
 Private Sub IWebDriver_URLOpen(url As String)
@@ -397,10 +406,10 @@ Private Function IWebDriver_GetElementByXpath(xPath As String) As IWebElement
     functionCode = "function(xpath){return  document.evaluate(xpath, document, null, " & _
                             "XPathResult.FIRST_ORDERED_NODE_TYPE, null ).singleNodeValue;}"
             
-    Dim objectId As String
-    objectId = GetObjectIdOfElementBy(xPath, scriptCode, functionCode)
-    If objectId = "" Then GoTo quit
-    Set IWebDriver_GetElementByXpath = MakeElementObject(objectId)
+    Dim ObjectId As String
+    ObjectId = GetObjectIdOfElementBy(xPath, scriptCode, functionCode)
+    If ObjectId = "" Then GoTo quit
+    Set IWebDriver_GetElementByXpath = MakeElementObject(ObjectId)
 Exit Function
 
 quit:
@@ -419,27 +428,26 @@ Private Function GetObjectIdOfElementBy(way As String, scriptCode As String, fun
         jsonhandler.GetValueFromJson(responseJson, Array("result", "result", "objectId"))
 End Function
 'エレメントを作成し、戻り値として返却
-Public Function MakeElementObject(objectId As String) As IWebElement
+Public Function MakeElementObject(ObjectId As String) As IWebElement
     DOMEnable
     
     
     Dim info  As String
-    info = DescribeNode(objectId)
+    info = DescribeNode(ObjectId)
     If InStr(info, "attributes") > 0 Then
         Dim attributes As Object
         Set attributes = GetAttributesDic( _
                                 jsonHandler_.GetValueFromJson(info, Array("result", "node", "attributes")))
     End If
     If InStr(info, "frameId") > 0 Then
-        Dim frameId As String
-        frameId = jsonHandler_.GetValueFromJson(info, Array("result", "node", "frameId"))
+        Dim FrameId As String
+        FrameId = jsonHandler_.GetValueFromJson(info, Array("result", "node", "frameId"))
     End If
     Dim nodeId As Long
     nodeId = 1
     
-    
     Dim element As WebElement: Set element = New WebElement
-    element.Init Me, objectId, nodeId, attributes
+    element.Init Me, ObjectId, nodeId, attributes, FrameId
     Set MakeElementObject = element
 End Function
 Private Function GetAttributesDic(attributes As String) As Object
@@ -460,10 +468,10 @@ Private Function IWebDriver_GetElementByName(Name As String) As IWebElement
     scriptCode = "document.getElementsByName('" & Name & "')[0];"
     functionCode = "function(name){return  document.getElementsByName(name)[0];}"
     
-    Dim objectId As String
-    objectId = GetObjectIdOfElementBy(Name, scriptCode, functionCode)
-    If objectId = "" Then GoTo quit
-    Set IWebDriver_GetElementByName = MakeElementObject(objectId)
+    Dim ObjectId As String
+    ObjectId = GetObjectIdOfElementBy(Name, scriptCode, functionCode)
+    If ObjectId = "" Then GoTo quit
+    Set IWebDriver_GetElementByName = MakeElementObject(ObjectId)
 Exit Function
 
 quit:
@@ -508,7 +516,7 @@ End Function
 
 Private Function CreateElementsItemByIndex(tagName As String, index As Long) As IWebElement
     Dim javaScriptCode As String, responseJson As String
-    Dim objectId As String
+    Dim ObjectId As String
     Dim elem As IWebElement
     
     If executionContextId_ = 0 Then
@@ -519,8 +527,8 @@ Private Function CreateElementsItemByIndex(tagName As String, index As Long) As 
         "function(tagName){return  document.getElementsByTagName(tagName)[" & index & "];}"
         responseJson = JavaScritpCallFunction(javaScriptCode, executionContextId_, tagName)
     End If
-    objectId = jsonhandler.GetValueFromJson(responseJson, Array("result", "result", "objectId"))
-    Set CreateElementsItemByIndex = MakeElementObject(objectId)
+    ObjectId = jsonhandler.GetValueFromJson(responseJson, Array("result", "result", "objectId"))
+    Set CreateElementsItemByIndex = MakeElementObject(ObjectId)
 End Function
 
 
@@ -528,17 +536,17 @@ End Function
 '第1引数で指定される値のフレームにフレームを切替
 Private Sub IWebDriver_SwitchFrameByNameOrUrlOrIndex(value As Variant)
     Dim frameInfos As Collection: Set frameInfos = GetFrameInfos
-    Dim frameId As String
+    Dim FrameId As String
     If IsNumeric(value) Then
         If frameInfos.Count < value Then GoTo quit
-        frameId = jsonHandler_.GetValueFromJson(frameInfos(value), Array("id"))
+        FrameId = jsonHandler_.GetValueFromJson(frameInfos(value), Array("id"))
     Else
-        frameId = GetTargetFrameId(frameInfos, value)
+        FrameId = GetTargetFrameId(frameInfos, value)
     End If
-    If frameId = "" Then GoTo quit
+    If FrameId = "" Then GoTo quit
     
-    executionContextId_ = CreateIsolatedFrameWorld(frameId)
-    isolatedFrameId_ = frameId
+    executionContextId_ = CreateIsolatedFrameWorld(FrameId)
+    isolatedFrameId_ = FrameId
     
 Exit Sub
 
@@ -619,11 +627,89 @@ Private Sub IWebDriver_DebugPrintAccessibleFrameInfo()
 End Sub
 
 'Public
+Private Sub IWebDriver_SwitchFrameByIframeElement(IframeElement As IWebElement)
+    Dim frameInfos As Collection: Set frameInfos = GetFrameInfos
+    Dim elem As WebElement: Set elem = IframeElement
+    If elem.FrameId = "" Then
+        DisplayErrorAndEnd "指定されたElementがIframeではありません" & vbCrLf & vbCrLf & _
+                                      "Iframe要素を引数に渡して下さい" & vbCrLf
+    End If
+    
+'    events_.ForDebug_ShowtargetInfo
+    GetTargetInfo
+    SetDiscoverTargets
+'    events_.ForDebug_ShowtargetInfo
+    'frameIdがframeIdならIsolatedWorldで対応
+    executionContextId_ = CreateIsolatedFrameWorld(elem.FrameId)
+    If executionContextId_ <> 0 Then
+        isolatedFrameId_ = elem.FrameId
+        Exit Sub
+    Else
+        DisplayErrorAndEnd "このIframeはこのメソッドでは切り替えができません。" & vbCrLf & vbCrLf & _
+                                      "※" & vbCrLf
+    End If
+    
+    
+'    テスト
+'    Dim docElem As WebElement
+'    Dim functionCode As String, responseJson As String, docObjectId As String
+'    functionCode = "function(name){return  this.contentDocument;}"
+'    responseJson = JavaScritpCallFunction(functionCode, elem.ObjectId, "")
+'    docObjectId = jsonhandler.GetValueFromJson(responseJson, Array("result", "result", "objectId"))
+'    Dim info  As String
+'    info = DescribeNode(docObjectId)
+    
+    
+'    frameIdがtargetIdなら接続切り替えで対応
+'    basicInfo_.Update elem.FrameId, jsonHandler_, False
+'    isolatedFrameId_ = ""
+'
+'    webSocket_.CloseWebSocket
+'    Set webSocket_ = Nothing
+'    Set webSocket_ = New a_0_x1_WebSocketCommunicator
+'    If webSocket_.Init(basicInfo_.Host, basicInfo_.WebSocketUrlPath, _
+'                                basicInfo_.DebuggingPort) = False Then
+'        DisplayErrorAndEnd "SwitchIframeに失敗しました" & vbCrLf
+'    End If
+'
+'    AttachToTarget elem.FrameId
+'    PageEnable
+'    DOMEnable
+'
+'    documentObjectId_ = GetDocumentObjectID
+'    documentNodeId_ = GetDocumentNodeID
+
+End Sub
+
+'Public
 'デフォルトのフレームに戻す
 Private Sub IWebDriver_SwitchFrameToDefault()
-    isolatedFrameId_ = ""
-    executionContextId_ = 0
+    If isolatedFrameId_ <> "" Then
+        isolatedFrameId_ = ""
+        executionContextId_ = 0
+    End If
+    
+'    If basicInfo_.IsTargetPageDefault = False Then
+'        SwitchTargetToPageDefault
+'    End If
 End Sub
+'Private Sub SwitchTargetToPageDefault()
+'    Dim newTargetId As String
+'    newTargetId = basicInfo_.PageDefaultTargetId
+'    basicInfo_.Update newTargetId, jsonHandler_, False
+'
+'    webSocket_.CloseWebSocket
+'    Set webSocket_ = Nothing
+'    Set webSocket_ = New a_0_x1_WebSocketCommunicator
+'    If webSocket_.Init(basicInfo_.Host, basicInfo_.WebSocketUrlPath, basicInfo_.DebuggingPort) = False Then End
+'
+'    ActivateTarget basicInfo_.TargetId
+'    PageEnable
+'    DOMEnable
+'
+'    documentObjectId_ = GetDocumentObjectID
+'    documentNodeId_ = GetDocumentNodeID
+'End Sub
 
 'Public
 '第1引数で指定されるXpathの要素有無の確認
@@ -635,9 +721,9 @@ Private Function IWebDriver_IsExistsElementByXpath(xPath As String) As Boolean
                         "XPathResult.FIRST_ORDERED_NODE_TYPE, null ).singleNodeValue;"
     functionCode = "function(xpath){return  document.evaluate(xpath, document, null, " & _
                             "XPathResult.FIRST_ORDERED_NODE_TYPE, null ).singleNodeValue;}"
-    Dim objectId As String
-    objectId = GetObjectIdOfElementBy(xPath, scriptCode, functionCode)
-    If objectId = "" Then
+    Dim ObjectId As String
+    ObjectId = GetObjectIdOfElementBy(xPath, scriptCode, functionCode)
+    If ObjectId = "" Then
         IWebDriver_IsExistsElementByXpath = False
     Else
         IWebDriver_IsExistsElementByXpath = True
@@ -734,7 +820,7 @@ End Sub
 Private Sub IWebDriver_SwitchTabByIndex(index As Long)
     Dim newTargetId As String
     newTargetId = events_.PageInfos(index)("targetId")
-    basicInfo_.Update newTargetId, jsonHandler_
+    basicInfo_.Update newTargetId, jsonHandler_, True
     
     webSocket_.CloseWebSocket
     Set webSocket_ = Nothing

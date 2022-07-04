@@ -455,7 +455,9 @@ Private Function GetAttributesDic(attributes As String) As Object
     Dim attributesDic As Object: Set attributesDic = CreateObject("Scripting.Dictionary")
     Dim i As Long
     For i = LBound(ary) To UBound(ary) - 1 Step 2
-        attributesDic.add ary(i), ary(i + 1)
+        If attributesDic.exists(ary(i)) = False Then
+            attributesDic.add ary(i), ary(i + 1)
+        End If
     Next
     Set GetAttributesDic = attributesDic
 End Function

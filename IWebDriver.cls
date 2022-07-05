@@ -33,6 +33,10 @@ Public Sub SwitchFrameByNameOrURLOrIndex(value As Variant)
 
 End Sub
 
+Public Sub SwitchFrameByIframeElement(IframeElement As IWebElement)
+
+End Sub
+
 Public Sub SwitchFrameToDefault()
 
 End Sub

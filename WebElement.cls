@@ -137,6 +137,20 @@ Private Sub WaitPageChangeToComplete()
     chrome_.CDPEvents.IsCurrentTargetNavigated = False
 End Sub
 
+'要素中心のxy座標をクリックシミュレート
+Private Sub IWebElement_SimulateClick()
+    Dim centerXY As Variant
+    centerXY = chrome_.GetBoxModel(objectId_)
+    Dim x As Long, y As Long
+    x = centerXY(0)
+    y = centerXY(1)
+    
+    Dim result As String
+    result = chrome_.DispatchMouseEvent("mousePressed", x, y, "left", 1)
+    result = chrome_.DispatchMouseEvent("mouseReleased", x, y, "left", 1)
+End Sub
+
+
 Private Function IsIsolatedFrameChanging() As Boolean
     '一回無害なメソッドを投げて、イベント発生状況更新
     chrome_.PageEnable
@@ -314,3 +328,4 @@ Private Function IWebElement_GetTextContent() As String
     text = chrome_.jsonhandler.GetValueFromJson(responseJson, Array("result", "result", "value"))
     IWebElement_GetTextContent = text
 End Function
+

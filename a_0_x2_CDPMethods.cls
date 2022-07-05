@@ -106,11 +106,11 @@ Public Function GetFrameTree() As String
     GetFrameTree = message
 End Function
 
-Public Function CreateIsolatedFrameWorld(frameId As String) As String
+Public Function CreateIsolatedFrameWorld(FrameId As String) As String
     id_ = id_ + 1
     Dim message As String
     message = "{""id"": " & id_ & ",""method"": ""Page.createIsolatedWorld""," & _
-                     """params"": {""frameId"": """ & frameId & """}}"
+                     """params"": {""frameId"": """ & FrameId & """,""grantUniveralAccess"": true}}"
     CreateIsolatedFrameWorld = message
 End Function
 
@@ -127,6 +127,23 @@ Public Function DispatchKeyEvent_DOMKeyCode(eventType As String, code As String)
 '    windowsVirtualKeyCode
 End Function
 
+'マウスイベントをxy座標にディスパッチする。mousePressed, mouseReleased, mouseMoved, mouseWheelのいずれか。
+Public Function DispatchMouseEvent(eventType As String, x As Long, y As Long, _
+                                                        button As String, clickCount As Long, _
+                                                        Optional modifiers As Long = 0) As String
+    id_ = id_ + 1
+    Dim message As String
+    message = "{""id"": " & id_ & ",""method"": ""Input.dispatchMouseEvent""," & _
+                      """params"": {""type"":  """ & eventType & """,""x"": " & x & ",""y"": " & y & "," & _
+                                            """button"": """ & button & """,""clickCount"": " & clickCount
+                                            'none, left, middle, right, back, forwardのいずれか
+                                            
+    'Alt=1, Ctrl=2, Meta/Command=4, Shift=8
+    If modifiers <> 0 Then message = message & ",""modifiers"": " & modifiers
+    
+    message = message & "}}"
+    DispatchMouseEvent = message
+End Function
 '*******************************************************************
 'DOM Domain*******************************************************************
 'Domの有効化
@@ -138,11 +155,11 @@ Public Function DOM_Enable()
 End Function
 
 '指定された要素にフォーカスを当てる。
-Public Function Focus(objectId As String) As String
+Public Function Focus(ObjectId As String) As String
     id_ = id_ + 1
     Dim message As String
     message = "{""id"": " & id_ & ",""method"": ""DOM.focus""," & _
-                      """params"": {""objectId"":  """ & objectId & """}}"
+                      """params"": {""objectId"":  """ & ObjectId & """}}"
     Focus = message
 End Function
 
@@ -165,11 +182,11 @@ Public Function querySelector(Selector As String, Optional nodeId As Long = 1) A
 End Function
 
 'objectIdからnodeId取得
-Public Function RequestNode(objectId As String) As String
+Public Function RequestNode(ObjectId As String) As String
     id_ = id_ + 1
     Dim message As String
     message = "{""id"": " & id_ & ",""method"": ""DOM.requestNode""," & _
-                      """params"": {""objectId"":  """ & objectId & """}}"
+                      """params"": {""objectId"":  """ & ObjectId & """}}"
     RequestNode = message
 End Function
 
@@ -196,10 +213,10 @@ Public Function DescribeNode(id As Variant) As Variant
     Dim message As String
     If IsNumeric(id) Then
         message = "{""id"": " & id_ & ",""method"": ""DOM.describeNode""," & _
-                          """params"": {""nodeId"":  " & id & ",""depth"": 0}}"
+                          """params"": {""nodeId"":  " & id & ",""depth"": -1,""pierce"": true}}"
     Else
         message = "{""id"": " & id_ & ",""method"": ""DOM.describeNode""," & _
-                         """params"": {""objectId"":  """ & id & """,""depth"": 0}}"
+                         """params"": {""objectId"":  """ & id & """,""depth"": -1,""pierce"": true}}"
     End If
     DescribeNode = message
 End Function
@@ -210,6 +227,15 @@ Public Function RequestChildNodes() As String
     message = "{""id"": " & id_ & ",""method"": ""DOM.RequestChildNodes""," & _
                       """params"": {""nodeId"":  " & id_ & ",""depth"":  -1}}"
     RequestChildNodes = message
+End Function
+
+'指定された要素にフォーカスを当てる。
+Public Function GetBoxModel(ObjectId As String) As String
+    id_ = id_ + 1
+    Dim message As String
+    message = "{""id"": " & id_ & ",""method"": ""DOM.getBoxModel""," & _
+                      """params"": {""objectId"":  """ & ObjectId & """}}"
+    GetBoxModel = message
 End Function
 
 'RunTime Domain*******************************************************************
@@ -227,7 +253,7 @@ Public Function JavaScritpEvaluate(script As String)
     JavaScritpEvaluate = message
 End Function
 
-Public Function JavaScritpCallFunction(funcDeclear As String, objectId As Variant, argments As Variant)
+Public Function JavaScritpCallFunction(funcDeclear As String, ObjectId As Variant, argments As Variant)
     id_ = id_ + 1
     Dim JavaScriptObjectArgs As String
     
@@ -241,10 +267,10 @@ Public Function JavaScritpCallFunction(funcDeclear As String, objectId As Varian
     message = "{""id"": " & id_ & ",""method"": ""Runtime.callFunctionOn""," & _
                       """params"": " & _
                      "{""functionDeclaration"": """ & funcDeclear & """,""arguments"": " & JavaScriptObjectArgs
-    If IsNumeric(objectId) Then
-        message = message & ",""executionContextId"": " & objectId & "}}"
+    If IsNumeric(ObjectId) Then
+        message = message & ",""executionContextId"": " & ObjectId & "}}"
     Else
-        message = message & ",""objectId"": """ & objectId & """}}"
+        message = message & ",""objectId"": """ & ObjectId & """}}"
     End If
     JavaScritpCallFunction = message
 End Function

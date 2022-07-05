@@ -29,6 +29,10 @@ Public Sub Click()
 
 End Sub
 
+Public Sub SimulateClick()
+
+End Sub
+
 Public Sub SelectItemByText(text As String)
 
 End Sub

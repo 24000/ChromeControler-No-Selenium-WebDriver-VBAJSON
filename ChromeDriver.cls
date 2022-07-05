@@ -221,6 +221,16 @@ Public Function DispatchKeyEvent_DOMKeyCode(eventType As String, code As String)
     responseJson = ProcessMessage(CDPMethod_.id, jsonForSending, jsonHandler_)
 End Function
 
+'マウスイベントをxy座標にディスパッチする。mousePressed, mouseReleased, mouseMoved, mouseWheelのいずれか。
+Public Function DispatchMouseEvent(eventType As String, x As Long, y As Long, _
+                                                        button As String, clickCount As Long, _
+                                                        Optional modifiers As Long = 0) As String
+                                                        
+    Dim jsonForSending  As String, responseJson As String
+    jsonForSending = CDPMethod_.DispatchMouseEvent(eventType, x, y, button, clickCount, modifiers)
+    responseJson = ProcessMessage(CDPMethod_.id, jsonForSending, jsonHandler_)
+End Function
+
 '*******************************************************************
 
 'DOM操作系************************************************
@@ -235,6 +245,22 @@ Public Sub Focus(ObjectId As String)
     jsonForSending = CDPMethod_.Focus(ObjectId)
     responseJson = ProcessMessage(CDPMethod_.id, jsonForSending, jsonHandler_)
 End Sub
+
+Public Function GetBoxModel(ObjectId As String) As Variant
+    Dim jsonForSending  As String, responseJson As String
+    jsonForSending = CDPMethod_.GetBoxModel(ObjectId)
+    responseJson = ProcessMessage(CDPMethod_.id, jsonForSending, jsonHandler_)
+    Dim result As Variant
+    result = jsonHandler_.GetValueFromJson(responseJson, Array("result", "model", "content"))
+    result = Split(result, ",")
+    Dim width As Long, height As Long
+    width = jsonHandler_.GetValueFromJson(responseJson, Array("result", "model", "width"))
+    height = jsonHandler_.GetValueFromJson(responseJson, Array("result", "model", "height"))
+    Dim xy(1) As Variant
+    xy(0) = result(0) + (width / 2)
+    xy(1) = result(1) + (height / 2)
+    GetBoxModel = xy
+End Function
 
 Public Sub FindElementByQuerySelector(Selector As String)
     Dim jsonForSending  As String, responseJson As String

@@ -10,6 +10,17 @@ Attribute VB_Exposed = False
 Option Explicit
 Implements IWebElement
 
+Private Declare PtrSafe Function FindWindow Lib "user32" Alias "FindWindowA" ( _
+        ByVal lpClassName As String, ByVal lpWindowName As String) As Long
+        
+Private Declare PtrSafe Function FindWindowEx Lib "user32" Alias "FindWindowExA" ( _
+        ByVal hwndParent As LongPtr, ByVal hwndChildAfter As LongPtr, _
+        ByVal lpClassName As String, ByVal lpWindowName As String) As Long
+        
+Private Declare PtrSafe Function SendMessage Lib "user32" Alias "SendMessageA" ( _
+        ByVal hwnd As Long, ByVal wMsg As Long, _
+        ByVal wParam As Long, lParam As Any) As LongPtr
+
 Private chrome_ As ChromeDriver
 
 Private objectId_ As String
@@ -37,6 +48,7 @@ End Property
 
 '***********************************************
 'Public
+'チェックボックス要素についてチェックChecked属性の設定
 Private Property Let IWebElement_Checked(RHS As Boolean)
     Dim responseJson As String
     'checkedプロパティを持っているか事前にチェック。持っていない場合はじく。
@@ -60,6 +72,7 @@ chrome_.DisplayErrorAndEnd "このElementはCheckedを持ちません。" & vbCrLf & _
                                             "※CheckedはCheckBoxで使用可能"
 End Property
 'Public
+'チェックボックス要素についてチェック状態取得
 Private Property Get IWebElement_Checked() As Boolean
     Dim responseJson As String
     responseJson = chrome_.JavaScritpCallFunction( _
@@ -77,6 +90,7 @@ chrome_.DisplayErrorAndEnd "このElementはCheckedを持ちません。" & vbCrLf & _
 End Property
 
 'Public
+'javaScriptによってクリック実行
 Private Sub IWebElement_Click()
     chrome_.Focus (objectId_)
     Dim responseJson As String
@@ -111,8 +125,8 @@ Private Function IsPageChanging() As Boolean
     End If
 End Function
 Private Sub WaitPageChangeToComplete()
-    Dim chromeInterFace As IWebDriver
-    Set chromeInterFace = chrome_
+    Dim chromeInterface As IWebDriver
+    Set chromeInterface = chrome_
     
     Dim isEndChane As Boolean
     Do
@@ -124,7 +138,7 @@ Private Sub WaitPageChangeToComplete()
             
         If isEndChane Then Exit Do
         
-        chromeInterFace.SleepByWindowsAPI 1000
+        chromeInterface.SleepByWindowsAPI 1000
     Loop While (isEndChane = False)
     
     If chrome_.CDPEvents.IsCurrentTargetNavigated = False Then
@@ -136,21 +150,6 @@ Private Sub WaitPageChangeToComplete()
     chrome_.CDPEvents.IsCurrentTargetClearedScheduledNavigation = False
     chrome_.CDPEvents.IsCurrentTargetNavigated = False
 End Sub
-
-'要素中心のxy座標をクリックシミュレート
-Private Sub IWebElement_DispatchLeftClickEvent()
-    Dim centerXY As Variant
-    centerXY = chrome_.GetBoxModel(objectId_)
-    Dim x As Long, y As Long
-    x = centerXY(0)
-    y = centerXY(1)
-    
-    Dim result As String
-    result = chrome_.DispatchMouseEvent("mousePressed", x, y, "left", 1)
-    result = chrome_.DispatchMouseEvent("mouseReleased", x, y, "left", 1)
-End Sub
-
-
 Private Function IsIsolatedFrameChanging() As Boolean
     '一回無害なメソッドを投げて、イベント発生状況更新
     chrome_.PageEnable
@@ -163,8 +162,8 @@ Private Function IsIsolatedFrameChanging() As Boolean
     End If
 End Function
 Private Sub WaitIsolatedFrameChangeToComplete()
-    Dim chromeInterFace As IWebDriver
-    Set chromeInterFace = chrome_
+    Dim chromeInterface As IWebDriver
+    Set chromeInterface = chrome_
     
     Dim isEndChane As Boolean
     Do
@@ -176,7 +175,7 @@ Private Sub WaitIsolatedFrameChangeToComplete()
             
         If isEndChane Then Exit Do
         
-        chromeInterFace.SleepByWindowsAPI 1000
+        chromeInterface.SleepByWindowsAPI 1000
     Loop While (isEndChane = False)
     
     If chrome_.CDPEvents.IsIsolatedFrameNavigated = False Then
@@ -190,7 +189,9 @@ Private Sub WaitIsolatedFrameChangeToComplete()
 End Sub
 
 
+
 'Public
+'要素のValue属性に文字列を設定
 Private Sub IWebElement_SetText(text As String)
     chrome_.Focus (objectId_)
     chrome_.DispatchKeyEvent_DOMKeyCode "keyUp", "Enter"
@@ -203,7 +204,9 @@ Private Sub IWebElement_SetText(text As String)
     "}", _
     objectId_, encodingText
 End Sub
+
 'Public
+'要素のTextContentに文字列を設定
 Private Sub IWebElement_SetTextContent(text As String)
     Dim encodingText As String: encodingText = chrome_.jsonhandler.EncodeURL(text)
     chrome_.JavaScritpCallFunction _
@@ -213,7 +216,9 @@ Private Sub IWebElement_SetTextContent(text As String)
     "}", _
     objectId_, encodingText
 End Sub
+
 'Public
+'SelectBoxの選択肢を文字列で選択
 Private Sub IWebElement_SelectItemByText(text As String)
     Dim encodingText As String: encodingText = chrome_.jsonhandler.EncodeURL(text)
     Dim javaScriptCode As String
@@ -256,10 +261,12 @@ Private Sub IWebElement_SelectItemByText(text As String)
         responseJson = chrome_.JavaScritpCallFunction(javaScriptCode, objectId_, encodingText)
     End If
     
-    Dim chromeInterFace As IWebDriver
-    Set chromeInterFace = chrome_
-    chromeInterFace.SleepByWindowsAPI 500
+    Dim chromeInterface As IWebDriver
+    Set chromeInterface = chrome_
+    chromeInterface.SleepByWindowsAPI 500
 End Sub
+
+
 
 'Public
 Private Function IWebElement_GetElementByName(Name As String) As IWebElement
@@ -328,4 +335,55 @@ Private Function IWebElement_GetTextContent() As String
     text = chrome_.jsonhandler.GetValueFromJson(responseJson, Array("result", "result", "value"))
     IWebElement_GetTextContent = text
 End Function
+
+
+'要素中心位置のxy座標をCDPMethodで左クリック発行
+Private Sub IWebElement_DispatchLeftClickEvent()
+    Dim centerXY As Variant
+    centerXY = chrome_.GetBoxModel(objectId_)
+    Dim x As Long, y As Long
+    x = centerXY(0)
+    y = centerXY(1)
+    
+    Dim chromeInterface As IWebDriver: Set chromeInterface = chrome_
+    chromeInterface.ScrollWindow y - 50
+    
+    Dim result As String
+    result = chrome_.DispatchMouseEvent("mousePressed", x, y, "left", 1)
+    result = chrome_.DispatchMouseEvent("mouseReleased", x, y, "left", 1)
+End Sub
+
+'Public
+'type=fileのInputBoxへファイル設定
+Private Sub IWebElement_SetFileToFileSelectInputButton(filePath As String)
+'    filePath = Replace(filePath, "\", "\\")
+'    filePath = chrome_.jsonhandler.EncodeURL(filePath)
+'    filePath = Replace(filePath, "%5C", "\")
+'    chrome_.SetFileInputFiles objectId_,
+'CDPMethodで設定しようとしても、ファイルパスに日本語が含まれる場合、
+'エンコードして送信はできるが、クローム側でデコードしてくれない為、没
+    Dim centerXY As Variant
+    centerXY = chrome_.GetBoxModel(objectId_)
+    
+    Dim chromeInterface As IWebDriver: Set chromeInterface = chrome_
+    chromeInterface.ScrollWindow CLng(centerXY(1)) - 50
+    
+    IWebElement_DispatchLeftClickEvent
+    chrome_.SleepByWindowsAPIInner 1000
+    ControlFileSelectDialog filePath
+End Sub
+Private Sub ControlFileSelectDialog(filePath As String)
+    Dim DialogHwnd As LongPtr: DialogHwnd = FindWindow(vbNullString, "開く")
+    Dim InputHwnd As Long
+    InputHwnd = FindWindowEx(DialogHwnd, 0&, "ComboBoxEx32", "")
+    InputHwnd = FindWindowEx(InputHwnd, 0&, "ComboBox", "")
+    InputHwnd = FindWindowEx(InputHwnd, 0&, "Edit", "")
+    Call SendMessage(InputHwnd, &HC, 0, ByVal filePath)
+ 
+    Dim ButtonHwnd As Long
+    ButtonHwnd = FindWindowEx(DialogHwnd, 0&, "Button", "開く(&O)")
+    Call SendMessage(ButtonHwnd, &HF5, 0, 0&)
+End Sub
+
+
 

@@ -130,7 +130,8 @@ End Function
 'マウスイベントをxy座標にディスパッチする。mousePressed, mouseReleased, mouseMoved, mouseWheelのいずれか。
 Public Function DispatchMouseEvent(eventType As String, x As Long, y As Long, _
                                                         button As String, clickCount As Long, _
-                                                        Optional modifiers As Long = 0) As String
+                                                        Optional modifiers As Long = 0, _
+                                                        Optional deltaX As Long = 0, Optional deltaY As Long = 0) As String
     id_ = id_ + 1
     Dim message As String
     message = "{""id"": " & id_ & ",""method"": ""Input.dispatchMouseEvent""," & _
@@ -139,7 +140,13 @@ Public Function DispatchMouseEvent(eventType As String, x As Long, y As Long, _
                                             'none, left, middle, right, back, forwardのいずれか
                                             
     'Alt=1, Ctrl=2, Meta/Command=4, Shift=8
-    If modifiers <> 0 Then message = message & ",""modifiers"": " & modifiers
+    If modifiers <> 0 Then
+        message = message & ",""modifiers"": " & modifiers
+    End If
+    
+    If deltaX <> 0 Or deltaY <> 0 Then
+        message = message & ",""deltaX"": " & deltaX & ",""deltaY"": " & deltaY
+    End If
     
     message = message & "}}"
     DispatchMouseEvent = message
@@ -236,6 +243,19 @@ Public Function GetBoxModel(ObjectId As String) As String
     message = "{""id"": " & id_ & ",""method"": ""DOM.getBoxModel""," & _
                       """params"": {""objectId"":  """ & ObjectId & """}}"
     GetBoxModel = message
+End Function
+
+'ファイル登録インプットボックスへファイルPath登録
+Public Function SetFileInputFiles(ObjectId As Variant, files As String) As String
+    id_ = id_ + 1
+    files = "[""" & files & """]"
+    
+    Dim message As String
+    message = "{""id"": " & id_ & ",""method"": ""DOM.setFileInputFiles""," & _
+                      """params"": " & _
+                     "{""files"": " & files & ",""objectId"": """ & ObjectId & """}}"
+    
+    SetFileInputFiles = message
 End Function
 
 'RunTime Domain*******************************************************************

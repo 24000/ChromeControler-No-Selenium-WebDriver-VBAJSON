@@ -137,7 +137,7 @@ End Function
 
 '************************************************
 
-'ElementId系************************************************
+'DOM(ElementId)系************************************************
 'CDPMethodにないのでJavascript実行
 Private Function GetDocumentObjectID() As String
     Dim responseJson  As String
@@ -176,7 +176,7 @@ Private Function ChangeNodeIdToObjectId(nodeId As Long) As String
 End Function
 '************************************************
 
-'Element情報系************************************************
+'DOM(Element情報)系************************************************
 Private Function GetAttributes(nodeId As Long) As String
     Dim jsonForSending  As String, responseJson As String
     jsonForSending = CDPMethod_.GetAttributes(nodeId)
@@ -224,10 +224,12 @@ End Function
 'マウスイベントをxy座標にディスパッチする。mousePressed, mouseReleased, mouseMoved, mouseWheelのいずれか。
 Public Function DispatchMouseEvent(eventType As String, x As Long, y As Long, _
                                                         button As String, clickCount As Long, _
-                                                        Optional modifiers As Long = 0) As String
+                                                        Optional modifiers As Long = 0, _
+                                                        Optional deltaX As Long = 0, Optional deltaY As Long = 0) As String
                                                         
     Dim jsonForSending  As String, responseJson As String
-    jsonForSending = CDPMethod_.DispatchMouseEvent(eventType, x, y, button, clickCount, modifiers)
+    jsonForSending = CDPMethod_.DispatchMouseEvent(eventType, x, y, button, clickCount, _
+                                                                                    modifiers, deltaX, deltaY)
     responseJson = ProcessMessage(CDPMethod_.id, jsonForSending, jsonHandler_)
 End Function
 
@@ -261,6 +263,12 @@ Public Function GetBoxModel(ObjectId As String) As Variant
     xy(1) = result(1) + (height / 2)
     GetBoxModel = xy
 End Function
+
+Public Sub SetFileInputFiles(ObjectId As Variant, files As String)
+    Dim jsonForSending  As String, responseJson As String
+    jsonForSending = CDPMethod_.SetFileInputFiles(ObjectId, files)
+    responseJson = ProcessMessage(CDPMethod_.id, jsonForSending, jsonHandler_)
+End Sub
 
 Public Sub FindElementByQuerySelector(Selector As String)
     Dim jsonForSending  As String, responseJson As String
@@ -347,7 +355,9 @@ Public Function GetTargetInfo() As String
     responseJson = ProcessMessage(CDPMethod_.id, jsonForSending, jsonHandler_)
 End Function
 
-
+Public Sub SleepByWindowsAPIInner(ms As Long)
+    Sleep ms
+End Sub
 
 
 
@@ -381,6 +391,8 @@ Private Property Get IWebDriver_CurrentURL() As String
         End If
     Next
 End Property
+
+
 
 
 
@@ -878,4 +890,8 @@ End Sub
 
 Private Sub IWebDriver_CloseWindow()
     SessionClose
+End Sub
+
+Private Sub IWebDriver_ScrollWindow(yPixel As Long, Optional xPixel As Long = 0&)
+    DispatchMouseEvent "mouseWheel", 0, 0, "none", 0, 0, xPixel, yPixel
 End Sub

@@ -72,3 +72,7 @@ End Sub
 Public Sub CloseWindow()
     
 End Sub
+
+Public Sub ScrollWindow(yPixel As Long, Optional xPixel As Long = 0)
+
+End Sub

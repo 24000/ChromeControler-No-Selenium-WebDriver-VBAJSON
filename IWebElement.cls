@@ -29,10 +29,6 @@ Public Sub Click()
 
 End Sub
 
-Public Sub DispatchLeftClickEvent()
-
-End Sub
-
 Public Sub SelectItemByText(text As String)
 
 End Sub
@@ -48,3 +44,13 @@ End Function
 Public Function GetTextContent() As String
 
 End Function
+
+Public Sub DispatchLeftClickEvent()
+
+End Sub
+
+Public Sub SetFileToFileSelectInputButton(filePath As String)
+
+End Sub
+
+

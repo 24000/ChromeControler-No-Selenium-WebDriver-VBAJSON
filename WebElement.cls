@@ -138,7 +138,7 @@ Private Sub WaitPageChangeToComplete()
 End Sub
 
 '要素中心のxy座標をクリックシミュレート
-Private Sub IWebElement_SimulateClick()
+Private Sub IWebElement_DispatchLeftClickEvent()
     Dim centerXY As Variant
     centerXY = chrome_.GetBoxModel(objectId_)
     Dim x As Long, y As Long

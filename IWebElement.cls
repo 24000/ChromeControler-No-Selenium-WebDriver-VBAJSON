@@ -29,7 +29,7 @@ Public Sub Click()
 
 End Sub
 
-Public Sub SimulateClick()
+Public Sub DispatchLeftClickEvent()
 
 End Sub
 

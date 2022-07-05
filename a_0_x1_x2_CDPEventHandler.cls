@@ -62,14 +62,16 @@ Public Sub GetInfo(EventInfo As String, chrome As ChromeDriver)
             RemoveTargetInfo EventInfo, chrome.jsonhandler
             
         Case "Page.frameScheduledNavigation" '”ñ„§‚Æ‚È‚Á‚Ä‚¢‚é‚ª‚±‚ê‚ª•Ô‚Á‚Ä‚­‚éB
-            If isCurrentTarget Then IsCurrentTargetScheduledNavigation = True
-            If isIsolatedFrameId Then IsIsolatedFrameScheduledNavigation = True
+            If InStr(EventInfo, "anchorClick") > 0 Then
+                If isCurrentTarget Then IsCurrentTargetScheduledNavigation = True
+                If isIsolatedFrameId Then IsIsolatedFrameScheduledNavigation = True
+            End If
         Case "Page.frameStartedLoading"
             If isCurrentTarget Then IsCurrentTargetStartedLoading = True
             If isIsolatedFrameId Then IsIsolatedFrameStartedLoading = True
-        Case "Page.frameClearedScheduledNavigation" '”ñ„§‚Æ‚È‚Á‚Ä‚¢‚é‚ª‚±‚ê‚ª•Ô‚Á‚Ä‚­‚éB
-            If isCurrentTarget Then IsCurrentTargetClearedScheduledNavigation = True
-            If isIsolatedFrameId Then IsIsolatedFrameClearedScheduledNavigation = True
+'        Case "Page.frameClearedScheduledNavigation" '”ñ„§‚Æ‚È‚Á‚Ä‚¢‚é‚ª‚±‚ê‚ª•Ô‚Á‚Ä‚­‚éB
+'            If isCurrentTarget Then IsCurrentTargetClearedScheduledNavigation = True
+'            If isIsolatedFrameId Then IsIsolatedFrameClearedScheduledNavigation = True
         Case "Page.frameNavigated"
             If isCurrentTarget Then IsCurrentTargetNavigated = True
             If isIsolatedFrameId Then IsIsolatedFrameNavigated = True

@@ -114,8 +114,7 @@ Private Sub IWebElement_Click()
     
 End Sub
 Private Function IsPageChanging() As Boolean
-    '一回無害なメソッドを投げて、イベント発生状況更新
-    chrome_.PageEnable
+    chrome_.PageEnable '一回無害なメソッドを投げて、イベント発生状況更新
     
     If chrome_.CDPEvents.IsCurrentTargetScheduledNavigation _
     Or chrome_.CDPEvents.IsCurrentTargetStartedLoading Then
@@ -128,25 +127,18 @@ Private Sub WaitPageChangeToComplete()
     Dim chromeInterface As IWebDriver
     Set chromeInterface = chrome_
     
-    Dim isEndChange As Boolean
-    Do
-        isEndChange = _
-            chrome_.CDPEvents.IsCurrentTargetClearedScheduledNavigation _
-            Or chrome_.CDPEvents.IsCurrentTargetNavigated
-        If isEndChange Then Exit Do
-        
-        chrome_.PageEnable  '一回無害なメソッドを投げて、イベント発生状況更新
-        chromeInterface.SleepByWindowsAPI 1000
-    Loop While (isEndChange = False)
-    
     'TargetNavigatedは返って来ないケースがある？ので繰り返し回数に制限をかけてループ
     Dim failSafeCounter As Long
-    Do While (chrome_.CDPEvents.IsCurrentTargetNavigated = False _
-                    And failSafeCounter <= 4)
-        chrome_.GetFrameTree '適当なメソッドを投げて、イベント発生状況更新
-        chrome_.PageEnable
+    Dim isEndChange As Boolean
+    Do
+        isEndChange = chrome_.CDPEvents.IsCurrentTargetNavigated
+'                                Or　chrome_.CDPEvents.IsCurrentTargetClearedScheduledNavigation
+        If isEndChange Then Exit Do
+        
+        chrome_.RuntimeEnable
         chromeInterface.SleepByWindowsAPI 1000
-    End If
+        failSafeCounter = failSafeCounter + 1
+    Loop While (isEndChange = False And failSafeCounter <= 5)
     
     chrome_.CDPEvents.IsCurrentTargetScheduledNavigation = False
     chrome_.CDPEvents.IsCurrentTargetStartedLoading = False
@@ -154,8 +146,7 @@ Private Sub WaitPageChangeToComplete()
     chrome_.CDPEvents.IsCurrentTargetNavigated = False
 End Sub
 Private Function IsIsolatedFrameChanging() As Boolean
-    '一回無害なメソッド(frameなのでDOM系)を投げて、イベント発生状況更新
-    chrome_.DOMEnable
+    chrome_.DOMEnable '一回無害なメソッド(frameなのでDOM系)を投げて、イベント発生状況更新
     
     If chrome_.CDPEvents.IsIsolatedFrameScheduledNavigation _
     Or chrome_.CDPEvents.IsIsolatedFrameStartedLoading Then
@@ -168,27 +159,19 @@ Private Sub WaitIsolatedFrameChangeToComplete()
     Dim chromeInterface As IWebDriver
     Set chromeInterface = chrome_
     
-    Dim isEndChange As Boolean
-    Do
-        isEndChange = _
-            chrome_.CDPEvents.IsIsolatedFrameClearedScheduledNavigation _
-            Or chrome_.CDPEvents.IsIsolatedFrameNavigated
-        If isEndChange Then Exit Do
-        
-        chrome_.DOMEnable '一回無害なメソッド(frameなのでDOM系)を投げて、イベント発生状況更新
-        chromeInterface.SleepByWindowsAPI 1000
-    Loop While (isEndChange = False)
-    
     'FrameNavigatedは返って来ないケースがある？ので繰り返し回数に制限をかけてループ
     Dim failSafeCounter As Long
-    Do While (chrome_.CDPEvents.IsIsolatedFrameNavigated = False _
-                    And failSafeCounter <= 4)
-        chrome_.GetFrameTree '適当なメソッド(frameなのframe系とDOM系)を投げて、イベント発生状況更新
+    Dim isEndChange As Boolean
+    Do
+        isEndChange = chrome_.CDPEvents.IsIsolatedFrameNavigated
+'                               Or chrome_.CDPEvents.IsIsolatedFrameClearedScheduledNavigation
+        If isEndChange Then Exit Do
+        
         chrome_.DOMEnable
+        chrome_.RuntimeEnable
         chromeInterface.SleepByWindowsAPI 1000
-        chrome_.ReCreateIsolatedFrameWorld_IfFlagOn
         failSafeCounter = failSafeCounter + 1
-    Loop
+    Loop While (isEndChange = False And failSafeCounter <= 5)
     
     chrome_.CDPEvents.IsIsolatedFrameScheduledNavigation = False
     chrome_.CDPEvents.IsIsolatedFrameStartedLoading = False

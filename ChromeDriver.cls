@@ -842,6 +842,7 @@ Public Sub ReCreateIsolatedFrameWorld_IfFlagOn()
 'event検知がうまくいかないため、一旦DefaultFrame以外の操作継続時には毎回CreateIsolatedFrameWorldする
     If isolatedFrameId_ <> "" Then
         GetFrameTree '一旦無害なメソッドを投げてイベント発生チェック
+        DOMEnable
         executionContextId_ = CreateIsolatedFrameWorld(isolatedFrameId_)
     End If
     

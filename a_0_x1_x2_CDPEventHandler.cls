@@ -40,7 +40,7 @@ Public Sub GetInfo(EventInfo As String, chrome As ChromeDriver)
         If InStr(eventName, "Navigated") = 0 Then
             id = chrome.jsonhandler.GetValueFromJson(EventInfo, Array("params", "frameId"))
         Else
-            id = chrome.jsonhandler.GetValueFromJson(EventInfo, Array("params", "frame", "Id"))
+            id = chrome.jsonhandler.GetValueFromJson(EventInfo, Array("params", "frame", "id"))
         End If
         Dim isCurrentTarget As Boolean
         isCurrentTarget = (id = chrome.TargetId)

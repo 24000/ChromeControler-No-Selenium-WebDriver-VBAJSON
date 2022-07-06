@@ -9,23 +9,23 @@ Attribute VB_PredeclaredId = False
 Attribute VB_Exposed = False
 Option Explicit
 
-Public Property Get CurrentURL() As String
+Public Property Get URL() As String
 
 End Property
 
-Public Sub URLOpen(url As String)
+Public Sub OpenURL(targetURL As String)
 
 End Sub
 
-Public Function ExecuteJavaScript(script As String) As String
+Public Function ExecuteScript(script As String) As String
 
 End Function
 
-Public Function GetElementByXpath(xPath As String) As IWebElement
+Public Function FindElementByXPath(xPath As String) As IWebElement
 
 End Function
 
-Public Function GetElementByName(Name As String) As IWebElement
+Public Function FindElementByName(Name As String) As IWebElement
 
 End Function
 
@@ -45,11 +45,11 @@ Public Function IsExistsElementByXpath(xPath As String) As Boolean
 
 End Function
 
-Public Sub WaitForElementToAppearByXpath(xPath As String, maxWaitTime_sec As Long)
+Public Sub WaitForElementToAppearByXPath(xPath As String, maxWaitTime_sec As Long)
 
 End Sub
 
-Public Sub PushOkButtonOnDialog()
+Public Sub HandleAlertDialog()
 
 End Sub
 
@@ -57,7 +57,7 @@ Public Sub SleepByWindowsAPI(milliSecond As Long)
 
 End Sub
 
-Public Function GetElementsByTagName(tagName As String) As IWebElements
+Public Function FindElementsByTag(tagName As String) As IWebElements
 
 End Function
 

@@ -29,15 +29,15 @@ Public Sub Click()
 
 End Sub
 
-Public Sub SelectItemByText(text As String)
+Public Sub SelectItemInSelectBoxByText(text As String)
 
 End Sub
 
-Public Function GetElementByName(Name As String) As IWebElement
+Public Function FindElementByName(Name As String) As IWebElement
 
 End Function
 
-Public Function GetElementsByTagName(tagName As String) As IWebElements
+Public Function FindElementsByTag(tagName As String) As IWebElements
 
 End Function
 

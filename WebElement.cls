@@ -80,7 +80,7 @@ Private Property Get IWebElement_Checked() As Boolean
     If InStr(responseJson, """type"":""boolean""") = 0 Then GoTo quit
     
     Dim Checked As Boolean
-    Checked = chrome_.jsonhandler.GetValueFromJson(responseJson, Array("result", "result", "value"))
+    Checked = chrome_.Json.GetValueFrom(responseJson, Array("result", "result", "value"))
     IWebElement_Checked = Checked
 Exit Property
 
@@ -187,7 +187,7 @@ Private Sub IWebElement_SetText(text As String)
     chrome_.Focus (objectId_)
     chrome_.DispatchKeyEvent_DOMKeyCode "keyUp", "Enter"
 
-    Dim encodingText As String: encodingText = chrome_.jsonhandler.EncodeURL(text)
+    Dim encodingText As String: encodingText = chrome_.Json.EncodeURL(text)
     chrome_.JavaScritpCallFunction _
     "function(value){" & _
         "value = decodeURI(value);" & _
@@ -199,7 +199,7 @@ End Sub
 'Public
 '要素のTextContentに文字列を設定
 Private Sub IWebElement_SetTextContent(text As String)
-    Dim encodingText As String: encodingText = chrome_.jsonhandler.EncodeURL(text)
+    Dim encodingText As String: encodingText = chrome_.Json.EncodeURL(text)
     chrome_.JavaScritpCallFunction _
     "function(value){" & _
         "value = decodeURI(value);" & _
@@ -210,8 +210,8 @@ End Sub
 
 'Public
 'SelectBoxの選択肢を文字列で選択
-Private Sub IWebElement_SelectItemByText(text As String)
-    Dim encodingText As String: encodingText = chrome_.jsonhandler.EncodeURL(text)
+Private Sub IWebElement_SelectItemInSelectBoxByText(text As String)
+    Dim encodingText As String: encodingText = chrome_.Json.EncodeURL(text)
     Dim javaScriptCode As String
     javaScriptCode = _
     "function(value){value = decodeURI(value);" & _
@@ -230,7 +230,7 @@ Private Sub IWebElement_SelectItemByText(text As String)
     responseJson = chrome_.JavaScritpCallFunction(javaScriptCode, objectId_, encodingText)
     
     Dim IsSelect As Boolean
-    IsSelect = chrome_.jsonhandler.GetValueFromJson(responseJson, Array("result", "result", "value"))
+    IsSelect = chrome_.Json.GetValueFrom(responseJson, Array("result", "result", "value"))
     
     If IsSelect = False Then
         MsgBox "「" & text & "」は選択肢の中に存在しません。" & vbCrLf & _
@@ -260,16 +260,16 @@ End Sub
 
 
 'Public
-Private Function IWebElement_GetElementByName(Name As String) As IWebElement
+Private Function IWebElement_FindElementByName(Name As String) As IWebElement
     Dim functionCode As String, responseJson As String
     functionCode = "function(name){return  this.getElementsByName(name)[0];}"
     responseJson = chrome_.JavaScritpCallFunction(functionCode, objectId_, Name)
     
     Dim findObjectId As String
-    findObjectId = chrome_.jsonhandler.GetValueFromJson( _
+    findObjectId = chrome_.Json.GetValueFrom( _
                             responseJson, Array("result", "result", "objectId"))
     If findObjectId = "" Then GoTo quit
-    Set IWebElement_GetElementByName = chrome_.MakeElementObject(findObjectId)
+    Set IWebElement_FindElementByName = chrome_.MakeElementObject(findObjectId)
 Exit Function
 
 quit:
@@ -277,7 +277,7 @@ chrome_.DisplayErrorAndEnd "指定された以下Nameの要素は存在しませんでした。" & vb
 End Function
 
 'Public
-Private Function IWebElement_GetElementsByTagName(tagName As String) As IWebElements
+Private Function IWebElement_FindElementsByTag(tagName As String) As IWebElements
     Dim elemsCount As Long
     elemsCount = GetElementsCount(tagName)
     If elemsCount = 0 Then GoTo quit
@@ -291,7 +291,7 @@ Private Function IWebElement_GetElementsByTagName(tagName As String) As IWebElem
     Dim elems As WebElements: Set elems = New WebElements
     elems.Init elements
     
-    Set IWebElement_GetElementsByTagName = elems
+    Set IWebElement_FindElementsByTag = elems
 Exit Function
 quit:
 chrome_.DisplayErrorAndEnd "指定された以下TagNameの要素は存在しませんでした。" & vbCrLf & tagName
@@ -301,7 +301,7 @@ Private Function GetElementsCount(tagName As String) As Long
     javaScriptCode = _
     "function(tagName){return  this.getElementsByTagName('" & tagName & "').length;}"
     responseJson = chrome_.JavaScritpCallFunction(javaScriptCode, objectId_, tagName)
-    GetElementsCount = chrome_.jsonhandler.GetValueFromJson(responseJson, Array("result", "result", "value"))
+    GetElementsCount = chrome_.Json.GetValueFrom(responseJson, Array("result", "result", "value"))
 End Function
 Private Function CreateElementsItemByIndex(tagName As String, index As Long) As IWebElement
     Dim javaScriptCode As String, responseJson As String
@@ -312,7 +312,7 @@ Private Function CreateElementsItemByIndex(tagName As String, index As Long) As 
     "function(tagName){return  this.getElementsByTagName(tagName)[" & index & "];}"
     responseJson = chrome_.JavaScritpCallFunction(javaScriptCode, objectId_, tagName)
 
-    ObjectId = chrome_.jsonhandler.GetValueFromJson(responseJson, Array("result", "result", "objectId"))
+    ObjectId = chrome_.Json.GetValueFrom(responseJson, Array("result", "result", "objectId"))
     Set CreateElementsItemByIndex = chrome_.MakeElementObject(ObjectId)
 End Function
 
@@ -323,7 +323,7 @@ Private Function IWebElement_GetTextContent() As String
     responseJson = chrome_.JavaScritpCallFunction(javaScriptCode, objectId_, "")
     
     Dim text As String
-    text = chrome_.jsonhandler.GetValueFromJson(responseJson, Array("result", "result", "value"))
+    text = chrome_.Json.GetValueFrom(responseJson, Array("result", "result", "value"))
     IWebElement_GetTextContent = text
 End Function
 
@@ -348,7 +348,7 @@ End Sub
 'type=fileのInputBoxへファイル設定
 Private Sub IWebElement_SetFileToFileSelectInputButton(filePath As String)
 '    filePath = Replace(filePath, "\", "\\")
-'    filePath = chrome_.jsonhandler.EncodeURL(filePath)
+'    filePath = chrome_.Json.EncodeURL(filePath)
 '    filePath = Replace(filePath, "%5C", "\")
 '    chrome_.SetFileInputFiles objectId_,
 'CDPMethodで設定しようとしても、ファイルパスに日本語が含まれる場合、

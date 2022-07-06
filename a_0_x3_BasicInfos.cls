@@ -34,13 +34,13 @@ Public Property Get ResourcePath() As String
     ResourcePath = RESOURCE_PATH
 End Property
 
-Public Sub Init(jsonhandler As a_0_x4_JSONHandler)
+Public Sub Init(Json As a_0_x4_JSONHandler)
     TargetInfoJSON = GetTragetInfoJSON
     
-    WebSocketURL = jsonhandler.GetValueFromJson( _
+    WebSocketURL = Json.GetValueFrom( _
                                 TargetInfoJSON, Array(0, KEY_WEBSOCKETURL))
                                 
-    TargetId = jsonhandler.GetValueFromJson(TargetInfoJSON, Array(0, "id"))
+    TargetId = Json.GetValueFrom(TargetInfoJSON, Array(0, "id"))
     
     PageDefaultTargetId = TargetId
     
@@ -60,23 +60,23 @@ Private Function GetTragetInfoJSON() As String
 End Function
 
 
-Public Function Update(newTargetId As String, jsonhandler As a_0_x4_JSONHandler, _
+Public Function Update(newTargetId As String, Json As a_0_x4_JSONHandler, _
                                     isPageSwitch As Boolean) As Collection
     If isPageSwitch Then PageDefaultTargetId = newTargetId
     
     TargetId = newTargetId
     TargetInfoJSON = GetTragetInfoJSON
-    WebSocketURL = GetWebSocketDebuggerUrl(jsonhandler)
+    WebSocketURL = GetWebSocketDebuggerUrl(Json)
     WebSocketUrlPath = Replace(WebSocketURL, WEBSOCKET_SCHEMA & HOST_ & ":" & DEBUGGING_PORT, "")
     Context = Replace(WebSocketUrlPath, TargetId, "")
 End Function
 
-Private Function GetWebSocketDebuggerUrl(jsonhandler As a_0_x4_JSONHandler) As String
+Private Function GetWebSocketDebuggerUrl(Json As a_0_x4_JSONHandler) As String
     Dim collect As Collection: Set collect = New Collection
     Dim targetInfo As String
     Dim Count As Long
     Do
-        targetInfo = jsonhandler.GetObjectFromJson(TargetInfoJSON, Array(Count))
+        targetInfo = Json.GetObjectFrom(TargetInfoJSON, Array(Count))
         If targetInfo = "" Then Exit Do
         collect.add targetInfo
         Count = Count + 1
@@ -85,11 +85,11 @@ Private Function GetWebSocketDebuggerUrl(jsonhandler As a_0_x4_JSONHandler) As S
     Dim i As Long
     Dim targetType As String, id As String
     For i = 1 To collect.Count
-            targetType = jsonhandler.GetValueFromJson(collect(i), Array("type"))
+            targetType = Json.GetValueFrom(collect(i), Array("type"))
             If targetType <> "page" Then GoTo next_
-            id = jsonhandler.GetValueFromJson(collect(i), Array("id"))
+            id = Json.GetValueFrom(collect(i), Array("id"))
             If id <> TargetId Then GoTo next_
-            GetWebSocketDebuggerUrl = jsonhandler.GetValueFromJson(collect(i), Array(KEY_WEBSOCKETURL))
+            GetWebSocketDebuggerUrl = Json.GetValueFrom(collect(i), Array(KEY_WEBSOCKETURL))
             Exit Function
 next_:
     Next

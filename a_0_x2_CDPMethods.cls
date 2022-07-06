@@ -83,20 +83,20 @@ End Function
 '*******************************************************************
 
 'PageDomain*******************************************************************
-Public Function URLOpen(url As String) As String
+Public Function URLOpen(URL As String) As String
     id_ = id_ + 1
     Dim message As String
     message = "{""id"": " & id_ & ",""method"": ""Page.navigate""," & _
-                      """params"": {""url"": """ & url & """}}"
+                      """params"": {""url"": """ & URL & """}}"
     URLOpen = message
 End Function
 
-Public Function handleJavaScriptDialog() As String
+Public Function HandleJavaScriptDialog() As String
     id_ = id_ + 1
     Dim message As String
     message = "{""id"": " & id_ & ",""method"": ""Page.handleJavaScriptDialog""," & _
                      """params"": {""accept"": true}}"
-    handleJavaScriptDialog = message
+    HandleJavaScriptDialog = message
 End Function
 
 Public Function GetFrameTree() As String
@@ -175,7 +175,7 @@ Public Function GetDocumentID() As String
     id_ = id_ + 1
     Dim message As String
     message = "{""id"": " & id_ & ",""method"": ""DOM.getDocument""," & _
-                     """params"": {""depth"": " & -1 & "}}"
+                     """params"": {""depth"": " & 1 & "}}"
     GetDocumentID = message
 End Function
 
@@ -220,10 +220,10 @@ Public Function DescribeNode(id As Variant) As Variant
     Dim message As String
     If IsNumeric(id) Then
         message = "{""id"": " & id_ & ",""method"": ""DOM.describeNode""," & _
-                          """params"": {""nodeId"":  " & id & ",""depth"": -1,""pierce"": true}}"
+                          """params"": {""nodeId"":  " & id & ",""depth"": 1,""pierce"": false}}"
     Else
         message = "{""id"": " & id_ & ",""method"": ""DOM.describeNode""," & _
-                         """params"": {""objectId"":  """ & id & """,""depth"": -1,""pierce"": true}}"
+                         """params"": {""objectId"":  """ & id & """,""depth"": 1,""pierce"": false}}"
     End If
     DescribeNode = message
 End Function

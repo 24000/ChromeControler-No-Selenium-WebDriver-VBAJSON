@@ -76,3 +76,7 @@ End Sub
 Public Sub ScrollWindow(yPixel As Long, Optional xPixel As Long = 0)
 
 End Sub
+
+Public Sub SetForeGroundWindow()
+
+End Sub

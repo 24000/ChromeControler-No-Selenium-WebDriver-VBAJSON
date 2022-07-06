@@ -12,6 +12,17 @@ Implements IWebDriver
 
 Private Declare PtrSafe Sub Sleep Lib "kernel32" (ByVal ms As LongPtr)
 
+Private Declare PtrSafe Function FindWindow Lib "User32" Alias "FindWindowA" ( _
+        ByVal lpClassName As String, ByVal lpWindowName As String) As Long
+Private Const CLASS_NAME As String = "Chrome_WidgetWin_1"
+Private Const CAPTION_NAME As String = "data:, - Google Chrome"
+
+Private Declare PtrSafe Function GetWindowThreadProcessId Lib "user32.dll" ( _
+        ByVal hwnd As LongPtr, ByRef ProcessId As Long) As Long
+
+Private Declare PtrSafe Sub SetForeGroundWindow Lib "User32" Alias "SetForegroundWindow" (ByVal ms As LongPtr)
+
+Private Const CHROME_EXE_REG_KEY As String = "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\App Paths\chrome.exe\"
 Private Const CHROME_EXE As String = """chrome.exe"""
 Private Const DEBUG_MODE_OPTION As String = " --remote-debugging-Port=9222"
 Private Const USER_DATA_DIR_OPTION As String = " --user-data-dir="
@@ -24,6 +35,9 @@ Private CDPMethod_ As a_0_x2_CDPMethods
 Private json_ As a_0_x4_JSONHandler
 Private basicInfo_ As a_0_x3_BasicInfos
 Private events_ As a_0_x1_x2_CDPEventHandler
+
+Private processId_ As Long
+Private chromeHwnd_ As LongPtr
 
 Public documentNodeId_ As Long
 Public documentObjectId_ As String
@@ -60,14 +74,11 @@ End Property
 Private Sub Class_Initialize()
     
     userDataDir = ThisWorkbook.Path & "\マクロ実行で作成されるフォルダ_削除OK\"
-    If Dir(userDataDir, vbDirectory) = "" Then
-        MkDir userDataDir
-    End If
+    If Dir(userDataDir, vbDirectory) = "" Then MkDir userDataDir
     
-    CreateObject("WScript.Shell").Run _
-        CHROME_EXE & DEBUG_MODE_OPTION & ENABLE_AUTOMATION_OPTION _
-                              & USER_DATA_DIR_OPTION & "" & userDataDir & ""
-    Sleep 2000
+    processId_ = StartChrome
+    '検証したところ、複数Chromeが立ち上がっていても最新のWindowHandleが返ってくる模様。これで一旦問題なしか？
+    chromeHwnd_ = FindWindow(CLASS_NAME, vbNullString)
     
     Set json_ = New a_0_x4_JSONHandler
     Set basicInfo_ = New a_0_x3_BasicInfos: basicInfo_.Init json_
@@ -79,8 +90,21 @@ Private Sub Class_Initialize()
     
     SetDiscoverTargets
     AttachToTarget basicInfo_.TargetId
-    
 End Sub
+
+Private Function StartChrome() As Long
+    Dim chromeExe As String
+    Dim objExec As Object
+    With CreateObject("WScript.Shell")
+        chromeExe = """" & .RegRead(CHROME_EXE_REG_KEY) & """"
+        Set objExec = .Exec( _
+                            chromeExe & DEBUG_MODE_OPTION & ENABLE_AUTOMATION_OPTION _
+                            & USER_DATA_DIR_OPTION & "" & userDataDir & "")
+        StartChrome = objExec.ProcessId
+        Set objExec = Nothing
+    End With
+    Sleep 2000
+End Function
 
 'message処理送信＆受信
 '受信時には、送信に対する受信ではなく、クロームからのイベント通知を受信する場合あり。
@@ -353,6 +377,8 @@ End Function
 Public Sub SleepByWindowsAPIInner(ms As Long)
     Sleep ms
 End Sub
+
+
 
 
 
@@ -896,4 +922,8 @@ End Sub
 
 Private Sub IWebDriver_ScrollWindow(yPixel As Long, Optional xPixel As Long = 0&)
     DispatchMouseEvent "mouseWheel", 0, 0, "none", 0, 0, xPixel, yPixel
+End Sub
+
+Private Sub IWebDriver_SetForeGroundWindow()
+    SetForeGroundWindow chromeHwnd_
 End Sub

@@ -10,14 +10,14 @@ Attribute VB_Exposed = False
 Option Explicit
 Implements IWebElement
 
-Private Declare PtrSafe Function FindWindow Lib "user32" Alias "FindWindowA" ( _
+Private Declare PtrSafe Function FindWindow Lib "User32" Alias "FindWindowA" ( _
         ByVal lpClassName As String, ByVal lpWindowName As String) As Long
         
-Private Declare PtrSafe Function FindWindowEx Lib "user32" Alias "FindWindowExA" ( _
-        ByVal hwndParent As LongPtr, ByVal hwndChildAfter As LongPtr, _
+Private Declare PtrSafe Function FindWindowEx Lib "User32" Alias "FindWindowExA" ( _
+        ByVal hWndParent As LongPtr, ByVal hwndChildAfter As LongPtr, _
         ByVal lpClassName As String, ByVal lpWindowName As String) As Long
         
-Private Declare PtrSafe Function SendMessage Lib "user32" Alias "SendMessageA" ( _
+Private Declare PtrSafe Function SendMessage Lib "User32" Alias "SendMessageA" ( _
         ByVal hwnd As Long, ByVal wMsg As Long, _
         ByVal wParam As Long, lParam As Any) As LongPtr
 
@@ -88,6 +88,26 @@ quit:
 chrome_.DisplayErrorAndEnd "このElementはCheckedを持ちません。" & vbCrLf & _
                                             "※CheckedはCheckBoxで使用可能"
 End Property
+
+'Public
+'要素の状態(有効or無効)を取得
+Private Property Get IWebElement_IsEnabled() As Boolean
+    Dim responseJson As String
+    responseJson = chrome_.JavaScritpCallFunction( _
+        "function(value){return this.disabled;}", objectId_, "")
+    If InStr(responseJson, """type"":""boolean""") = 0 Then GoTo quit
+    
+    Dim Enabled As Boolean
+    Enabled = chrome_.Json.GetValueFrom(responseJson, Array("result", "result", "value"))
+    IWebElement_IsEnabled = Not Enabled
+Exit Property
+    
+quit:
+chrome_.DisplayErrorAndEnd "このElementはEnabledを持ちません。" & vbCrLf & _
+                                            "※EnabledはCheckBoxで使用可能"
+End Property
+
+
 
 'Public
 'javaScriptによってクリック実行
@@ -178,6 +198,8 @@ Private Sub WaitIsolatedFrameChangeToComplete()
     chrome_.CDPEvents.IsIsolatedFrameClearedScheduledNavigation = False
     chrome_.CDPEvents.IsIsolatedFrameNavigated = False
 End Sub
+
+
 
 
 

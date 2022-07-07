@@ -16,6 +16,10 @@ Public Property Let Checked(bool As Boolean)
 
 End Property
 
+Public Property Get IsEnabled() As Boolean
+
+End Property
+
 
 Public Sub SetText(text As String)
 

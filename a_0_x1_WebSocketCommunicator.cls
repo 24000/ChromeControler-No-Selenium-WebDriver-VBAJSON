@@ -57,7 +57,7 @@ Private Declare PtrSafe Function WinHttpWebSocketQueryCloseStatus Lib "WinHttp" 
    ) As Long
    
 'Websocket受信に使用(自作構造体)
-Private Type Response
+Private Type response
     Buffer(32767) As Byte   '第1引数　'fragment発生時に戻ってくるbyteとして32768が最大の模様
     BufferLength As Long    '第2引数
     ReceiveBytes As Long    '第3引数
@@ -84,7 +84,6 @@ End Function
 'クロームへメッセージ送信
 Public Function SendMessage(message As String) As Boolean
 
-    Debug.Print "送信内容：" & message
     message = StrConv(message, vbFromUnicode)
     Dim ary() As Byte: ary = message
     Dim messageByteSize As Long: messageByteSize = LenB(message)
@@ -103,7 +102,7 @@ End Function
 
 'クロームからのレスポンス(JSON)受信
 Public Function GetMessage() As String
-    Dim res As Response
+    Dim res As response
     InitializeBuffer res.Buffer, res.CurrentPointer, res.BufferLength
     Set res.collect = New Collection
 
@@ -116,7 +115,6 @@ Public Function GetMessage() As String
         If res.Status = WINHTTP_WEB_SOCKET_UTF8_MESSAGE_BUFFER_TYPE Then
             res.collect.add res.Buffer
             GetMessage = MakeResponseMessage(res.collect)
-            Debug.Print "受信：" & GetMessage
             Exit Function
         End If
         

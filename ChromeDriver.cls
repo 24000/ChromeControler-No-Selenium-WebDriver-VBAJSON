@@ -112,7 +112,8 @@ End Function
 '補足:送信自体は成功しても、送信したJsonに不備がある場合も、responsにidが含まれない。
 Public Function ProcessMessage( _
     sendId As Long, sendMsg As String, Json As a_0_x4_JSONHandler) As String
-
+    
+    Debug.Print vbCrLf & ">>>>>>" & "送信内容：" & sendMsg
     If webSocket_.SendMessage(sendMsg) = False Then GoTo quit
 
     Dim response As String, responseId As Variant
@@ -135,6 +136,7 @@ Public Function ProcessMessage( _
                 GoTo quit
             End If
         End If
+    Debug.Print "受信：" & response
     Loop While (sendId <> responseId)
     
     ProcessMessage = response
@@ -181,9 +183,9 @@ Private Function GetDocumentNodeID() As Long
     GetDocumentNodeID = documentNodeId_
 End Function
 
-Private Function ChangeObjectIdToNodeId(ObjectId As String) As String
+Private Function ChangeObjectIdToNodeId(objectId As String) As String
     Dim sendMsg  As String, responseMsg As String
-    sendMsg = CDPMethod_.RequestNode(ObjectId)
+    sendMsg = CDPMethod_.RequestNode(objectId)
     responseMsg = ProcessMessage(CDPMethod_.id, sendMsg, json_)
     ChangeObjectIdToNodeId = json_.GetValueFrom(responseMsg, Array("result", "nodeId"))
 End Function
@@ -226,9 +228,9 @@ Private Function ExecuteJavaScript_Inner(script As String) As String
 End Function
 
 'JavaScript_Function実行
-Public Function JavaScritpCallFunction(funcName As String, ObjectId As Variant, args As Variant) As String
+Public Function JavaScritpCallFunction(funcName As String, objectId As Variant, args As Variant) As String
     Dim sendMsg  As String
-    sendMsg = CDPMethod_.JavaScritpCallFunction(funcName, ObjectId, args)
+    sendMsg = CDPMethod_.JavaScritpCallFunction(funcName, objectId, args)
     JavaScritpCallFunction = ProcessMessage(CDPMethod_.id, sendMsg, json_)
 End Function
 '************************************************
@@ -261,15 +263,15 @@ Public Sub DOMEnable()
     responseMsg = ProcessMessage(CDPMethod_.id, sendMsg, json_)
 End Sub
 
-Public Sub Focus(ObjectId As String)
+Public Sub Focus(objectId As String)
     Dim sendMsg  As String, responseMsg As String
-    sendMsg = CDPMethod_.Focus(ObjectId)
+    sendMsg = CDPMethod_.Focus(objectId)
     responseMsg = ProcessMessage(CDPMethod_.id, sendMsg, json_)
 End Sub
 
-Public Function GetBoxModel(ObjectId As String) As Variant
+Public Function GetBoxModel(objectId As String) As Variant
     Dim sendMsg  As String, responseMsg As String
-    sendMsg = CDPMethod_.GetBoxModel(ObjectId)
+    sendMsg = CDPMethod_.GetBoxModel(objectId)
     responseMsg = ProcessMessage(CDPMethod_.id, sendMsg, json_)
     Dim result As Variant
     result = json_.GetValueFrom(responseMsg, Array("result", "model", "content"))
@@ -283,9 +285,9 @@ Public Function GetBoxModel(ObjectId As String) As Variant
     GetBoxModel = xy
 End Function
 
-Public Sub SetFileInputFiles(ObjectId As Variant, files As String)
+Public Sub SetFileInputFiles(objectId As Variant, files As String)
     Dim sendMsg  As String, responseMsg As String
-    sendMsg = CDPMethod_.SetFileInputFiles(ObjectId, files)
+    sendMsg = CDPMethod_.SetFileInputFiles(objectId, files)
     responseMsg = ProcessMessage(CDPMethod_.id, sendMsg, json_)
 End Sub
 
@@ -335,7 +337,7 @@ Public Function CreateIsolatedFrameWorld(FrameId As String) As Long
     Else
         CreateIsolatedFrameWorld = _
             json_.GetValueFrom(responseMsg, Array("result", "executionContextId"))
-        Sleep 1000
+        Sleep 200
     End If
 End Function
 
@@ -463,52 +465,56 @@ End Function
 'Public
 '第1引数で指定されるXpathの要素を取得し、エレメントObjectとして返却
 Private Function IWebDriver_FindElementByXpath(xPath As String) As IWebElement
-    ReCreateIsolatedFrameWorld
     
     If InStr(xPath, """") > 0 Then xPath = Replace(xPath, """", "\""")
     
-    Dim scriptCode As String, functionCode As String
+    Dim scriptCode As String, FunctionCode As String
     scriptCode = "document.evaluate('" & xPath & "', document, null, " & _
                         "XPathResult.FIRST_ORDERED_NODE_TYPE, null ).singleNodeValue;"
-    functionCode = "function(xpath){return  document.evaluate(xpath, document, null, " & _
+    FunctionCode = "function(xpath){return  document.evaluate(xpath, document, null, " & _
                             "XPathResult.FIRST_ORDERED_NODE_TYPE, null ).singleNodeValue;}"
             
-    Dim ObjectId As String
-    ObjectId = GetObjectIdOfElementBy(xPath, scriptCode, functionCode)
-    If ObjectId = "" Then GoTo quit
-    Set IWebDriver_FindElementByXpath = MakeElementObject(ObjectId)
+    Dim objectId As String
+    objectId = GetObjectIdOfElementBy(xPath, scriptCode, FunctionCode)
+    If objectId = "" Then GoTo quit
+    Set IWebDriver_FindElementByXpath = MakeElementObject(objectId)
 Exit Function
 
 quit:
 DisplayErrorAndEnd "＜FindElementByXpath＞" & vbCrLf & _
                                 "指定された以下Xpathの要素は存在しませんでした。" & vbCrLf & _
                                 xPath & vbCrLf & vbCrLf & _
-                                "※引数のXPathにはChromeの検証ツールで「完全なXPath」を" & vbCrLf & _
-                                "　 コピペしたものを指定してください。" & vbCrLf & vbCrLf & _
-                                "※要素の出現前に取得しようとすると失敗します。" & vbCrLf & _
+                                "※引数のXPathにはChromeの検証ツールで「完全なXPath」が" & vbCrLf & _
+                                "　 コピペできるので、それを指定してください。" & vbCrLf & vbCrLf & _
+                                "※XPathが正しくとも要素の出現前に取得しようとすると失敗します。" & vbCrLf & _
                                 "　 必要であればWaitForElementToAppearByXpathで" & vbCrLf & _
                                 "　 要素の出現を確認する処理を入れましょう。" & vbCrLf
 End Function
 'Xpathで要素を探し、オブジェクトIDを返す
-Private Function GetObjectIdOfElementBy(way As String, scriptCode As String, functionCode As String) As String
+Private Function GetObjectIdOfElementBy(way As String, scriptCode As String, FunctionCode As String) As String
     Dim responseMsg As String
     If executionContextId_ = 0 Then
         responseMsg = ExecuteJavaScript_Inner(scriptCode)
     Else
-        responseMsg = JavaScritpCallFunction(functionCode, executionContextId_, way)
+        responseMsg = JavaScritpCallFunction(FunctionCode, executionContextId_, way)
+        If InStr(responseMsg, "Cannot find context with specified id") > 0 Then
+            ReCreateIsolatedFrameWorld
+            responseMsg = JavaScritpCallFunction(FunctionCode, executionContextId_, way)
+        End If
     End If
     
     GetObjectIdOfElementBy = _
         json_.GetValueFrom(responseMsg, Array("result", "result", "objectId"))
 End Function
 'エレメントを作成し、戻り値として返却
-Public Function MakeElementObject(ObjectId As String) As IWebElement
+'エレメント内容：ObjectId,NodeId,Attributes(辞書),フレームの場合のみframeId追加
+Public Function MakeElementObject(objectId As String) As IWebElement
     
     Dim nodeId As Long
-    nodeId = ChangeObjectIdToNodeId(ObjectId)
+    nodeId = ChangeObjectIdToNodeId(objectId)
     
     Dim info  As String
-    info = DescribeNode(ObjectId)
+    info = DescribeNode(objectId)
     If InStr(info, "attributes") > 0 Then
         Dim attributes As Object
         Set attributes = MakeAttributesDic( _
@@ -521,9 +527,10 @@ Public Function MakeElementObject(ObjectId As String) As IWebElement
     
     
     Dim element As WebElement: Set element = New WebElement
-    element.Init Me, ObjectId, nodeId, attributes, FrameId
+    element.Init Me, objectId, nodeId, attributes, FrameId
     Set MakeElementObject = element
 End Function
+'elementの属性情報を辞書にして返す。
 Private Function MakeAttributesDic(attributes As String) As Object
     Dim ary As Variant: ary = Split(attributes, ",")
     Dim attributesDic As Object: Set attributesDic = CreateObject("Scripting.Dictionary")
@@ -538,16 +545,15 @@ End Function
 
 'Public
 Private Function IWebDriver_FindElementByName(Name As String) As IWebElement
-    ReCreateIsolatedFrameWorld
     
-    Dim scriptCode As String, functionCode As String
+    Dim scriptCode As String, FunctionCode As String
     scriptCode = "document.getElementsByName('" & Name & "')[0];"
-    functionCode = "function(name){return  document.getElementsByName(name)[0];}"
+    FunctionCode = "function(name){return  document.getElementsByName(name)[0];}"
     
-    Dim ObjectId As String
-    ObjectId = GetObjectIdOfElementBy(Name, scriptCode, functionCode)
-    If ObjectId = "" Then GoTo quit
-    Set IWebDriver_FindElementByName = MakeElementObject(ObjectId)
+    Dim objectId As String
+    objectId = GetObjectIdOfElementBy(Name, scriptCode, FunctionCode)
+    If objectId = "" Then GoTo quit
+    Set IWebDriver_FindElementByName = MakeElementObject(objectId)
 Exit Function
 
 quit:
@@ -560,16 +566,23 @@ DisplayErrorAndEnd "＜FindElementByName＞" & vbCrLf & _
 End Function
 
 'Public
+'tag名で要素コレクションを取得（要素グループのLengthを取得し、Length分要素作成ループ）
 Private Function IWebDriver_FindElementsByTag(tagName As String) As IWebElements
-    
+    Dim scriptCode As String, FunctionCode As String
+    scriptCode = "document.getElementsByTagName('" & tagName & "').length;"
+    FunctionCode = "function(tagName){return  document.getElementsByTagName('" & tagName & "').length;}"
     Dim elemsCount As Long
-    elemsCount = GetElementsCount(tagName)
+    elemsCount = GetElementsCountBy(tagName, scriptCode, FunctionCode)
     If elemsCount = 0 Then GoTo quit
     
     Dim elements As Collection: Set elements = New Collection
+    Dim objectId As String
     Dim index As Long
     For index = 0 To elemsCount - 1
-        elements.add CreateElementsItemByIndex(tagName, index)
+        scriptCode = "document.getElementsByTagName('" & tagName & "')[" & index & "];"
+        FunctionCode = "function(tagName){return  document.getElementsByTagName(tagName)[" & index & "];}"
+        objectId = GetObjectIdOfElementBy(tagName, scriptCode, FunctionCode)
+        elements.add MakeElementObject(objectId)
     Next
     
     Dim elems As WebElements: Set elems = New WebElements
@@ -587,34 +600,18 @@ DisplayErrorAndEnd "＜FindElementsByTag＞" & vbCrLf & _
                                 "　 要素の出現を確認する処理を入れましょう。" & vbCrLf
 End Function
 
-Private Function GetElementsCount(tagName As String) As Long
-    Dim javaScriptCode As String, responseMsg As String
+Private Function GetElementsCountBy(way As String, scriptCode As String, FunctionCode As String) As Long
+    Dim responseMsg As String
     If executionContextId_ = 0 Then
-        javaScriptCode = "document.getElementsByTagName('" & tagName & "').length;"
-        responseMsg = ExecuteJavaScript_Inner(javaScriptCode)
+        responseMsg = ExecuteJavaScript_Inner(scriptCode)
     Else
-        javaScriptCode = _
-        "function(tagName){return  document.getElementsByTagName('" & tagName & "').length;}"
-        responseMsg = JavaScritpCallFunction(javaScriptCode, executionContextId_, tagName)
+        responseMsg = JavaScritpCallFunction(FunctionCode, executionContextId_, way)
+        If InStr(responseMsg, "Cannot find context with specified id") > 0 Then
+            ReCreateIsolatedFrameWorld
+            responseMsg = JavaScritpCallFunction(FunctionCode, executionContextId_, way)
+        End If
     End If
-    GetElementsCount = json_.GetValueFrom(responseMsg, Array("result", "result", "value"))
-End Function
-
-Private Function CreateElementsItemByIndex(tagName As String, index As Long) As IWebElement
-    Dim javaScriptCode As String, responseMsg As String
-    Dim ObjectId As String
-    Dim elem As IWebElement
-    
-    If executionContextId_ = 0 Then
-        javaScriptCode = "document.getElementsByTagName('" & tagName & "')[" & index & "];"
-        responseMsg = ExecuteJavaScript_Inner(javaScriptCode)
-    Else
-        javaScriptCode = _
-        "function(tagName){return  document.getElementsByTagName(tagName)[" & index & "];}"
-        responseMsg = JavaScritpCallFunction(javaScriptCode, executionContextId_, tagName)
-    End If
-    ObjectId = json_.GetValueFrom(responseMsg, Array("result", "result", "objectId"))
-    Set CreateElementsItemByIndex = MakeElementObject(ObjectId)
+    GetElementsCountBy = json_.GetValueFrom(responseMsg, Array("result", "result", "value"))
 End Function
 
 
@@ -810,16 +807,15 @@ End Sub
 'Public
 '第1引数で指定されるXpathの要素有無の確認
 Private Function IWebDriver_IsExistsElementByXpath(xPath As String) As Boolean
-    ReCreateIsolatedFrameWorld
     
-    Dim scriptCode As String, functionCode As String
+    Dim scriptCode As String, FunctionCode As String
     scriptCode = "document.evaluate('" & xPath & "', document, null, " & _
                         "XPathResult.FIRST_ORDERED_NODE_TYPE, null ).singleNodeValue;"
-    functionCode = "function(xpath){return  document.evaluate(xpath, document, null, " & _
+    FunctionCode = "function(xpath){return  document.evaluate(xpath, document, null, " & _
                             "XPathResult.FIRST_ORDERED_NODE_TYPE, null ).singleNodeValue;}"
-    Dim ObjectId As String
-    ObjectId = GetObjectIdOfElementBy(xPath, scriptCode, functionCode)
-    If ObjectId = "" Then
+    Dim objectId As String
+    objectId = GetObjectIdOfElementBy(xPath, scriptCode, FunctionCode)
+    If objectId = "" Then
         IWebDriver_IsExistsElementByXpath = False
     Else
         IWebDriver_IsExistsElementByXpath = True
@@ -839,7 +835,6 @@ Private Sub IWebDriver_WaitForElementToAppearByXpath(xPath As String, maxWaitTim
                                          "秒経過しても、指定の以下要素は現れませんでした。" & vbCrLf & _
                                           xPath
         End If
-        ReCreateIsolatedFrameWorld
         DoEvents: Sleep 500
     Loop
 End Sub
@@ -890,8 +885,6 @@ End Sub
 'IWebDriver_GetElementsByTagName
 Public Sub ReCreateIsolatedFrameWorld()
     If isolatedFrameId_ <> "" Then
-        GetFrameTree '一旦無害なメソッドを投げてイベント発生チェック
-        DOMEnable
         executionContextId_ = CreateIsolatedFrameWorld(isolatedFrameId_)
     End If
 End Sub

@@ -64,18 +64,26 @@ Public Sub GetInfo(EventInfo As String, chrome As ChromeDriver)
         Case "Page.frameScheduledNavigation" '非推奨となっているがこれが返ってくる。
             If InStr(EventInfo, "anchorClick") > 0 Then
                 If isCurrentTarget Then IsCurrentTargetScheduledNavigation = True
-                If isIsolatedFrameId Then IsIsolatedFrameScheduledNavigation = True
+                If isIsolatedFrameId Then
+                    IsIsolatedFrameScheduledNavigation = True
+                    Debug.Print "★★IsolatedFrameScheduledNavigation"
+                End If
             End If
         Case "Page.frameStartedLoading"
             If isCurrentTarget Then IsCurrentTargetStartedLoading = True
-            If isIsolatedFrameId Then IsIsolatedFrameStartedLoading = True
+            If isIsolatedFrameId Then
+                IsIsolatedFrameStartedLoading = True
+                chrome.SleepByWindowsAPIInner 1000
+            End If
 '        Case "Page.frameClearedScheduledNavigation" '非推奨となっているがこれが返ってくる。
 '            If isCurrentTarget Then IsCurrentTargetClearedScheduledNavigation = True
 '            If isIsolatedFrameId Then IsIsolatedFrameClearedScheduledNavigation = True
         Case "Page.frameNavigated"
             If isCurrentTarget Then IsCurrentTargetNavigated = True
-            If isIsolatedFrameId Then IsIsolatedFrameNavigated = True
-            
+            If isIsolatedFrameId Then
+                IsIsolatedFrameNavigated = True
+                Debug.Print "★★IsolatedFrameNavigated"
+            End If
     End Select
 End Sub
 'アラートダイアログ出現時に情報を取得

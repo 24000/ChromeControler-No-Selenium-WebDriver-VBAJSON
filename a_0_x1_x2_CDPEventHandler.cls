@@ -51,9 +51,10 @@ Public Sub GetInfo(EventInfo As String, chrome As ChromeDriver)
     Select Case eventName
         Case "Page.javascriptDialogOpening"
             SetDialogInfo EventInfo, chrome.Json
+            Debug.Print "ššDialogOpening"
         Case "Page.javascriptDialogClosed"
             InitializeDialogInfo
-            
+            Debug.Print "ššDialogClosed"
         Case "Target.targetCreated"
             AddTargetInfo EventInfo, chrome.Json
         Case "Target.targetInfoChanged"

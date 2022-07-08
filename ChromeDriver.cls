@@ -73,10 +73,15 @@ End Property
 
 Private Sub Class_Initialize()
     
-    userDataDir = ThisWorkbook.Path & "\マクロ実行で作成されるフォルダ_削除OK\"
-    If Dir(userDataDir, vbDirectory) = "" Then MkDir userDataDir
+    userDataDir = ThisWorkbook.Path & "\マクロ実行専用UserDataフォルダ\"
+    Dim isFirst As Boolean
+    If Dir(userDataDir, vbDirectory) = "" Then
+        MkDir userDataDir
+        isFirst = True
+    End If
     
     processId_ = StartChrome
+    
     '検証したところ、複数Chromeが立ち上がっていても最新のWindowHandleが返ってくる模様。これで一旦問題なしか？
     chromeHwnd_ = FindWindow(CLASS_NAME, vbNullString)
     
@@ -90,7 +95,44 @@ Private Sub Class_Initialize()
     
     SetDiscoverTargets
     AttachToTarget basicInfo_.TargetId
+    
+    If isFirst Then
+        IWebDriver_CloseWindow
+        ChromeFirstLaunch
+    End If
+    
+    Sleep 2000
 End Sub
+
+'クロームの真の初回起動時の画面遷移
+Private Sub ChromeFirstLaunch()
+    MsgBox "今回、初回起動のため、このファイルと同一フォルダ内に" & vbCrLf & _
+                "マクロ実行専用のUserDataフォルダを作成しました。" & vbCrLf & vbCrLf & _
+                "お手数ですが、再度マクロを実行してください。" & vbCrLf & _
+                "※次回以降、このメッセージは表示されません。", _
+                vbInformation, "Chrome初回起動メッセージ"
+    End
+'    Sleep 2000
+'    TabKey 1
+'    SendKeys "{ENTER}", True
+'    Sleep 1500
+'    TabKey 6
+'    SendKeys "{ENTER}", True
+'    Sleep 1500
+'    TabKey 8
+'    SendKeys "{ENTER}", True
+'    Sleep 1500
+'    TabKey 2
+'    SendKeys "{ENTER}", True
+'    Sleep 1500
+End Sub
+'Private Sub TabKey(num As Long)
+'    Dim i As Long
+'    For i = 1 To num
+'        SendKeys "{TAB}", True
+'    Next
+'End Sub
+
 
 Private Function StartChrome() As Long
     Dim chromeExe As String
@@ -103,7 +145,6 @@ Private Function StartChrome() As Long
         StartChrome = objExec.ProcessId
         Set objExec = Nothing
     End With
-    Sleep 2000
 End Function
 
 'message処理送信＆受信

@@ -29,6 +29,10 @@ Public Function FindElementByName(Name As String) As IWebElement
 
 End Function
 
+Public Function FindElementsByTag(tagName As String) As IWebElements
+
+End Function
+
 Public Sub SwitchFrameByNameOrURLOrIndex(value As Variant)
 
 End Sub
@@ -57,9 +61,7 @@ Public Sub SleepByWindowsAPI(milliSecond As Long)
 
 End Sub
 
-Public Function FindElementsByTag(tagName As String) As IWebElements
 
-End Function
 
 Public Sub SwitchTabByIndex(index As Long)
     
@@ -77,6 +79,10 @@ Public Sub ScrollWindow(yPixel As Long, Optional xPixel As Long = 0)
 
 End Sub
 
-Public Sub SetForeGroundWindow()
+'Public Sub SetForeGroundWindow()
+'
+'End Sub
+
+Public Sub FlagOnForControlRobbingTypeDialogBeforeClick()
 
 End Sub

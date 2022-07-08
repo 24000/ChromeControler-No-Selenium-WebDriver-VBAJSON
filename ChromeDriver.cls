@@ -441,6 +441,8 @@ End Sub
 
 
 
+
+
 '以下､インターフェイス公開メソッドおよびその関連メソッド
 '************************************************
 'Public
@@ -958,6 +960,12 @@ Private Sub IWebDriver_ScrollWindow(yPixel As Long, Optional xPixel As Long = 0&
     DispatchMouseEvent "mouseWheel", 0, 0, "none", 0, 0, xPixel, yPixel
 End Sub
 
-Private Sub IWebDriver_SetForeGroundWindow()
-    SetForeGroundWindow chromeHwnd_
+'Private Sub IWebDriver_SetForeGroundWindow()
+'    SetForeGroundWindow chromeHwnd_
+'End Sub
+
+'制御を奪うコントロールかつクロームがダイアログ出現を検知せず通知してこないダイアログが存在する。
+'クリック後にそういったダイアログが出現する場合にクリック前で呼ぶ。
+Private Sub IWebDriver_FlagOnForControlRobbingTypeDialogBeforeClick()
+    events_.DialogInfoDic("IsExistDialog") = True
 End Sub

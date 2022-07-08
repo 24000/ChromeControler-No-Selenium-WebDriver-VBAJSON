@@ -128,8 +128,6 @@ Private Sub IWebElement_Click()
         chrome_.DispatchKeyEvent_DOMKeyCode "keyUp", "Enter"
     End If
     
-    If chrome_.CDPEvents.DialogInfoDic("IsExistDialog") Then Exit Sub
-    
     If IsPageChanging Then WaitPageChangeToComplete
     If IsIsolatedFrameChanging Then WaitIsolatedFrameChangeToComplete
     

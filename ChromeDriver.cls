@@ -166,13 +166,6 @@ Public Function ProcessMessage( _
         If responseId = "" Then
             If InStr(response, "method") > 0 Then
                 events_.GetInfo response, Me
-                
-                'ダイアログ出現時のみの特殊対応。ダイアログが出現したら、利用者は必ず次は(HandleAlertDialogを使用し)
-                'ダイアログを消すと思われるので、その前提でこのループから抜ける。（他の操作をされるとアウト）
-                '理由：ダイアログによっては出現時に処理をしないと、それ以降クロームがメッセージを返さなくなるケースがある。
-                'そのダイアログの場合にこの受信ループを継続すると、クロームから返信なし⇒受信から抜け出せなくなって完全に止まるため。
-                If events_.DialogInfoDic("IsExistDialog") Then Exit Function
-                
             ElseIf InStr(response, "error") > 0 Then
                 GoTo quit
             End If
@@ -884,16 +877,12 @@ End Sub
 
 'Public
 'AlertダイアログのOKボタンを押して閉じる
-'★events_.DialogInfoDic("IsExistDialog")の判定、特殊対応を入れている箇所★
-'①ProcessMessage②これ③WebElemets：Click
-'制御を奪うDialogの場合、Dialog出現以降に、このCDPメソッド以外のCDPメソッドを投げると、
-'制御が奪われているため、返信がなく詰む。
 Private Sub IWebDriver_HandleAlertDialog()
-    Dim sendMsg  As String, responseMsg As String
     If events_.DialogInfoDic("IsExistDialog") = False Then
         DOMEnable 'イベント受信状況更新のため、一回無害なメソッドを投げる
     End If
     
+    Dim sendMsg  As String, responseMsg As String
     sendMsg = CDPMethod_.HandleJavaScriptDialog()
     responseMsg = ProcessMessage(CDPMethod_.id, sendMsg, json_)
     If InStr(responseMsg, "No dialog is showing") > 0 Then GoTo quit

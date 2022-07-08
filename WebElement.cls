@@ -30,17 +30,17 @@ Private frameId_ As String
 
 
 Public Sub Init(chrome As ChromeDriver, _
-                        ObjectId As String, Optional nodeId As Long = 0, _
+                        objectId As String, Optional nodeId As Long = 0, _
                         Optional attributes As Object = Nothing, Optional FrameId As String)
     Set chrome_ = chrome
-    objectId_ = ObjectId
+    objectId_ = objectId
     nodeId_ = nodeId
     Set attributes_ = attributes
     frameId_ = FrameId
 End Sub
 
-Public Property Get ObjectId() As String
-    ObjectId = objectId_
+Public Property Get objectId() As String
+    objectId = objectId_
 End Property
 Public Property Get FrameId() As String
     FrameId = frameId_
@@ -88,6 +88,7 @@ quit:
 chrome_.DisplayErrorAndEnd "このElementはCheckedを持ちません。" & vbCrLf & _
                                             "※CheckedはCheckBoxで使用可能"
 End Property
+
 
 'Public
 '要素の状態(有効or無効)を取得
@@ -144,8 +145,8 @@ Private Function IsPageChanging() As Boolean
     End If
 End Function
 Private Sub WaitPageChangeToComplete()
-    Dim chromeInterface As IWebDriver
-    Set chromeInterface = chrome_
+    Dim ChromeInterFace As IWebDriver
+    Set ChromeInterFace = chrome_
     
     'TargetNavigatedは返って来ないケースがある？ので繰り返し回数に制限をかけてループ
     Dim failSafeCounter As Long
@@ -156,7 +157,7 @@ Private Sub WaitPageChangeToComplete()
         If isEndChange Then Exit Do
         
         chrome_.RuntimeEnable
-        chromeInterface.SleepByWindowsAPI 1000
+        ChromeInterFace.SleepByWindowsAPI 1000
         failSafeCounter = failSafeCounter + 1
     Loop While (isEndChange = False And failSafeCounter <= 5)
     
@@ -176,8 +177,8 @@ Private Function IsIsolatedFrameChanging() As Boolean
     End If
 End Function
 Private Sub WaitIsolatedFrameChangeToComplete()
-    Dim chromeInterface As IWebDriver
-    Set chromeInterface = chrome_
+    Dim ChromeInterFace As IWebDriver
+    Set ChromeInterFace = chrome_
     
     'FrameNavigatedは返って来ないケースがある？ので繰り返し回数に制限をかけてループ
     Dim failSafeCounter As Long
@@ -189,7 +190,7 @@ Private Sub WaitIsolatedFrameChangeToComplete()
         
         chrome_.DOMEnable
         chrome_.RuntimeEnable
-        chromeInterface.SleepByWindowsAPI 1000
+        ChromeInterFace.SleepByWindowsAPI 1000
         failSafeCounter = failSafeCounter + 1
     Loop While (isEndChange = False And failSafeCounter <= 5)
     
@@ -273,19 +274,16 @@ Private Sub IWebElement_SelectItemInSelectBoxByText(text As String)
         "}"
         responseJson = chrome_.JavaScritpCallFunction(javaScriptCode, objectId_, encodingText)
     End If
-    
-    Dim chromeInterface As IWebDriver
-    Set chromeInterface = chrome_
-    chromeInterface.SleepByWindowsAPI 500
+
 End Sub
 
 
 
 'Public
 Private Function IWebElement_FindElementByName(Name As String) As IWebElement
-    Dim functionCode As String, responseJson As String
-    functionCode = "function(name){return  this.getElementsByName(name)[0];}"
-    responseJson = chrome_.JavaScritpCallFunction(functionCode, objectId_, Name)
+    Dim FunctionCode As String, responseJson As String
+    FunctionCode = "function(name){return  this.getElementsByName(name)[0];}"
+    responseJson = chrome_.JavaScritpCallFunction(FunctionCode, objectId_, Name)
     
     Dim findObjectId As String
     findObjectId = chrome_.Json.GetValueFrom( _
@@ -327,15 +325,15 @@ Private Function GetElementsCount(tagName As String) As Long
 End Function
 Private Function CreateElementsItemByIndex(tagName As String, index As Long) As IWebElement
     Dim javaScriptCode As String, responseJson As String
-    Dim ObjectId As String
+    Dim objectId As String
     Dim elem As IWebElement
 
     javaScriptCode = _
     "function(tagName){return  this.getElementsByTagName(tagName)[" & index & "];}"
     responseJson = chrome_.JavaScritpCallFunction(javaScriptCode, objectId_, tagName)
 
-    ObjectId = chrome_.Json.GetValueFrom(responseJson, Array("result", "result", "objectId"))
-    Set CreateElementsItemByIndex = chrome_.MakeElementObject(ObjectId)
+    objectId = chrome_.Json.GetValueFrom(responseJson, Array("result", "result", "objectId"))
+    Set CreateElementsItemByIndex = chrome_.MakeElementObject(objectId)
 End Function
 
 'Public
@@ -358,8 +356,8 @@ Private Sub IWebElement_DispatchLeftClickEvent()
     x = centerXY(0)
     y = centerXY(1)
     
-    Dim chromeInterface As IWebDriver: Set chromeInterface = chrome_
-    chromeInterface.ScrollWindow y - 50
+    Dim ChromeInterFace As IWebDriver: Set ChromeInterFace = chrome_
+    ChromeInterFace.ScrollWindow y - 50
     
     Dim result As String
     result = chrome_.DispatchMouseEvent("mousePressed", x, y, "left", 1)
@@ -378,8 +376,8 @@ Private Sub IWebElement_SetFileToFileSelectInputButton(filePath As String)
     Dim centerXY As Variant
     centerXY = chrome_.GetBoxModel(objectId_)
     
-    Dim chromeInterface As IWebDriver: Set chromeInterface = chrome_
-    chromeInterface.ScrollWindow CLng(centerXY(1)) - 50
+    Dim ChromeInterFace As IWebDriver: Set ChromeInterFace = chrome_
+    ChromeInterFace.ScrollWindow CLng(centerXY(1)) - 50
     
     IWebElement_DispatchLeftClickEvent
     chrome_.SleepByWindowsAPIInner 1000
@@ -398,5 +396,15 @@ Private Sub ControlFileSelectDialog(filePath As String)
     Call SendMessage(ButtonHwnd, &HF5, 0, 0&)
 End Sub
 
+Private Sub IWebElement_ClickAndThenAlertDialogErase()
+    chrome_.Focus (objectId_)
+    Dim responseJson As String
+    responseJson = chrome_.JavaScritpCallFunction("function(value){this.click();}", objectId_, "")
+    chrome_.SleepByWindowsAPIInner 1000
+    
+    Dim ChromeInterFace As IWebDriver
+    Set ChromeInterFace = chrome_
+    ChromeInterFace.HandleAlertDialog
+End Sub
 
 

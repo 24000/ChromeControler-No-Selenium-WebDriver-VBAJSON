@@ -964,8 +964,4 @@ End Sub
 '    SetForeGroundWindow chromeHwnd_
 'End Sub
 
-'制御を奪うコントロールかつクロームがダイアログ出現を検知せず通知してこないダイアログが存在する。
-'クリック後にそういったダイアログが出現する場合にクリック前で呼ぶ。
-Private Sub IWebDriver_FlagOnForControlRobbingTypeDialogBeforeClick()
-    events_.DialogInfoDic("IsExistDialog") = True
-End Sub
+

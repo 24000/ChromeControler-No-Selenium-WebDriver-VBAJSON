@@ -57,4 +57,6 @@ Public Sub SetFileToFileSelectInputButton(filePath As String)
 
 End Sub
 
+Public Sub ClickAndThenAlertDialogErase()
 
+End Sub

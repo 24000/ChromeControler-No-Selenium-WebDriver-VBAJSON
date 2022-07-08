@@ -83,6 +83,3 @@ End Sub
 '
 'End Sub
 
-Public Sub FlagOnForControlRobbingTypeDialogBeforeClick()
-
-End Sub

@@ -53,6 +53,10 @@ Public Function GetSelectedValue() As String
 
 End Function
 
+Public Function GetSelectedTextContent() As String
+
+End Function
+
 Public Sub DispatchLeftClickEvent()
 
 End Sub

@@ -93,6 +93,8 @@ End Property
 
 
 
+
+
 'Public
 '要素の状態(有効or無効)を取得
 Private Property Get IWebElement_IsEnabled() As Boolean
@@ -242,7 +244,7 @@ Private Sub IWebElement_SelectItemInSelectBoxByText(text As String)
         "for(let i = 0; i < this.options.length; i++){" & _
             "let val1 = this.options[i].value.replace(/\\r?\\n/g,'');" & _
             "let val2 = this.options[i].textContent.replace(/\\r?\\n/g,'');" & _
-            "console.log(value + ':' + val1 + ':'+ val2);" & _
+            "console.log('(you)' + value + ':(value)' + val1 + ':(textContent)'+ val2);" & _
             "if(val1 === value || val2 === value){" & _
                 "this.options[i].selected = true;" & _
                 "return true;" & _
@@ -362,6 +364,23 @@ Private Function IWebElement_GetSelectedValue() As String
     IWebElement_GetSelectedValue = text
 End Function
 
+'Public
+Private Function IWebElement_GetSelectedTextContent() As String
+    Dim javaScriptCode As String, responseJson As String
+    javaScriptCode = _
+    "function(value){" & _
+        "for(let i = 0; i < this.options.length; i++){" & _
+            "if(this.options[i].selected){" & _
+                "return this.options[i].textContent.replace(/\\s/g, ' ');" & _
+            "}" & _
+        "}" & _
+    "}"
+    responseJson = chrome_.JavaScritpCallFunction(javaScriptCode, objectId_, "")
+    
+    Dim text As String
+    text = chrome_.Json.GetValueFrom(responseJson, Array("result", "result", "value"))
+    IWebElement_GetSelectedTextContent = text
+End Function
 
 '要素中心位置のxy座標をCDPMethodで左クリック発行
 Private Sub IWebElement_DispatchLeftClickEvent()

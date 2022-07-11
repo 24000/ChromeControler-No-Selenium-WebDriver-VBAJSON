@@ -538,17 +538,29 @@ DisplayErrorAndEnd "＜FindElementByXpath＞" & vbCrLf & _
                                 "　 必要であればWaitForElementToAppearByXpathで" & vbCrLf & _
                                 "　 要素の出現を確認する処理を入れましょう。" & vbCrLf
 End Function
-'Xpathで要素を探し、オブジェクトIDを返す
+'指定の方法で要素を探し(最大４秒間探す）、オブジェクトIDを返す
 Private Function GetObjectIdOfElementBy(way As String, scriptCode As String, FunctionCode As String) As String
-    Dim responseMsg As String
-    If executionContextId_ = 0 Then
-        responseMsg = ExecuteJavaScript_Inner(scriptCode)
-    Else
-        responseMsg = JavaScritpCallFunction(FunctionCode, executionContextId_, way)
-    End If
     
-    GetObjectIdOfElementBy = _
-        json_.GetValueFrom(responseMsg, Array("result", "result", "objectId"))
+    Dim startTime As Date: startTime = Timer()
+    Dim responseMsg As String, objectId As String
+    Do
+        If executionContextId_ = 0 Then
+            responseMsg = ExecuteJavaScript_Inner(scriptCode)
+        Else
+            responseMsg = JavaScritpCallFunction(FunctionCode, executionContextId_, way)
+        End If
+        objectId = json_.GetValueFrom(responseMsg, Array("result", "result", "objectId"))
+    
+        If objectId <> "" Then
+            GetObjectIdOfElementBy = objectId
+            Exit Function
+        ElseIf CInt((Timer() - startTime)) > 4 Then
+            GetObjectIdOfElementBy = ""
+            Exit Function
+        End If
+        
+        DoEvents: Sleep 500
+    Loop
 End Function
 'エレメントを作成し、戻り値として返却
 'エレメント内容：ObjectId,NodeId,Attributes(辞書),フレームの場合のみframeId追加

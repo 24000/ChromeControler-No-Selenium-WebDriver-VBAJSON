@@ -85,10 +85,6 @@ Private Sub Class_Initialize()
     End If
     
     processId_ = StartChrome
-    If isFirst Then
-        IWebDriver_CloseWindow
-        ChromeFirstLaunch
-    End If
     
     '適切に取得ができないケースあり、要改善（よってまだどこでもhwndは使用しない）
     chromeHwnd_ = FindWindow(CLASS_NAME, CAPTION_NAME)
@@ -100,6 +96,11 @@ Private Sub Class_Initialize()
     
     Set CDPMethod_ = New a_0_x2_CDPMethods
     Set events_ = New a_0_x1_x2_CDPEventHandler
+    
+    If isFirst Then  'この位置で判定必要（CloseWindowするため通信確立後）
+        IWebDriver_CloseWindow
+        ChromeFirstLaunch
+    End If
     
     SetDiscoverTargets
     AttachToTarget basicInfo_.TargetId

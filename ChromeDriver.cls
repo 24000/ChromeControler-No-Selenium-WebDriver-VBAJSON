@@ -269,9 +269,14 @@ End Function
 
 'JavaScript_FunctionŽÀs
 Public Function JavaScritpCallFunction(funcName As String, objectId As Variant, args As Variant) As String
-    Dim sendMsg  As String
+    Dim sendMsg  As String, responseMsg As String
     sendMsg = CDPMethod_.JavaScritpCallFunction(funcName, objectId, args)
-    JavaScritpCallFunction = ProcessMessage(CDPMethod_.Id, sendMsg, json_)
+    responseMsg = ProcessMessage(CDPMethod_.Id, sendMsg, json_)
+    If InStr(responseMsg, "Cannot find context with specified id") > 0 Then
+        ReCreateIsolatedFrameWorld
+        responseMsg = JavaScritpCallFunction(FunctionCode, executionContextId_, way)
+    End If
+    JavaScritpCallFunction = responseMsg
 End Function
 '************************************************
 'Input Domain*******************************************************************
@@ -537,10 +542,6 @@ Private Function GetObjectIdOfElementBy(way As String, scriptCode As String, Fun
         responseMsg = ExecuteJavaScript_Inner(scriptCode)
     Else
         responseMsg = JavaScritpCallFunction(FunctionCode, executionContextId_, way)
-        If InStr(responseMsg, "Cannot find context with specified id") > 0 Then
-            ReCreateIsolatedFrameWorld
-            responseMsg = JavaScritpCallFunction(FunctionCode, executionContextId_, way)
-        End If
     End If
     
     GetObjectIdOfElementBy = _
@@ -667,10 +668,6 @@ Private Function GetElementsCountBy(way As String, scriptCode As String, Functio
         responseMsg = ExecuteJavaScript_Inner(scriptCode)
     Else
         responseMsg = JavaScritpCallFunction(FunctionCode, executionContextId_, way)
-        If InStr(responseMsg, "Cannot find context with specified id") > 0 Then
-            ReCreateIsolatedFrameWorld
-            responseMsg = JavaScritpCallFunction(FunctionCode, executionContextId_, way)
-        End If
     End If
     GetElementsCountBy = json_.GetValueFrom(responseMsg, Array("result", "result", "value"))
 End Function

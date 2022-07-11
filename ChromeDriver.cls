@@ -274,7 +274,7 @@ Public Function JavaScritpCallFunction(funcName As String, objectId As Variant, 
     responseMsg = ProcessMessage(CDPMethod_.Id, sendMsg, json_)
     If InStr(responseMsg, "Cannot find context with specified id") > 0 Then
         ReCreateIsolatedFrameWorld
-        responseMsg = JavaScritpCallFunction(FunctionCode, executionContextId_, way)
+        responseMsg = ProcessMessage(CDPMethod_.Id, sendMsg, json_)
     End If
     JavaScritpCallFunction = responseMsg
 End Function

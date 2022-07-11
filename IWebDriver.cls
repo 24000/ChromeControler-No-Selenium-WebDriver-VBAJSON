@@ -29,7 +29,7 @@ Public Function FindElementByXPath(xPath As String) As IWebElement
 
 End Function
 
-Public Function FindElementByName(Name As String) As IWebElement
+Public Function FindElementByName(name As String) As IWebElement
 
 End Function
 
@@ -53,7 +53,15 @@ Public Function IsExistsElementByXpath(xPath As String) As Boolean
 
 End Function
 
-Public Sub WaitForElementToAppearByXPath(xPath As String, maxWaitTime_sec As Long)
+Public Function IsExistsElementById(Id As String) As Boolean
+
+End Function
+
+Public Function IsExistsElementByName(name As String) As Boolean
+
+End Function
+
+Public Sub WaitForElementToAppearByXpath(xPath As String, maxWaitTime_sec As Long)
 
 End Sub
 

@@ -37,18 +37,6 @@ Public Function FindElementsByTag(tagName As String) As IWebElements
 
 End Function
 
-Public Sub SwitchFrameByNameOrURLOrIndex(value As Variant)
-
-End Sub
-
-Public Sub SwitchFrameByIframeElement(IframeElement As IWebElement)
-
-End Sub
-
-Public Sub SwitchFrameToDefault()
-
-End Sub
-
 Public Function IsExistsElementByXpath(xPath As String) As Boolean
 
 End Function
@@ -65,6 +53,14 @@ Public Sub WaitForElementToAppearByXpath(xPath As String, maxWaitTime_sec As Lon
 
 End Sub
 
+Public Sub WaitForElementToAppearById(Id As String, maxWaitTime_sec As Long)
+
+End Sub
+
+Public Sub WaitForElementToAppearByName(name As String, maxWaitTime_sec As Long)
+
+End Sub
+
 Public Sub HandleAlertDialog()
 
 End Sub
@@ -73,10 +69,20 @@ Public Sub SleepByWindowsAPI(milliSecond As Long)
 
 End Sub
 
-
-
 Public Sub SwitchTabByIndex(index As Long)
     
+End Sub
+
+Public Sub SwitchFrameByNameOrURLOrIndex(value As Variant)
+
+End Sub
+
+Public Sub SwitchFrameByIframeElement(IframeElement As IWebElement)
+
+End Sub
+
+Public Sub SwitchFrameToDefault()
+
 End Sub
 
 Public Sub DebugPrintAccessibleFrameInfo()

@@ -894,19 +894,20 @@ End Sub
 'Public
 '第1引数で指定されるXpathの要素有無の確認
 Private Function IWebDriver_IsExistsElementByXpath(xPath As String) As Boolean
-    IWebDriver_IsExistsElementByXpath = IsExistsElemetBy(xPath, "xpath")
+    IWebDriver_IsExistsElementByXpath = IsExistsElementBy(xPath, "xpath")
 End Function
 'Public
-'第1引数で指定されるXpathの要素有無の確認
+'第1引数で指定されるIdの要素有無の確認
 Private Function IWebDriver_IsExistsElementById(Id As String) As Boolean
-    IWebDriver_IsExistsElementById = IsExistsElemetBy(Id, "id")
+    IWebDriver_IsExistsElementById = IsExistsElementBy(Id, "id")
 End Function
 'Public
-'第1引数で指定されるXpathの要素有無の確認
+'第1引数で指定されるNameの要素有無の確認
 Private Function IWebDriver_IsExistsElementByName(name As String) As Boolean
-    IWebDriver_IsExistsElementByName = IsExistsElemetBy(name, "name")
+    IWebDriver_IsExistsElementByName = IsExistsElementBy(name, "name")
 End Function
-Private Function IsExistsElemetBy(way As String, way_stringSpecify As String) As Boolean
+'IsExists共通関数
+Private Function IsExistsElementBy(way As String, way_stringSpecify As String) As Boolean
     Dim codes As Variant
     Select Case way_stringSpecify
       Case "xpath"
@@ -918,24 +919,41 @@ Private Function IsExistsElemetBy(way As String, way_stringSpecify As String) As
     End Select
     Dim objectId As String: objectId = GetObjectIdOfElementBy(way, codes)
     If objectId = "" Then
-        IsExistsElemetBy = False
+        IsExistsElementBy = False
     Else
-        IsExistsElemetBy = True
+        IsExistsElementBy = True
     End If
 End Function
+
 
 'Public
 'Xpath(第1引数)で指定されるの要素が出現するのを、最大待機時間(第2引数)待つ
 Private Sub IWebDriver_WaitForElementToAppearByXpath(xPath As String, maxWaitTime_sec As Long)
+    WaitForElementToAppearBy xPath, maxWaitTime_sec, "xpath"
+End Sub
+'Public
+'Id(第1引数)で指定されるの要素が出現するのを、最大待機時間(第2引数)待つ
+Private Sub IWebDriver_WaitForElementToAppearById(Id As String, maxWaitTime_sec As Long)
+    WaitForElementToAppearBy Id, maxWaitTime_sec, "id"
+End Sub
+'Public
+'Name(第1引数)で指定されるの要素が出現するのを、最大待機時間(第2引数)待つ
+Private Sub IWebDriver_WaitForElementToAppearByName(name As String, maxWaitTime_sec As Long)
+    WaitForElementToAppearBy name, maxWaitTime_sec, "name"
+End Sub
+'WaitForElement共通関数
+Private Sub WaitForElementToAppearBy(way As String, _
+        maxWaitTime_sec As Long, way_stringSpecify As String)
     
     Dim startTime As Date: startTime = Timer()
     Do
-        If IWebDriver_IsExistsElementByXpath(xPath) Then
+        If IsExistsElementBy(way, way_stringSpecify) Then
             Exit Sub
         ElseIf CInt((Timer() - startTime)) > maxWaitTime_sec Then
-            DisplayErrorAndEnd maxWaitTime_sec & _
+            DisplayErrorAndEnd "<WaitForElementToAppearBy" & way_stringSpecify & ">" & vbCrLf & _
+                                          maxWaitTime_sec & _
                                          "秒経過しても、指定の以下要素は現れませんでした。" & vbCrLf & _
-                                          xPath
+                                          way
         End If
         DoEvents: Sleep 500
     Loop

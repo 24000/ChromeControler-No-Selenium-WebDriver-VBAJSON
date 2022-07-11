@@ -416,6 +416,7 @@ Private Sub IWebElement_SetFileToFileSelectInputButton(filePath As String)
     IWebElement_DispatchLeftClickEvent
     chrome_.SleepByWindowsAPIInner 1000
     ControlFileSelectDialog filePath
+    chrome_.SleepByWindowsAPIInner 1000
 End Sub
 Private Sub ControlFileSelectDialog(filePath As String)
     Dim DialogHwnd As LongPtr: DialogHwnd = FindWindow(vbNullString, "ŠJ‚­")

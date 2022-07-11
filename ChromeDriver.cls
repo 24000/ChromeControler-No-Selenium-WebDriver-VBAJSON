@@ -12,15 +12,19 @@ Implements IWebDriver
 
 Private Declare PtrSafe Sub Sleep Lib "kernel32" (ByVal ms As LongPtr)
 
-Private Declare PtrSafe Function FindWindow Lib "User32" Alias "FindWindowA" ( _
+Private Declare PtrSafe Function FindWindow Lib "user32" Alias "FindWindowA" ( _
         ByVal lpClassName As String, ByVal lpWindowName As String) As Long
 Private Const CLASS_NAME As String = "Chrome_WidgetWin_1"
-Private Const CAPTION_NAME As String = "data:, - Google Chrome"
+Private Const CAPTION_NAME As String = "新しいタブ - Google Chrome" '"data:, - Google Chrome"
 
-Private Declare PtrSafe Function GetWindowThreadProcessId Lib "user32.dll" ( _
-        ByVal hwnd As LongPtr, ByRef ProcessId As Long) As Long
+'Private Declare PtrSafe Function GetWindowText Lib "user32" Alias "GetWindowTextA" ( _
+'        ByVal hWnd As LongPtr, ByVal lpString As String, ByVal cch As Long) As Long
+'
 
-Private Declare PtrSafe Sub SetForeGroundWindow Lib "User32" Alias "SetForegroundWindow" (ByVal ms As LongPtr)
+Private Declare PtrSafe Function GetWindowThreadProcessId Lib "USER32.DLL" ( _
+        ByVal hWnd As LongPtr, ByRef ProcessId As Long) As Long
+
+Private Declare PtrSafe Sub SetForeGroundWindow Lib "user32" Alias "SetForegroundWindow" (ByVal ms As LongPtr)
 
 Private Const CHROME_EXE_REG_KEY As String = "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\App Paths\chrome.exe\"
 Private Const CHROME_EXE As String = """chrome.exe"""
@@ -81,9 +85,13 @@ Private Sub Class_Initialize()
     End If
     
     processId_ = StartChrome
+    If isFirst Then
+        IWebDriver_CloseWindow
+        ChromeFirstLaunch
+    End If
     
-    '検証したところ、複数Chromeが立ち上がっていても最新のWindowHandleが返ってくる模様。これで一旦問題なしか？
-    chromeHwnd_ = FindWindow(CLASS_NAME, vbNullString)
+    '適切に取得ができないケースあり、要改善（よってまだどこでもhwndは使用しない）
+    chromeHwnd_ = FindWindow(CLASS_NAME, CAPTION_NAME)
     
     Set json_ = New a_0_x4_JSONHandler
     Set basicInfo_ = New a_0_x3_BasicInfos: basicInfo_.Init json_
@@ -96,12 +104,7 @@ Private Sub Class_Initialize()
     SetDiscoverTargets
     AttachToTarget basicInfo_.TargetId
     
-    If isFirst Then
-        IWebDriver_CloseWindow
-        ChromeFirstLaunch
-    End If
-    
-    Sleep 2000
+    Sleep 2500
 End Sub
 
 'クロームの真の初回起動時の画面遷移
@@ -132,7 +135,6 @@ End Sub
 '        SendKeys "{TAB}", True
 '    Next
 'End Sub
-
 
 Private Function StartChrome() As Long
     Dim chromeExe As String
@@ -166,6 +168,10 @@ Public Function ProcessMessage( _
         If responseId = "" Then
             If InStr(response, "method") > 0 Then
                 events_.GetInfo response, Me
+                '制御を奪うダイアログが存在し、そのDialogOpenのイベント通知がくるとその後、ループ受信でとまる。
+                '例：クリック送信⇒クリックに対する受信までの間にそのイベント通知が来ると、受信ができずに止まる。
+                'そのため、DialogOpenの通知のみ特殊対応。抜けた後にはすぐダイアログ処理する必要あり。
+                If events_.DialogInfoDic("IsExistDialog") Then Exit Function
             ElseIf InStr(response, "error") > 0 Then
                 GoTo quit
             End If
@@ -878,10 +884,7 @@ End Sub
 'Public
 'AlertダイアログのOKボタンを押して閉じる
 Private Sub IWebDriver_HandleAlertDialog()
-    If events_.DialogInfoDic("IsExistDialog") = False Then
-        DOMEnable 'イベント受信状況更新のため、一回無害なメソッドを投げる
-    End If
-    
+    Sleep 1000
     Dim sendMsg  As String, responseMsg As String
     sendMsg = CDPMethod_.HandleJavaScriptDialog()
     responseMsg = ProcessMessage(CDPMethod_.id, sendMsg, json_)

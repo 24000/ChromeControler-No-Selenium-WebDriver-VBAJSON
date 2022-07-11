@@ -10,15 +10,15 @@ Attribute VB_Exposed = False
 Option Explicit
 Implements IWebElement
 
-Private Declare PtrSafe Function FindWindow Lib "User32" Alias "FindWindowA" ( _
+Private Declare PtrSafe Function FindWindow Lib "user32" Alias "FindWindowA" ( _
         ByVal lpClassName As String, ByVal lpWindowName As String) As Long
         
-Private Declare PtrSafe Function FindWindowEx Lib "User32" Alias "FindWindowExA" ( _
+Private Declare PtrSafe Function FindWindowEx Lib "user32" Alias "FindWindowExA" ( _
         ByVal hWndParent As LongPtr, ByVal hwndChildAfter As LongPtr, _
         ByVal lpClassName As String, ByVal lpWindowName As String) As Long
         
-Private Declare PtrSafe Function SendMessage Lib "User32" Alias "SendMessageA" ( _
-        ByVal hwnd As Long, ByVal wMsg As Long, _
+Private Declare PtrSafe Function SendMessage Lib "user32" Alias "SendMessageA" ( _
+        ByVal hWnd As Long, ByVal wMsg As Long, _
         ByVal wParam As Long, lParam As Any) As LongPtr
 
 Private chrome_ As ChromeDriver
@@ -157,7 +157,7 @@ Private Sub WaitPageChangeToComplete()
         chrome_.RuntimeEnable
         ChromeInterFace.SleepByWindowsAPI 1000
         failSafeCounter = failSafeCounter + 1
-    Loop While (isEndChange = False And failSafeCounter <= 5)
+    Loop While (isEndChange = False And failSafeCounter <= 4)
     
     chrome_.CDPEvents.IsCurrentTargetScheduledNavigation = False
     chrome_.CDPEvents.IsCurrentTargetStartedLoading = False
@@ -190,7 +190,7 @@ Private Sub WaitIsolatedFrameChangeToComplete()
         chrome_.RuntimeEnable
         ChromeInterFace.SleepByWindowsAPI 1000
         failSafeCounter = failSafeCounter + 1
-    Loop While (isEndChange = False And failSafeCounter <= 5)
+    Loop While (isEndChange = False And failSafeCounter <= 4)
     
     chrome_.CDPEvents.IsIsolatedFrameScheduledNavigation = False
     chrome_.CDPEvents.IsIsolatedFrameStartedLoading = False

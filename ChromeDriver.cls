@@ -272,8 +272,10 @@ Public Function JavaScritpCallFunction(funcName As String, objectId As Variant, 
     Dim sendMsg  As String, responseMsg As String
     sendMsg = CDPMethod_.JavaScritpCallFunction(funcName, objectId, args)
     responseMsg = ProcessMessage(CDPMethod_.Id, sendMsg, json_)
+    '↓このエラーメッセージが返ってくるのはexecutionContextIdが渡ってきた場合のみなので、ObjectIdが渡ってくるときは問題なし
     If InStr(responseMsg, "Cannot find context with specified id") > 0 Then
         ReCreateIsolatedFrameWorld
+        sendMsg = CDPMethod_.JavaScritpCallFunction(funcName, executionContextId_, args)
         responseMsg = ProcessMessage(CDPMethod_.Id, sendMsg, json_)
     End If
     JavaScritpCallFunction = responseMsg

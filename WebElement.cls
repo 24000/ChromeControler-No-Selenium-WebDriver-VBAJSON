@@ -89,7 +89,6 @@ chrome_.DisplayErrorAndEnd "このElementはCheckedを持ちません。" & vbCrLf & _
                                             "※CheckedはCheckBoxで使用可能"
 End Property
 
-
 'Public
 '要素の状態(有効or無効)を取得
 Private Property Get IWebElement_IsEnabled() As Boolean
@@ -345,6 +344,17 @@ Private Function IWebElement_GetTextContent() As String
     IWebElement_GetTextContent = text
 End Function
 
+'Public
+Private Function IWebElement_GetSelectedValue() As String
+    Dim javaScriptCode As String, responseJson As String
+    javaScriptCode = "function(value){return this.value.replace(/\\s/g, ' ');}"
+    responseJson = chrome_.JavaScritpCallFunction(javaScriptCode, objectId_, "")
+    
+    Dim text As String
+    text = chrome_.Json.GetValueFrom(responseJson, Array("result", "result", "value"))
+    IWebElement_GetSelectedValue = text
+End Function
+
 
 '要素中心位置のxy座標をCDPMethodで左クリック発行
 Private Sub IWebElement_DispatchLeftClickEvent()
@@ -394,6 +404,7 @@ Private Sub ControlFileSelectDialog(filePath As String)
     Call SendMessage(ButtonHwnd, &HF5, 0, 0&)
 End Sub
 
+'Public
 Private Sub IWebElement_ClickAndThenAlertDialogErase()
     chrome_.Focus (objectId_)
     Dim responseJson As String

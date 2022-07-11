@@ -49,6 +49,10 @@ Public Function GetTextContent() As String
 
 End Function
 
+Public Function GetSelectedValue() As String
+
+End Function
+
 Public Sub DispatchLeftClickEvent()
 
 End Sub
@@ -60,3 +64,5 @@ End Sub
 Public Sub ClickAndThenAlertDialogErase()
 
 End Sub
+
+

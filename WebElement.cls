@@ -89,6 +89,10 @@ chrome_.DisplayErrorAndEnd "このElementはCheckedを持ちません。" & vbCrLf & _
                                             "※CheckedはCheckBoxで使用可能"
 End Property
 
+
+
+
+
 'Public
 '要素の状態(有効or無効)を取得
 Private Property Get IWebElement_IsEnabled() As Boolean
@@ -274,8 +278,6 @@ Private Sub IWebElement_SelectItemInSelectBoxByText(text As String)
 
 End Sub
 
-
-
 'Public
 Private Function IWebElement_FindElementByName(Name As String) As IWebElement
     Dim FunctionCode As String, responseJson As String
@@ -290,7 +292,12 @@ Private Function IWebElement_FindElementByName(Name As String) As IWebElement
 Exit Function
 
 quit:
-chrome_.DisplayErrorAndEnd "指定された以下Nameの要素は存在しませんでした。" & vbCrLf & Name
+chrome_.DisplayErrorAndEnd "＜FindElementByName＞" & vbCrLf & _
+                                "指定された以下Nameの要素は存在しませんでした。" & vbCrLf & _
+                                Name & vbCrLf & vbCrLf & _
+                                "※要素の出現前に取得しようとすると失敗します。" & vbCrLf & _
+                                "　 必要であればWaitForElementToAppearByXpathで" & vbCrLf & _
+                                "　 要素の出現を確認する処理を入れましょう。" & vbCrLf
 End Function
 
 'Public

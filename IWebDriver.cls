@@ -21,6 +21,10 @@ Public Function ExecuteScript(script As String) As String
 
 End Function
 
+Public Function FindElementById(Id As String) As IWebElement
+
+End Function
+
 Public Function FindElementByXPath(xPath As String) As IWebElement
 
 End Function

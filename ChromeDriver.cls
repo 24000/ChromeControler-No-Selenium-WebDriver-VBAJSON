@@ -104,7 +104,7 @@ Private Sub Class_Initialize()
     SetDiscoverTargets
     AttachToTarget basicInfo_.TargetId
     
-    Sleep 2500
+    Sleep 2000
 End Sub
 
 'クロームの真の初回起動時の画面遷移
@@ -200,7 +200,7 @@ End Function
 Private Function SessionClose() As String
     Dim sendMsg  As String, responseMsg As String
     sendMsg = CDPMethod_.SessionClose
-    responseMsg = ProcessMessage(CDPMethod_.id, sendMsg, json_)
+    responseMsg = ProcessMessage(CDPMethod_.Id, sendMsg, json_)
 End Function
 
 '************************************************
@@ -218,7 +218,7 @@ End Function
 Private Function GetDocumentNodeID() As Long
     Dim sendMsg  As String, responseMsg As String
     sendMsg = CDPMethod_.GetDocumentID
-    responseMsg = ProcessMessage(CDPMethod_.id, sendMsg, json_)
+    responseMsg = ProcessMessage(CDPMethod_.Id, sendMsg, json_)
     documentNodeId_ = json_.GetValueFrom(responseMsg, Array("result", "root", "nodeId"))
     GetDocumentNodeID = documentNodeId_
 End Function
@@ -226,14 +226,14 @@ End Function
 Private Function ChangeObjectIdToNodeId(objectId As String) As String
     Dim sendMsg  As String, responseMsg As String
     sendMsg = CDPMethod_.RequestNode(objectId)
-    responseMsg = ProcessMessage(CDPMethod_.id, sendMsg, json_)
+    responseMsg = ProcessMessage(CDPMethod_.Id, sendMsg, json_)
     ChangeObjectIdToNodeId = json_.GetValueFrom(responseMsg, Array("result", "nodeId"))
 End Function
 
 Private Function ChangeNodeIdToObjectId(nodeId As Long) As String
     Dim sendMsg  As String, responseMsg As String
     sendMsg = CDPMethod_.ResolveNode(nodeId)
-    responseMsg = ProcessMessage(CDPMethod_.id, sendMsg, json_)
+    responseMsg = ProcessMessage(CDPMethod_.Id, sendMsg, json_)
     ChangeNodeIdToObjectId = json_.GetValueFrom(responseMsg, Array("result", "objectId"))
 End Function
 '************************************************
@@ -242,13 +242,13 @@ End Function
 Private Function GetAttributes(nodeId As Long) As String
     Dim sendMsg  As String
     sendMsg = CDPMethod_.GetAttributes(nodeId)
-    GetAttributes = ProcessMessage(CDPMethod_.id, sendMsg, json_)
+    GetAttributes = ProcessMessage(CDPMethod_.Id, sendMsg, json_)
 End Function
 
-Private Function DescribeNode(id As Variant) As Variant
+Private Function DescribeNode(Id As Variant) As Variant
     Dim sendMsg  As String
-    sendMsg = CDPMethod_.DescribeNode(id)
-    DescribeNode = ProcessMessage(CDPMethod_.id, sendMsg, json_)
+    sendMsg = CDPMethod_.DescribeNode(Id)
+    DescribeNode = ProcessMessage(CDPMethod_.Id, sendMsg, json_)
 End Function
 '************************************************
 
@@ -258,20 +258,20 @@ End Function
 Public Sub RuntimeEnable()
     Dim sendMsg  As String, responseMsg As String
     sendMsg = CDPMethod_.RunTime_Enable()
-    responseMsg = ProcessMessage(CDPMethod_.id, sendMsg, json_)
+    responseMsg = ProcessMessage(CDPMethod_.Id, sendMsg, json_)
 End Sub
 'JavaScriptコード実行
 Private Function ExecuteJavaScript_Inner(script As String) As String
     Dim sendMsg  As String
     sendMsg = CDPMethod_.JavaScritpEvaluate(script)
-    ExecuteJavaScript_Inner = ProcessMessage(CDPMethod_.id, sendMsg, json_)
+    ExecuteJavaScript_Inner = ProcessMessage(CDPMethod_.Id, sendMsg, json_)
 End Function
 
 'JavaScript_Function実行
 Public Function JavaScritpCallFunction(funcName As String, objectId As Variant, args As Variant) As String
     Dim sendMsg  As String
     sendMsg = CDPMethod_.JavaScritpCallFunction(funcName, objectId, args)
-    JavaScritpCallFunction = ProcessMessage(CDPMethod_.id, sendMsg, json_)
+    JavaScritpCallFunction = ProcessMessage(CDPMethod_.Id, sendMsg, json_)
 End Function
 '************************************************
 'Input Domain*******************************************************************
@@ -279,7 +279,7 @@ End Function
 Public Function DispatchKeyEvent_DOMKeyCode(eventType As String, code As String) As String
     Dim sendMsg  As String, responseMsg As String
     sendMsg = CDPMethod_.DispatchKeyEvent_DOMKeyCode(eventType, code)
-    responseMsg = ProcessMessage(CDPMethod_.id, sendMsg, json_)
+    responseMsg = ProcessMessage(CDPMethod_.Id, sendMsg, json_)
 End Function
 
 'マウスイベントをxy座標にディスパッチする。mousePressed, mouseReleased, mouseMoved, mouseWheelのいずれか。
@@ -291,7 +291,7 @@ Public Function DispatchMouseEvent(eventType As String, x As Long, y As Long, _
     Dim sendMsg  As String, responseMsg As String
     sendMsg = CDPMethod_.DispatchMouseEvent(eventType, x, y, button, clickCount, _
                                                                                     modifiers, deltaX, deltaY)
-    responseMsg = ProcessMessage(CDPMethod_.id, sendMsg, json_)
+    responseMsg = ProcessMessage(CDPMethod_.Id, sendMsg, json_)
 End Function
 
 '*******************************************************************
@@ -300,19 +300,19 @@ End Function
 Public Sub DOMEnable()
     Dim sendMsg  As String, responseMsg As String
     sendMsg = CDPMethod_.DOM_Enable()
-    responseMsg = ProcessMessage(CDPMethod_.id, sendMsg, json_)
+    responseMsg = ProcessMessage(CDPMethod_.Id, sendMsg, json_)
 End Sub
 
 Public Sub Focus(objectId As String)
     Dim sendMsg  As String, responseMsg As String
     sendMsg = CDPMethod_.Focus(objectId)
-    responseMsg = ProcessMessage(CDPMethod_.id, sendMsg, json_)
+    responseMsg = ProcessMessage(CDPMethod_.Id, sendMsg, json_)
 End Sub
 
 Public Function GetBoxModel(objectId As String) As Variant
     Dim sendMsg  As String, responseMsg As String
     sendMsg = CDPMethod_.GetBoxModel(objectId)
-    responseMsg = ProcessMessage(CDPMethod_.id, sendMsg, json_)
+    responseMsg = ProcessMessage(CDPMethod_.Id, sendMsg, json_)
     Dim result As Variant
     result = json_.GetValueFrom(responseMsg, Array("result", "model", "content"))
     result = Split(result, ",")
@@ -328,13 +328,13 @@ End Function
 Public Sub SetFileInputFiles(objectId As Variant, files As String)
     Dim sendMsg  As String, responseMsg As String
     sendMsg = CDPMethod_.SetFileInputFiles(objectId, files)
-    responseMsg = ProcessMessage(CDPMethod_.id, sendMsg, json_)
+    responseMsg = ProcessMessage(CDPMethod_.Id, sendMsg, json_)
 End Sub
 
 Public Sub FindElementByQuerySelector(Selector As String)
     Dim sendMsg  As String, responseMsg As String
     sendMsg = CDPMethod_.querySelector(Selector)
-    responseMsg = ProcessMessage(CDPMethod_.id, sendMsg, json_)
+    responseMsg = ProcessMessage(CDPMethod_.Id, sendMsg, json_)
     
     Dim nodeId As Long
     nodeId = json_.GetValueFrom(responseMsg, Array("result", "nodeId"))
@@ -342,10 +342,6 @@ Public Sub FindElementByQuerySelector(Selector As String)
     nodeInfoJson = DescribeNode(nodeId)
 End Sub
 
-Public Function FindElementByID(id As String) As String
-    
-    
-End Function
 '************************************************
 
 'Input系************************************************
@@ -358,20 +354,20 @@ End Function
 Public Function PageEnable() As String
     Dim sendMsg  As String, responseMsg As String
     sendMsg = CDPMethod_.PageEnable()
-    responseMsg = ProcessMessage(CDPMethod_.id, sendMsg, json_)
+    responseMsg = ProcessMessage(CDPMethod_.Id, sendMsg, json_)
 End Function
 
 Public Function GetFrameTree() As String
     Dim sendMsg  As String, responseMsg As String
     sendMsg = CDPMethod_.GetFrameTree()
-    responseMsg = ProcessMessage(CDPMethod_.id, sendMsg, json_)
+    responseMsg = ProcessMessage(CDPMethod_.Id, sendMsg, json_)
     GetFrameTree = responseMsg
 End Function
 
 Public Function CreateIsolatedFrameWorld(FrameId As String) As Long
     Dim sendMsg  As String, responseMsg As String
     sendMsg = CDPMethod_.CreateIsolatedFrameWorld(FrameId)
-    responseMsg = ProcessMessage(CDPMethod_.id, sendMsg, json_)
+    responseMsg = ProcessMessage(CDPMethod_.Id, sendMsg, json_)
     If InStr(responseMsg, "error") > 0 Then
         CreateIsolatedFrameWorld = 0
     Else
@@ -384,41 +380,43 @@ End Function
 Public Function SetDiscoverTargets() As String
     Dim sendMsg  As String, responseMsg As String
     sendMsg = CDPMethod_.SetDiscoverTargets(basicInfo_.TargetId)
-    responseMsg = ProcessMessage(CDPMethod_.id, sendMsg, json_)
+    responseMsg = ProcessMessage(CDPMethod_.Id, sendMsg, json_)
 End Function
 
 Public Function AttachToTarget(TargetId As String) As String
     Dim sendMsg  As String, responseMsg As String
     sendMsg = CDPMethod_.AttachToTarget(TargetId)
-    responseMsg = ProcessMessage(CDPMethod_.id, sendMsg, json_)
+    responseMsg = ProcessMessage(CDPMethod_.Id, sendMsg, json_)
 End Function
 
 Public Function ActivateTarget(TargetId As String) As String
     Dim sendMsg  As String, responseMsg As String
     sendMsg = CDPMethod_.ActivateTarget(TargetId)
-    responseMsg = ProcessMessage(CDPMethod_.id, sendMsg, json_)
+    responseMsg = ProcessMessage(CDPMethod_.Id, sendMsg, json_)
 End Function
 
 Public Function DetachFromTarget(TargetId As String) As String
     Dim sendMsg  As String, responseMsg As String
     sendMsg = CDPMethod_.DetachFromTarget(TargetId)
-    responseMsg = ProcessMessage(CDPMethod_.id, sendMsg, json_)
+    responseMsg = ProcessMessage(CDPMethod_.Id, sendMsg, json_)
 End Function
 
 Public Function TargetClose() As String
     Dim sendMsg  As String, responseMsg As String
     sendMsg = CDPMethod_.TargetClose(basicInfo_.TargetId)
-    responseMsg = ProcessMessage(CDPMethod_.id, sendMsg, json_)
+    responseMsg = ProcessMessage(CDPMethod_.Id, sendMsg, json_)
 End Function
 Public Function GetTargetInfo() As String
     Dim sendMsg  As String, responseMsg As String
     sendMsg = CDPMethod_.GetTargets()
-    responseMsg = ProcessMessage(CDPMethod_.id, sendMsg, json_)
+    responseMsg = ProcessMessage(CDPMethod_.Id, sendMsg, json_)
 End Function
 
 Public Sub SleepByWindowsAPIInner(ms As Long)
     Sleep ms
 End Sub
+
+
 
 
 
@@ -466,7 +464,7 @@ End Property
 Private Sub IWebDriver_OpenURL(targetURL As String)
     Dim sendMsg  As String, responseMsg As String
     sendMsg = CDPMethod_.URLOpen(targetURL)
-    responseMsg = ProcessMessage(CDPMethod_.id, sendMsg, json_)
+    responseMsg = ProcessMessage(CDPMethod_.Id, sendMsg, json_)
     If InStr(responseMsg, "invalid URL") > 0 Then GoTo quit
     
     WaitingForWebPageDisplay
@@ -583,6 +581,27 @@ Private Function MakeAttributesDic(attributes As String) As Object
         End If
     Next
     Set MakeAttributesDic = attributesDic
+End Function
+
+'Public
+Private Function IWebDriver_FindElementById(Id As String) As IWebElement
+    Dim scriptCode As String, FunctionCode As String
+    scriptCode = "document.getElementById('" & Id & "');"
+    FunctionCode = "function(id){return  document.getElementById(id);}"
+    
+    Dim objectId As String
+    objectId = GetObjectIdOfElementBy(Id, scriptCode, FunctionCode)
+    If objectId = "" Then GoTo quit
+    Set IWebDriver_FindElementById = MakeElementObject(objectId)
+Exit Function
+
+quit:
+DisplayErrorAndEnd "＜FindElementById＞" & vbCrLf & _
+                                "指定された以下Idの要素は存在しませんでした。" & vbCrLf & _
+                                Id & vbCrLf & vbCrLf & _
+                                "※要素の出現前に取得しようとすると失敗します。" & vbCrLf & _
+                                "　 必要であればWaitForElementToAppearByXpathで" & vbCrLf & _
+                                "　 要素の出現を確認する処理を入れましょう。" & vbCrLf
 End Function
 
 'Public
@@ -887,7 +906,7 @@ Private Sub IWebDriver_HandleAlertDialog()
     Sleep 1000
     Dim sendMsg  As String, responseMsg As String
     sendMsg = CDPMethod_.HandleJavaScriptDialog()
-    responseMsg = ProcessMessage(CDPMethod_.id, sendMsg, json_)
+    responseMsg = ProcessMessage(CDPMethod_.Id, sendMsg, json_)
     If InStr(responseMsg, "No dialog is showing") > 0 Then GoTo quit
 Exit Sub
 

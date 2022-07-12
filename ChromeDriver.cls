@@ -917,14 +917,22 @@ Private Function IsExistsElementBy(way As String, way_stringSpecify As String) A
       Case "name"
         codes = GetNameCodes(way)
     End Select
-    Dim objectId As String: objectId = GetObjectIdOfElementBy(way, codes)
+
+    Dim responseMsg As String
+    If executionContextId_ = 0 Then
+        responseMsg = ExecuteJavaScript_Inner((codes(0)))
+    Else
+        responseMsg = JavaScritpCallFunction((codes(1)), executionContextId_, way)
+    End If
+    Dim objectId As String
+    objectId = json_.GetValueFrom(responseMsg, Array("result", "result", "objectId"))
+
     If objectId = "" Then
         IsExistsElementBy = False
     Else
         IsExistsElementBy = True
     End If
 End Function
-
 
 'Public
 'Xpath(第1引数)で指定されるの要素が出現するのを、最大待機時間(第2引数)待つ

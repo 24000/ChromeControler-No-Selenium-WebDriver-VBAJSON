@@ -24,17 +24,21 @@ Private Declare PtrSafe Function SendMessage Lib "user32" Alias "SendMessageA" (
 Private chrome_ As ChromeDriver
 
 Private objectId_ As String
+Private findInfo_ As Collection
 Private nodeId_ As Long
 Private attributes_ As Object
 Private frameId_ As String
 
+Private xpath_ As String
+Private name_
+
 
 Public Sub Init(chrome As ChromeDriver, _
-                        objectId As String, Optional nodeId As Long = 0, _
+                        objectId As String, findInfo As Collection, _
                         Optional attributes As Object = Nothing, Optional FrameId As String)
     Set chrome_ = chrome
     objectId_ = objectId
-    nodeId_ = nodeId
+    Set findInfo_ = findInfo
     Set attributes_ = attributes
     frameId_ = FrameId
 End Sub
@@ -281,22 +285,23 @@ Private Sub IWebElement_SelectItemInSelectBoxByText(text As String)
 End Sub
 
 'Public
-Private Function IWebElement_FindElementByName(Name As String) As IWebElement
+Private Function IWebElement_FindElementByName(name As String) As IWebElement
     Dim FunctionCode As String, responseJson As String
     FunctionCode = "function(name){return  this.getElementsByName(name)[0];}"
-    responseJson = chrome_.JavaScritpCallFunction(FunctionCode, objectId_, Name)
+    responseJson = chrome_.JavaScritpCallFunction(FunctionCode, objectId_, name)
     
     Dim findObjectId As String
     findObjectId = chrome_.Json.GetValueFrom( _
                             responseJson, Array("result", "result", "objectId"))
     If findObjectId = "" Then GoTo quit
-    Set IWebElement_FindElementByName = chrome_.MakeElementObject(findObjectId)
+    Dim findInfoInElem As Collection: Set findInfoInElem = chrome_.MakeFindInfo("name", name)
+    Set IWebElement_FindElementByName = chrome_.MakeElementObject(findObjectId, findInfoInElem)
 Exit Function
 
 quit:
 chrome_.DisplayErrorAndEnd "＜FindElementByName＞" & vbCrLf & _
                                 "指定された以下Nameの要素は存在しませんでした。" & vbCrLf & _
-                                Name & vbCrLf & vbCrLf & _
+                                name & vbCrLf & vbCrLf & _
                                 "※要素の出現前に取得しようとすると失敗します。" & vbCrLf & _
                                 "　 必要であればWaitForElementToAppearByXpathで" & vbCrLf & _
                                 "　 要素の出現を確認する処理を入れましょう。" & vbCrLf
@@ -309,9 +314,9 @@ Private Function IWebElement_FindElementsByTag(tagName As String) As IWebElement
     If elemsCount = 0 Then GoTo quit
     
     Dim elements As Collection: Set elements = New Collection
-    Dim index As Long
-    For index = 0 To elemsCount - 1
-        elements.add CreateElementsItemByIndex(tagName, index)
+    Dim Index As Long
+    For Index = 0 To elemsCount - 1
+        elements.add CreateElementsItemByIndex(tagName, Index)
     Next
     
     Dim elems As WebElements: Set elems = New WebElements
@@ -329,17 +334,18 @@ Private Function GetElementsCount(tagName As String) As Long
     responseJson = chrome_.JavaScritpCallFunction(javaScriptCode, objectId_, tagName)
     GetElementsCount = chrome_.Json.GetValueFrom(responseJson, Array("result", "result", "value"))
 End Function
-Private Function CreateElementsItemByIndex(tagName As String, index As Long) As IWebElement
+Private Function CreateElementsItemByIndex(tagName As String, Index As Long) As IWebElement
     Dim javaScriptCode As String, responseJson As String
     Dim objectId As String
     Dim elem As IWebElement
 
     javaScriptCode = _
-    "function(tagName){return  this.getElementsByTagName(tagName)[" & index & "];}"
+    "function(tagName){return  this.getElementsByTagName(tagName)[" & Index & "];}"
     responseJson = chrome_.JavaScritpCallFunction(javaScriptCode, objectId_, tagName)
 
     objectId = chrome_.Json.GetValueFrom(responseJson, Array("result", "result", "objectId"))
-    Set CreateElementsItemByIndex = chrome_.MakeElementObject(objectId)
+    Dim findInfoInElem As Collection: Set findInfoInElem = chrome_.MakeFindInfo("tag", tagName, Index)
+    Set CreateElementsItemByIndex = chrome_.MakeElementObject(objectId, findInfoInElem)
 End Function
 
 'Public

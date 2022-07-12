@@ -24,6 +24,8 @@ Public IsIsolatedFrameStartedLoading As Boolean
 Public IsIsolatedFrameClearedScheduledNavigation As Boolean
 Public IsIsolatedFrameNavigated As Boolean
 
+Public IsCurrentContextIdDestroyed As Boolean
+
 Private Sub Class_Initialize()
     Set DialogInfoDic = CreateObject("Scripting.Dictionary")
     InitializeDialogInfo
@@ -36,16 +38,16 @@ Public Sub GetInfo(EventInfo As String, chrome As ChromeDriver)
     eventName = chrome.Json.GetValueFrom(EventInfo, Array("method"))
     
     If InStr(eventName, "frame") > 0 Then
-        Dim id As String
+        Dim Id As String
         If InStr(eventName, "Navigated") = 0 Then
-            id = chrome.Json.GetValueFrom(EventInfo, Array("params", "frameId"))
+            Id = chrome.Json.GetValueFrom(EventInfo, Array("params", "frameId"))
         Else
-            id = chrome.Json.GetValueFrom(EventInfo, Array("params", "frame", "id"))
+            Id = chrome.Json.GetValueFrom(EventInfo, Array("params", "frame", "id"))
         End If
         Dim isCurrentTarget As Boolean
-        isCurrentTarget = (id = chrome.TargetId)
+        isCurrentTarget = (Id = chrome.TargetId)
         Dim isIsolatedFrameId
-        isIsolatedFrameId = (id = chrome.isolatedFrameId_)
+        isIsolatedFrameId = (Id = chrome.isolatedFrameId_)
     End If
     
     Select Case eventName
@@ -84,6 +86,13 @@ Public Sub GetInfo(EventInfo As String, chrome As ChromeDriver)
             If isIsolatedFrameId Then
                 IsIsolatedFrameNavigated = True
                 Debug.Print "ÅöÅöIsolatedFrameNavigated"
+            End If
+        Case "Runtime.executionContextDestroyed"
+            Dim contextId As Long
+            contextId = chrome.Json.GetValueFrom(EventInfo, Array("params", "executionContextId"))
+            If contextId = chrome.executionContextId_ Then
+                IsCurrentContextIdDestroyed = True
+                Debug.Print "ÅöÅöIsCurrentContextIdDestroyed"
             End If
     End Select
 End Sub

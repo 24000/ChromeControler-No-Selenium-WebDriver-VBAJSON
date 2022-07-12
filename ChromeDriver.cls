@@ -521,7 +521,8 @@ Private Function IWebDriver_FindElementByXpath(xPath As String) As IWebElement
     Dim codes As Variant: codes = GetXpathCodes(xPath)
     Dim objectId As String: objectId = GetObjectIdOfElementBy(xPath, codes)
     If objectId = "" Then GoTo quit
-    Set IWebDriver_FindElementByXpath = MakeElementObject(objectId)
+    Dim findInfo As Collection: Set findInfo = MakeFindInfo("xpath", xPath)
+    Set IWebDriver_FindElementByXpath = MakeElementObject(objectId, findInfo)
 Exit Function
 
 quit:
@@ -569,12 +570,17 @@ Private Function GetObjectIdOfElementBy(way As String, codes As Variant) As Stri
         DoEvents: Sleep 500
     Loop
 End Function
+'elementをFindした情報を配列にして返す
+Public Function MakeFindInfo(way_string As String, way As String, Optional Index As Long = -1) As Collection
+    Dim findInfo As Collection: Set findInfo = New Collection
+    findInfo.add way_string
+    findInfo.add way
+    findInfo.add Index
+    Set MakeFindInfo = findInfo
+End Function
 'エレメントを作成し、戻り値として返却
 'エレメント内容：ObjectId,NodeId,Attributes(辞書),フレームの場合のみframeId追加
-Public Function MakeElementObject(objectId As String) As IWebElement
-    
-    Dim nodeId As Long
-    nodeId = ChangeObjectIdToNodeId(objectId)
+Public Function MakeElementObject(objectId As String, findInfo As Collection) As IWebElement
     
     Dim info  As String
     info = DescribeNode(objectId)
@@ -589,7 +595,7 @@ Public Function MakeElementObject(objectId As String) As IWebElement
     End If
     
     Dim element As WebElement: Set element = New WebElement
-    element.Init Me, objectId, nodeId, attributes, FrameId
+    element.Init Me, objectId, findInfo, attributes, FrameId
     Set MakeElementObject = element
 End Function
 'elementの属性情報を辞書にして返す。
@@ -607,11 +613,11 @@ End Function
 
 'Public
 Private Function IWebDriver_FindElementById(Id As String) As IWebElement
-
     Dim codes As Variant: codes = GetIdCodes(Id)
     Dim objectId As String: objectId = GetObjectIdOfElementBy(Id, codes)
     If objectId = "" Then GoTo quit
-    Set IWebDriver_FindElementById = MakeElementObject(objectId)
+    Dim findInfo As Collection: Set findInfo = MakeFindInfo("id", Id)
+    Set IWebDriver_FindElementById = MakeElementObject(objectId, findInfo)
 Exit Function
 
 quit:
@@ -619,7 +625,7 @@ DisplayErrorAndEnd "＜FindElementById＞" & vbCrLf & _
                                 "指定された以下Idの要素は存在しませんでした。" & vbCrLf & _
                                 Id & vbCrLf & vbCrLf & _
                                 "※要素の出現前に取得しようとすると失敗します。" & vbCrLf & _
-                                "　 必要であればWaitForElementToAppearByXpathで" & vbCrLf & _
+                                "　 必要であればWaitForElementToAppearByIdで" & vbCrLf & _
                                 "　 要素の出現を確認する処理を入れましょう。" & vbCrLf
 End Function
 Private Function GetIdCodes(Id As String) As Variant
@@ -635,7 +641,8 @@ Private Function IWebDriver_FindElementByName(name As String) As IWebElement
     Dim codes As Variant: codes = GetNameCodes(name)
     Dim objectId As String: objectId = GetObjectIdOfElementBy(name, codes)
     If objectId = "" Then GoTo quit
-    Set IWebDriver_FindElementByName = MakeElementObject(objectId)
+    Dim findInfo As Collection: Set findInfo = MakeFindInfo("name", name)
+    Set IWebDriver_FindElementByName = MakeElementObject(objectId, findInfo)
 Exit Function
 
 quit:
@@ -643,7 +650,7 @@ DisplayErrorAndEnd "＜FindElementByName＞" & vbCrLf & _
                                 "指定された以下Nameの要素は存在しませんでした。" & vbCrLf & _
                                 name & vbCrLf & vbCrLf & _
                                 "※要素の出現前に取得しようとすると失敗します。" & vbCrLf & _
-                                "　 必要であればWaitForElementToAppearByXpathで" & vbCrLf & _
+                                "　 必要であればWaitForElementToAppearByNameで" & vbCrLf & _
                                 "　 要素の出現を確認する処理を入れましょう。" & vbCrLf
 End Function
 Private Function GetNameCodes(name As String) As Variant
@@ -665,11 +672,12 @@ Private Function IWebDriver_FindElementsByTag(tagName As String) As IWebElements
     Dim elements As Collection: Set elements = New Collection
     
     Dim objectId As String
-    Dim index As Long
-    For index = 0 To elemsCount - 1
-        codes = GetTagCodes(tagName, index)
+    Dim Index As Long
+    For Index = 0 To elemsCount - 1
+        codes = GetTagCodes(tagName, Index)
         objectId = GetObjectIdOfElementBy(tagName, codes)
-        elements.add MakeElementObject(objectId)
+        Dim findInfo As Collection: Set findInfo = MakeFindInfo("tag", tagName, Index)
+        elements.add MakeElementObject(objectId, findInfo)
     Next
     
     Dim elems As WebElements: Set elems = New WebElements
@@ -683,7 +691,7 @@ DisplayErrorAndEnd "＜FindElementsByTag＞" & vbCrLf & _
                                 "指定された以下TagNameの要素は存在しませんでした。" & vbCrLf & _
                                 tagName & vbCrLf & vbCrLf & _
                                 "※要素の出現前に取得しようとすると失敗します。" & vbCrLf & _
-                                "　 必要であればWaitForElementToAppearByXpathで" & vbCrLf & _
+                                "　 必要であればWaitForElementToAppearBy○○で" & vbCrLf & _
                                 "　 要素の出現を確認する処理を入れましょう。" & vbCrLf
 End Function
 Private Function GetElementsCountBy(way As String, codes As Variant) As Long
@@ -695,10 +703,10 @@ Private Function GetElementsCountBy(way As String, codes As Variant) As Long
     End If
     GetElementsCountBy = json_.GetValueFrom(responseMsg, Array("result", "result", "value"))
 End Function
-Private Function GetTagCodes(tagName As String, index As Long) As Variant
+Private Function GetTagCodes(tagName As String, Index As Long) As Variant
     Dim codes(1) As String
-    codes(0) = "document.getElementsByTagName('" & tagName & "')[" & index & "];"
-    codes(1) = "function(tagName){return  document.getElementsByTagName(tagName)[" & index & "];}"
+    codes(0) = "document.getElementsByTagName('" & tagName & "')[" & Index & "];"
+    codes(1) = "function(tagName){return  document.getElementsByTagName(tagName)[" & Index & "];}"
     GetTagCodes = codes
 End Function
 
@@ -1011,9 +1019,9 @@ Public Sub ReCreateIsolatedFrameWorld()
 End Sub
 
 '右隣のタブへ移動
-Private Sub IWebDriver_SwitchTabByIndex(index As Long)
+Private Sub IWebDriver_SwitchTabByIndex(Index As Long)
     Dim newTargetId As String
-    newTargetId = events_.PageInfos(index)("targetId")
+    newTargetId = events_.PageInfos(Index)("targetId")
     basicInfo_.Update newTargetId, json_, True
     
     webSocket_.CloseWebSocket

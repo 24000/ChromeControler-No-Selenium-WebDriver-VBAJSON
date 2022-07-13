@@ -11,8 +11,8 @@ Option Explicit
 
 Private id_ As Long
 
-Public Property Get id() As Long
-    id = id_
+Public Property Get Id() As Long
+    Id = id_
 End Property
 
 'TargetDomain*******************************************************************
@@ -162,11 +162,11 @@ Public Function DOM_Enable()
 End Function
 
 '指定された要素にフォーカスを当てる。
-Public Function Focus(ObjectId As String) As String
+Public Function Focus(objectId As String) As String
     id_ = id_ + 1
     Dim message As String
     message = "{""id"": " & id_ & ",""method"": ""DOM.focus""," & _
-                      """params"": {""objectId"":  """ & ObjectId & """}}"
+                      """params"": {""objectId"":  """ & objectId & """}}"
     Focus = message
 End Function
 
@@ -189,11 +189,11 @@ Public Function querySelector(Selector As String, Optional nodeId As Long = 1) A
 End Function
 
 'objectIdからnodeId取得
-Public Function RequestNode(ObjectId As String) As String
+Public Function RequestNode(objectId As String) As String
     id_ = id_ + 1
     Dim message As String
     message = "{""id"": " & id_ & ",""method"": ""DOM.requestNode""," & _
-                      """params"": {""objectId"":  """ & ObjectId & """}}"
+                      """params"": {""objectId"":  """ & objectId & """}}"
     RequestNode = message
 End Function
 
@@ -215,15 +215,15 @@ Public Function GetAttributes(nodeId As Long)
 End Function
 
 'id で指定されたノード情報を叙述
-Public Function DescribeNode(id As Variant) As Variant
+Public Function DescribeNode(Id As Variant) As Variant
     id_ = id_ + 1
     Dim message As String
-    If IsNumeric(id) Then
+    If IsNumeric(Id) Then
         message = "{""id"": " & id_ & ",""method"": ""DOM.describeNode""," & _
-                          """params"": {""nodeId"":  " & id & ",""depth"": 1,""pierce"": false}}"
+                          """params"": {""nodeId"":  " & Id & ",""depth"": 1,""pierce"": false}}"
     Else
         message = "{""id"": " & id_ & ",""method"": ""DOM.describeNode""," & _
-                         """params"": {""objectId"":  """ & id & """,""depth"": 1,""pierce"": false}}"
+                         """params"": {""objectId"":  """ & Id & """,""depth"": 1,""pierce"": false}}"
     End If
     DescribeNode = message
 End Function
@@ -237,23 +237,23 @@ Public Function RequestChildNodes() As String
 End Function
 
 '指定された要素にフォーカスを当てる。
-Public Function GetBoxModel(ObjectId As String) As String
+Public Function GetBoxModel(objectId As String) As String
     id_ = id_ + 1
     Dim message As String
     message = "{""id"": " & id_ & ",""method"": ""DOM.getBoxModel""," & _
-                      """params"": {""objectId"":  """ & ObjectId & """}}"
+                      """params"": {""objectId"":  """ & objectId & """}}"
     GetBoxModel = message
 End Function
 
 'ファイル登録インプットボックスへファイルPath登録
-Public Function SetFileInputFiles(ObjectId As Variant, files As String) As String
+Public Function SetFileInputFiles(objectId As Variant, files As String) As String
     id_ = id_ + 1
     files = "[""" & files & """]"
     
     Dim message As String
     message = "{""id"": " & id_ & ",""method"": ""DOM.setFileInputFiles""," & _
                       """params"": " & _
-                     "{""files"": " & files & ",""objectId"": """ & ObjectId & """}}"
+                     "{""files"": " & files & ",""objectId"": """ & objectId & """}}"
     
     SetFileInputFiles = message
 End Function
@@ -273,7 +273,7 @@ Public Function JavaScritpEvaluate(script As String)
     JavaScritpEvaluate = message
 End Function
 
-Public Function JavaScritpCallFunction(funcDeclear As String, ObjectId As Variant, argments As Variant)
+Public Function CallJavaScriptFunction(funcDeclear As String, objectId As Variant, argments As Variant)
     id_ = id_ + 1
     Dim JavaScriptObjectArgs As String
     
@@ -287,11 +287,11 @@ Public Function JavaScritpCallFunction(funcDeclear As String, ObjectId As Varian
     message = "{""id"": " & id_ & ",""method"": ""Runtime.callFunctionOn""," & _
                       """params"": " & _
                      "{""functionDeclaration"": """ & funcDeclear & """,""arguments"": " & JavaScriptObjectArgs
-    If IsNumeric(ObjectId) Then
-        message = message & ",""executionContextId"": " & ObjectId & "}}"
+    If IsNumeric(objectId) Then
+        message = message & ",""executionContextId"": " & objectId & "}}"
     Else
-        message = message & ",""objectId"": """ & ObjectId & """}}"
+        message = message & ",""objectId"": """ & objectId & """}}"
     End If
-    JavaScritpCallFunction = message
+    CallJavaScriptFunction = message
 End Function
 '*******************************************************************

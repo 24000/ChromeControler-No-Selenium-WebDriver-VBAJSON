@@ -62,18 +62,18 @@ Private Function CallFunction(functionCode As String, args As String) As String
     CallFunction = responseMsg
 End Function
 Public Function ReGetObjectId()
-    Dim codes As Variant
+    Dim Codes As Variant
     Select Case findInfo_(1)
       Case "id"
-        codes = chrome_.GetIdCodes(findInfo_(2))
+        Codes = chrome_.GetIdCodes(findInfo_(2))
       Case "xpath"
-        codes = chrome_.GetXpathCodes(findInfo_(2))
+        Codes = chrome_.GetXpathCodes(findInfo_(2))
       Case "name"
-        codes = chrome_.GetNameCodes(findInfo_(2))
+        Codes = chrome_.GetNameCodes(findInfo_(2))
       Case "tag"
-        codes = chrome_.GetTagCodes(findInfo_(2), findInfo_(3))
+        Codes = chrome_.GetTagCodes(findInfo_(2), findInfo_(3))
     End Select
-    objectId_ = chrome_.GetObjectIdOfElementBy(findInfo_(2), codes)
+    objectId_ = chrome_.GetObjectIdOfElementBy(findInfo_(2), Codes)
 End Function
 
 '***********************************************
@@ -96,7 +96,7 @@ Private Property Let IWebElement_Checked(RHS As Boolean)
 
 Exit Property
 quit:
-chrome_.DisplayErrorAndEnd "このElementはCheckedを持ちません。" & vbCrLf & _
+chrome_.DisplayErrorAndEnd "このElementはCheckedプロパティを持ちません。" & vbCrLf & _
                                             "※CheckedはCheckBoxで使用可能"
 End Property
 'Public
@@ -112,7 +112,7 @@ Private Property Get IWebElement_Checked() As Boolean
 Exit Property
 
 quit:
-chrome_.DisplayErrorAndEnd "このElementはCheckedを持ちません。" & vbCrLf & _
+chrome_.DisplayErrorAndEnd "このElementはCheckedプロパティを持ちません。" & vbCrLf & _
                                             "※CheckedはCheckBoxで使用可能"
 End Property
 
@@ -135,8 +135,7 @@ Private Property Get IWebElement_IsEnabled() As Boolean
 Exit Property
     
 quit:
-chrome_.DisplayErrorAndEnd "このElementはEnabledを持ちません。" & vbCrLf & _
-                                            "※EnabledはCheckBoxで使用可能"
+chrome_.DisplayErrorAndEnd "このElementはEnabledプロパティを持ちません。" & vbCrLf
 End Property
 
 
@@ -311,12 +310,9 @@ Private Function IWebElement_FindElementByName(name As String) As IWebElement
 Exit Function
 
 quit:
-chrome_.DisplayErrorAndEnd "＜FindElementByName＞" & vbCrLf & _
-                                "指定された以下Nameの要素は存在しませんでした。" & vbCrLf & _
-                                name & vbCrLf & vbCrLf & _
-                                "※要素の出現前に取得しようとすると失敗します。" & vbCrLf & _
-                                "　 必要であればWaitForElementToAppearByNameで" & vbCrLf & _
-                                "　 要素の出現を確認する処理を入れましょう。" & vbCrLf
+Debug.Print vbCrLf & ">>見つからなかった要素" & vbCrLf & name
+Beep
+DisplayErrorAndEnd MakeFindErrorMessage("Name", name)
 End Function
 
 'Public
@@ -337,7 +333,9 @@ Private Function IWebElement_FindElementsByTag(tagName As String) As IWebElement
     Set IWebElement_FindElementsByTag = elems
 Exit Function
 quit:
-chrome_.DisplayErrorAndEnd "指定された以下TagNameの要素は存在しませんでした。" & vbCrLf & tagName
+Debug.Print vbCrLf & ">>見つからなかった要素" & vbCrLf & tagName
+Beep
+DisplayErrorAndEnd MakeFindErrorMessage("Tag", tagName, "○○")
 End Function
 Private Function GetElementsCount(tagName As String) As Long
     Dim javaScriptCode As String, responseJson As String

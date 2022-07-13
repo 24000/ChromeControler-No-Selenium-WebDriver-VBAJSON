@@ -525,44 +525,39 @@ Private Function IWebDriver_FindElementByXpath(xPath As String) As IWebElement
     
     If InStr(xPath, """") > 0 Then xPath = Replace(xPath, """", "\""")
     
-    Dim codes As Variant: codes = GetXpathCodes(xPath)
-    Dim objectId As String: objectId = GetObjectIdOfElementBy(xPath, codes)
+    Dim Codes As Variant: Codes = GetXpathCodes(xPath)
+    Dim objectId As String: objectId = GetObjectIdOfElementBy(xPath, Codes)
     If objectId = "" Then GoTo quit
     Dim findInfo As Collection: Set findInfo = MakeFindInfo("xpath", xPath)
     Set IWebDriver_FindElementByXpath = MakeElementObject(objectId, findInfo)
 Exit Function
 
 quit:
-DisplayErrorAndEnd "＜FindElementByXpath＞" & vbCrLf & _
-                                "指定された以下Xpathの要素は存在しませんでした。" & vbCrLf & _
-                                xPath & vbCrLf & vbCrLf & _
-                                "※引数のXPathにはChromeの検証ツールで「完全なXPath」が" & vbCrLf & _
-                                "　 コピペできるので、それを指定してください。" & vbCrLf & vbCrLf & _
-                                "※XPathが正しくとも要素の出現前に取得しようとすると失敗します。" & vbCrLf & _
-                                "　 必要であればWaitForElementToAppearByXpathで" & vbCrLf & _
-                                "　 要素の出現を確認する処理を入れましょう。" & vbCrLf
+Debug.Print vbCrLf & ">>見つからなかった要素" & vbCrLf & xPath
+Beep
+DisplayErrorAndEnd MakeFindErrorMessage("XPath", xPath)
 End Function
 
 Public Function GetXpathCodes(xPath As String) As Variant
-    Dim codes(1) As String
-    codes(0) = "document.evaluate('" & xPath & "', document, null, " & _
+    Dim Codes(1) As String
+    Codes(0) = "document.evaluate('" & xPath & "', document, null, " & _
                         "XPathResult.FIRST_ORDERED_NODE_TYPE, null ).singleNodeValue;"
-    codes(1) = "function(xpath){return  document.evaluate(xpath, document, null, " & _
+    Codes(1) = "function(xpath){return  document.evaluate(xpath, document, null, " & _
                             "XPathResult.FIRST_ORDERED_NODE_TYPE, null ).singleNodeValue;}"
-    GetXpathCodes = codes
+    GetXpathCodes = Codes
 End Function
 
 
 '指定の方法で要素を探し(最大４秒間探す）、オブジェクトIDを返す
-Public Function GetObjectIdOfElementBy(way As String, codes As Variant) As String
+Public Function GetObjectIdOfElementBy(way As String, Codes As Variant) As String
     
     Dim startTime As Date: startTime = Timer()
     Dim responseMsg As String, objectId As String
     Do
         If executionContextId_ = 0 Then
-            responseMsg = ExecuteJavaScript_Inner((codes(0)))
+            responseMsg = ExecuteJavaScript_Inner((Codes(0)))
         Else
-            responseMsg = CallJavaScriptFunction((codes(1)), executionContextId_, way)
+            responseMsg = CallJavaScriptFunction((Codes(1)), executionContextId_, way)
         End If
         objectId = json_.GetValueFrom(responseMsg, Array("result", "result", "objectId"))
     
@@ -617,72 +612,101 @@ Private Function MakeAttributesDic(attributes As String) As Object
     Next
     Set MakeAttributesDic = attributesDic
 End Function
+'Find系メソッドで要素が見つからなかった場合のエラーメッセージを作成する
+Private Function MakeFindErrorMessage(wayString As String, way As String, Optional wait As String = "") As String
+    Dim errMsg As String
+    errMsg = _
+    "＜FindElementBy" & wayString & "＞" & vbCrLf & _
+    "指定された以下" & wayString & "の要素は存在しませんでした。" & vbCrLf & _
+    way & vbCrLf & "(イミディエイトウィンドウで確認可能)" & vbCrLf & vbCrLf
+    
+    If wayString = "XPath" Then
+        errMsg = errMsg & _
+        "※引数のXPathにはChromeの検証ツールで「完全なXPath」が" & vbCrLf & _
+        "　 コピペできるので、それを指定してください。" & vbCrLf & vbCrLf
+    End If
+    
+    errMsg = errMsg & _
+        "※もし取得したい要素がiframe内の要素である場合、SwitchFrameを" & vbCrLf & _
+        "　 使用して、フレームを切り替えてからでないと取得できません。" & vbCrLf & vbCrLf
+    
+    errMsg = errMsg & _
+    "※上記に沿っていても、要素が画面に出現する前だと失敗します。" & vbCrLf
+    
+    If wait = "" Then
+        errMsg = errMsg & _
+        "　 必要であればWaitForElementToAppearBy" & wayString & "で" & vbCrLf
+    Else
+        errMsg = errMsg & _
+        "　 必要であればWaitForElementToAppearBy" & wait & "で" & vbCrLf
+    End If
+    
+    errMsg = errMsg & _
+    "　 要素の出現を確認する処理を入れましょう。" & vbCrLf
+    
+    MakeFindErrorMessage = errMsg
+End Function
 
 'Public
 Private Function IWebDriver_FindElementById(Id As String) As IWebElement
-    Dim codes As Variant: codes = GetIdCodes(Id)
-    Dim objectId As String: objectId = GetObjectIdOfElementBy(Id, codes)
+    Dim Codes As Variant: Codes = GetIdCodes(Id)
+    Dim objectId As String: objectId = GetObjectIdOfElementBy(Id, Codes)
     If objectId = "" Then GoTo quit
     Dim findInfo As Collection: Set findInfo = MakeFindInfo("id", Id)
     Set IWebDriver_FindElementById = MakeElementObject(objectId, findInfo)
 Exit Function
 
 quit:
-DisplayErrorAndEnd "＜FindElementById＞" & vbCrLf & _
-                                "指定された以下Idの要素は存在しませんでした。" & vbCrLf & _
-                                Id & vbCrLf & vbCrLf & _
-                                "※要素の出現前に取得しようとすると失敗します。" & vbCrLf & _
-                                "　 必要であればWaitForElementToAppearByIdで" & vbCrLf & _
-                                "　 要素の出現を確認する処理を入れましょう。" & vbCrLf
+Debug.Print vbCrLf & ">>見つからなかった要素" & vbCrLf & Id
+Beep
+DisplayErrorAndEnd MakeFindErrorMessage("Id", Id)
 End Function
 Public Function GetIdCodes(Id As String) As Variant
-    Dim codes(1) As String
-    codes(0) = "document.getElementById('" & Id & "');"
-    codes(1) = "function(id){return  document.getElementById(id);}"
-    GetIdCodes = codes
+    Dim Codes(1) As String
+    Codes(0) = "document.getElementById('" & Id & "');"
+    Codes(1) = "function(id){return  document.getElementById(id);}"
+    GetIdCodes = Codes
 End Function
 
 'Public
 Private Function IWebDriver_FindElementByName(name As String) As IWebElement
 
-    Dim codes As Variant: codes = GetNameCodes(name)
-    Dim objectId As String: objectId = GetObjectIdOfElementBy(name, codes)
+    Dim Codes As Variant: Codes = GetNameCodes(name)
+    Dim objectId As String: objectId = GetObjectIdOfElementBy(name, Codes)
     If objectId = "" Then GoTo quit
     Dim findInfo As Collection: Set findInfo = MakeFindInfo("name", name)
     Set IWebDriver_FindElementByName = MakeElementObject(objectId, findInfo)
 Exit Function
 
 quit:
-DisplayErrorAndEnd "＜FindElementByName＞" & vbCrLf & _
-                                "指定された以下Nameの要素は存在しませんでした。" & vbCrLf & _
-                                name & vbCrLf & vbCrLf & _
-                                "※要素の出現前に取得しようとすると失敗します。" & vbCrLf & _
-                                "　 必要であればWaitForElementToAppearByNameで" & vbCrLf & _
-                                "　 要素の出現を確認する処理を入れましょう。" & vbCrLf
+Debug.Print vbCrLf & ">>見つからなかった要素" & vbCrLf & name
+Beep
+DisplayErrorAndEnd MakeFindErrorMessage("Name", name)
 End Function
 Public Function GetNameCodes(name As String) As Variant
-    Dim codes(1) As String
-    codes(0) = "document.getElementsByName('" & name & "')[0];"
-    codes(1) = "function(name){return  document.getElementsByName(name)[0];}"
-    GetNameCodes = codes
+    Dim Codes(1) As String
+    Codes(0) = "document.getElementsByName('" & name & "')[0];"
+    Codes(1) = "function(name){return  document.getElementsByName(name)[0];}"
+    GetNameCodes = Codes
 End Function
 
 'Public
 'tag名で要素コレクションを取得（要素グループのLengthを取得し、Length分要素作成ループ）
 Private Function IWebDriver_FindElementsByTag(tagName As String) As IWebElements
-    Dim codes As Variant
-    codes(0) = "document.getElementsByTagName('" & tagName & "').length;"
-    codes(1) = "function(tagName){return  document.getElementsByTagName('" & tagName & "').length;}"
-    Dim elemsCount As Long: elemsCount = GetElementsCountBy(tagName, codes)
+    Dim countCodes(1) As Variant
+    countCodes(0) = "document.getElementsByTagName('" & tagName & "').length;"
+    countCodes(1) = "function(tagName){return  document.getElementsByTagName('" & tagName & "').length;}"
+    Dim elemsCount As Long: elemsCount = GetElementsCountBy(tagName, countCodes)
     If elemsCount = 0 Then GoTo quit
     
     Dim elements As Collection: Set elements = New Collection
     
     Dim objectId As String
+    Dim Codes As Variant
     Dim Index As Long
     For Index = 0 To elemsCount - 1
-        codes = GetTagCodes(tagName, Index)
-        objectId = GetObjectIdOfElementBy(tagName, codes)
+        Codes = GetTagCodes(tagName, Index)
+        objectId = GetObjectIdOfElementBy(tagName, Codes)
         Dim findInfo As Collection: Set findInfo = MakeFindInfo("tag", tagName, Index)
         elements.add MakeElementObject(objectId, findInfo)
     Next
@@ -694,27 +718,24 @@ Private Function IWebDriver_FindElementsByTag(tagName As String) As IWebElements
 Exit Function
 
 quit:
-DisplayErrorAndEnd "＜FindElementsByTag＞" & vbCrLf & _
-                                "指定された以下TagNameの要素は存在しませんでした。" & vbCrLf & _
-                                tagName & vbCrLf & vbCrLf & _
-                                "※要素の出現前に取得しようとすると失敗します。" & vbCrLf & _
-                                "　 必要であればWaitForElementToAppearBy○○で" & vbCrLf & _
-                                "　 要素の出現を確認する処理を入れましょう。" & vbCrLf
+Debug.Print vbCrLf & ">>見つからなかった要素" & vbCrLf & tagName
+Beep
+DisplayErrorAndEnd MakeFindErrorMessage("Tag", tagName, "○○")
 End Function
-Private Function GetElementsCountBy(way As String, codes As Variant) As Long
+Private Function GetElementsCountBy(way As String, Codes As Variant) As Long
     Dim responseMsg As String
     If executionContextId_ = 0 Then
-        responseMsg = ExecuteJavaScript_Inner((codes(0)))
+        responseMsg = ExecuteJavaScript_Inner((Codes(0)))
     Else
-        responseMsg = CallJavaScriptFunction((codes(1)), executionContextId_, way)
+        responseMsg = CallJavaScriptFunction((Codes(1)), executionContextId_, way)
     End If
     GetElementsCountBy = json_.GetValueFrom(responseMsg, Array("result", "result", "value"))
 End Function
 Public Function GetTagCodes(tagName As String, Index As Long) As Variant
-    Dim codes(1) As String
-    codes(0) = "document.getElementsByTagName('" & tagName & "')[" & Index & "];"
-    codes(1) = "function(tagName){return  document.getElementsByTagName(tagName)[" & Index & "];}"
-    GetTagCodes = codes
+    Dim Codes(1) As String
+    Codes(0) = "document.getElementsByTagName('" & tagName & "')[" & Index & "];"
+    Codes(1) = "function(tagName){return  document.getElementsByTagName(tagName)[" & Index & "];}"
+    GetTagCodes = Codes
 End Function
 
 'Public
@@ -923,21 +944,21 @@ Private Function IWebDriver_IsExistsElementByName(name As String) As Boolean
 End Function
 'IsExists共通関数
 Private Function IsExistsElementBy(way As String, way_stringSpecify As String) As Boolean
-    Dim codes As Variant
+    Dim Codes As Variant
     Select Case way_stringSpecify
       Case "xpath"
-        codes = GetXpathCodes(way)
+        Codes = GetXpathCodes(way)
       Case "id"
-        codes = GetIdCodes(way)
+        Codes = GetIdCodes(way)
       Case "name"
-        codes = GetNameCodes(way)
+        Codes = GetNameCodes(way)
     End Select
 
     Dim responseMsg As String
     If executionContextId_ = 0 Then
-        responseMsg = ExecuteJavaScript_Inner((codes(0)))
+        responseMsg = ExecuteJavaScript_Inner((Codes(0)))
     Else
-        responseMsg = CallJavaScriptFunction((codes(1)), executionContextId_, way)
+        responseMsg = CallJavaScriptFunction((Codes(1)), executionContextId_, way)
     End If
     Dim objectId As String
     objectId = json_.GetValueFrom(responseMsg, Array("result", "result", "objectId"))

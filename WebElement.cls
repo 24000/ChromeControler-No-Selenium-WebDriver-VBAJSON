@@ -51,6 +51,7 @@ Public Property Get FrameId() As String
 End Property
 
 'CallJavaScriptFunction呼出しの共通関数
+'戻り値が"Cannot find context with specified id"となる場合、ObjectIdの再取得が必要なため共通化
 Private Function CallFunction(functionCode As String, args As String) As String
     Dim responseMsg As String
     responseMsg = chrome_.CallJavaScriptFunctionForElement(functionCode, objectId_, args)
@@ -76,6 +77,21 @@ Public Function ReGetObjectId()
     objectId_ = chrome_.GetObjectIdOfElementBy(findInfo_(2), Codes)
 End Function
 
+'ChromeDriverのCDPMethodを呼出す場合に、引数にObjectIdを使用して呼出すMethodの共通管理のための関数
+'戻り値が"Cannot find context with specified id"となる場合に、ObjectIdの再取得が必要になるため共通化
+'現在FocusとGetGetBoxModelの呼び出しのみ
+Private Function CallObjectIdUsingMethod(methodName As String) As String
+    Dim responseMsg As String
+    responseMsg = CallByName(chrome_, methodName, VbMethod, objectId_)
+
+    If InStr(responseMsg, "Cannot find context with specified id") > 0 Then
+        chrome_.ReCreateIsolatedFrameWorld
+        ReGetObjectId
+        responseMsg = CallByName(chrome_, methodName, VbMethod, objectId_)
+    End If
+    CallObjectIdUsingMethod = responseMsg
+End Function
+
 '***********************************************
 'Public
 'チェックボックス要素についてChecked属性の設定
@@ -97,7 +113,7 @@ Private Property Let IWebElement_Checked(RHS As Boolean)
 Exit Property
 quit:
 chrome_.DisplayErrorAndEnd "このElementはCheckedプロパティを持ちません。" & vbCrLf & _
-                                            "※CheckedはCheckBoxで使用可能"
+                                            "※CheckedはCheckBoxで使用可能" & vbCrLf
 End Property
 'Public
 'チェックボックス要素についてチェック状態取得
@@ -107,13 +123,13 @@ Private Property Get IWebElement_Checked() As Boolean
     If InStr(responseJson, """type"":""boolean""") = 0 Then GoTo quit
     
     Dim Checked As Boolean
-    Checked = chrome_.Json.GetValueFrom(responseJson, Array("result", "result", "value"))
+    Checked = chrome_.json.GetValueFrom(responseJson, Array("result", "result", "value"))
     IWebElement_Checked = Checked
 Exit Property
 
 quit:
 chrome_.DisplayErrorAndEnd "このElementはCheckedプロパティを持ちません。" & vbCrLf & _
-                                            "※CheckedはCheckBoxで使用可能"
+                                            "※CheckedはCheckBoxで使用可能" & vbCrLf
 End Property
 
 
@@ -130,7 +146,7 @@ Private Property Get IWebElement_IsEnabled() As Boolean
     If InStr(responseJson, """type"":""boolean""") = 0 Then GoTo quit
     
     Dim Enabled As Boolean
-    Enabled = chrome_.Json.GetValueFrom(responseJson, Array("result", "result", "value"))
+    Enabled = chrome_.json.GetValueFrom(responseJson, Array("result", "result", "value"))
     IWebElement_IsEnabled = Not Enabled
 Exit Property
     
@@ -143,7 +159,8 @@ End Property
 'Public
 'javaScriptによってクリック実行
 Private Sub IWebElement_Click()
-    chrome_.Focus (objectId_)
+    CallObjectIdUsingMethod "Focus"
+
     Dim responseJson As String
     responseJson = CallFunction("function(){this.click();}", "")
     
@@ -152,7 +169,7 @@ Private Sub IWebElement_Click()
     End If
     
     If InStr(responseJson, "this.dispatchEvent is not a function") Then
-        chrome_.Focus (objectId_)
+        CallObjectIdUsingMethod "Focus"
         chrome_.DispatchKeyEvent_DOMKeyCode "keyUp", "Enter"
     End If
     
@@ -233,10 +250,10 @@ End Sub
 'Public
 '要素のValue属性に文字列を設定
 Private Sub IWebElement_SetText(text As String)
-    chrome_.Focus (objectId_)
+    CallObjectIdUsingMethod "Focus"
     chrome_.DispatchKeyEvent_DOMKeyCode "keyUp", "Enter"
 
-    Dim encodingText As String: encodingText = chrome_.Json.EncodeURL(text)
+    Dim encodingText As String: encodingText = chrome_.json.EncodeURL(text)
     CallFunction _
         "function(value){value = decodeURI(value);this.value = value;}", encodingText
 End Sub
@@ -244,7 +261,7 @@ End Sub
 'Public
 '要素のTextContentに文字列を設定
 Private Sub IWebElement_SetTextContent(text As String)
-    Dim encodingText As String: encodingText = chrome_.Json.EncodeURL(text)
+    Dim encodingText As String: encodingText = chrome_.json.EncodeURL(text)
     CallFunction _
         "function(value){value = decodeURI(value);this.textContent  = value;}", encodingText
 End Sub
@@ -252,7 +269,7 @@ End Sub
 'Public
 'SelectBoxの選択肢を文字列で選択
 Private Sub IWebElement_SelectItemInSelectBoxByText(text As String)
-    Dim encodingText As String: encodingText = chrome_.Json.EncodeURL(text)
+    Dim encodingText As String: encodingText = chrome_.json.EncodeURL(text)
     Dim javaScriptCode As String
     javaScriptCode = _
     "function(value){value = decodeURI(value);" & _
@@ -271,7 +288,7 @@ Private Sub IWebElement_SelectItemInSelectBoxByText(text As String)
     responseJson = CallFunction(javaScriptCode, encodingText)
     
     Dim IsSelect As Boolean
-    IsSelect = chrome_.Json.GetValueFrom(responseJson, Array("result", "result", "value"))
+    IsSelect = chrome_.json.GetValueFrom(responseJson, Array("result", "result", "value"))
     
     If IsSelect = False Then
         MsgBox "「" & text & "」は選択肢の中に存在しません。" & vbCrLf & _
@@ -302,7 +319,7 @@ Private Function IWebElement_FindElementByName(name As String) As IWebElement
     responseJson = CallFunction(functionCode, name)
     
     Dim findObjectId As String
-    findObjectId = chrome_.Json.GetValueFrom( _
+    findObjectId = chrome_.json.GetValueFrom( _
                             responseJson, Array("result", "result", "objectId"))
     If findObjectId = "" Then GoTo quit
     Dim findInfoInElem As Collection: Set findInfoInElem = chrome_.MakeFindInfo("name", name)
@@ -312,7 +329,7 @@ Exit Function
 quit:
 Debug.Print vbCrLf & ">>見つからなかった要素" & vbCrLf & name
 Beep
-DisplayErrorAndEnd MakeFindErrorMessage("Name", name)
+chrome_.DisplayErrorAndEnd chrome_.MakeFindErrorMessage("Name", name)
 End Function
 
 'Public
@@ -335,14 +352,14 @@ Exit Function
 quit:
 Debug.Print vbCrLf & ">>見つからなかった要素" & vbCrLf & tagName
 Beep
-DisplayErrorAndEnd MakeFindErrorMessage("Tag", tagName, "○○")
+chrome_.DisplayErrorAndEnd chrome_.MakeFindErrorMessage("Tag", tagName, "○○")
 End Function
 Private Function GetElementsCount(tagName As String) As Long
     Dim javaScriptCode As String, responseJson As String
     javaScriptCode = _
     "function(tagName){return  this.getElementsByTagName('" & tagName & "').length;}"
     responseJson = CallFunction(javaScriptCode, tagName)
-    GetElementsCount = chrome_.Json.GetValueFrom(responseJson, Array("result", "result", "value"))
+    GetElementsCount = chrome_.json.GetValueFrom(responseJson, Array("result", "result", "value"))
 End Function
 Private Function CreateElementsItemByIndex(tagName As String, Index As Long) As IWebElement
     Dim javaScriptCode As String, responseJson As String
@@ -353,7 +370,7 @@ Private Function CreateElementsItemByIndex(tagName As String, Index As Long) As 
     "function(tagName){return  this.getElementsByTagName(tagName)[" & Index & "];}"
     responseJson = CallFunction(javaScriptCode, tagName)
 
-    objectId = chrome_.Json.GetValueFrom(responseJson, Array("result", "result", "objectId"))
+    objectId = chrome_.json.GetValueFrom(responseJson, Array("result", "result", "objectId"))
     Dim findInfoInElem As Collection: Set findInfoInElem = chrome_.MakeFindInfo("tag", tagName, Index)
     Set CreateElementsItemByIndex = chrome_.MakeElementObject(objectId, findInfoInElem)
 End Function
@@ -365,7 +382,7 @@ Private Function IWebElement_GetTextContent() As String
     responseJson = CallFunction(javaScriptCode, "")
     
     Dim text As String
-    text = chrome_.Json.GetValueFrom(responseJson, Array("result", "result", "value"))
+    text = chrome_.json.GetValueFrom(responseJson, Array("result", "result", "value"))
     IWebElement_GetTextContent = text
 End Function
 
@@ -376,7 +393,7 @@ Private Function IWebElement_GetSelectedValue() As String
     responseJson = CallFunction(javaScriptCode, "")
     
     Dim text As String
-    text = chrome_.Json.GetValueFrom(responseJson, Array("result", "result", "value"))
+    text = chrome_.json.GetValueFrom(responseJson, Array("result", "result", "value"))
     IWebElement_GetSelectedValue = text
 End Function
 
@@ -394,17 +411,16 @@ Private Function IWebElement_GetSelectedTextContent() As String
     responseJson = CallFunction(javaScriptCode, "")
     
     Dim text As String
-    text = chrome_.Json.GetValueFrom(responseJson, Array("result", "result", "value"))
+    text = chrome_.json.GetValueFrom(responseJson, Array("result", "result", "value"))
     IWebElement_GetSelectedTextContent = text
 End Function
 
 '要素中心位置のxy座標をCDPMethodで左クリック発行
 Private Sub IWebElement_DispatchLeftClickEvent()
-    Dim centerXY As Variant
-    centerXY = chrome_.GetBoxModel(objectId_)
-    Dim x As Long, y As Long
-    x = centerXY(0)
-    y = centerXY(1)
+    Dim responseMsg As String: responseMsg = CallObjectIdUsingMethod("GetBoxModel")
+    Dim centerXY As Variant: centerXY = GetCenterPositionXY(responseMsg)
+    Dim x As Long: x = centerXY(0)
+    Dim y As Long: y = centerXY(1)
     
     Dim ChromeInterFace As IWebDriver: Set ChromeInterFace = chrome_
     ChromeInterFace.ScrollWindow y - 50
@@ -413,6 +429,19 @@ Private Sub IWebElement_DispatchLeftClickEvent()
     result = chrome_.DispatchMouseEvent("mousePressed", x, y, "left", 1)
     result = chrome_.DispatchMouseEvent("mouseReleased", x, y, "left", 1)
 End Sub
+
+Public Function GetCenterPositionXY(responseMsg As String)
+    Dim result As Variant
+    result = chrome_.json.GetValueFrom(responseMsg, Array("result", "model", "content"))
+    result = Split(result, ",")
+    Dim width As Long, height As Long
+    width = chrome_.json.GetValueFrom(responseMsg, Array("result", "model", "width"))
+    height = chrome_.json.GetValueFrom(responseMsg, Array("result", "model", "height"))
+    Dim xy(1) As Variant
+    xy(0) = result(0) + (width / 2)
+    xy(1) = result(1) + (height / 2)
+    GetCenterPositionXY = xy
+End Function
 
 'Public
 'type=fileのInputBoxへファイル設定
@@ -423,8 +452,8 @@ Private Sub IWebElement_SetFileToFileSelectInputButton(filePath As String)
 '    chrome_.SetFileInputFiles objectId_,
 'CDPMethodで設定しようとしても、ファイルパスに日本語が含まれる場合、
 'エンコードして送信はできるが、クローム側でデコードしてくれない為、没
-    Dim centerXY As Variant
-    centerXY = chrome_.GetBoxModel(objectId_)
+    Dim responseMsg As String: responseMsg = CallObjectIdUsingMethod("GetBoxModel")
+    Dim centerXY As Variant: centerXY = GetCenterPositionXY(responseMsg)
     
     Dim ChromeInterFace As IWebDriver: Set ChromeInterFace = chrome_
     ChromeInterFace.ScrollWindow CLng(centerXY(1)) - 50
@@ -449,7 +478,8 @@ End Sub
 
 'Public
 Private Sub IWebElement_ClickAndThenAlertDialogErase()
-    chrome_.Focus (objectId_)
+    CallObjectIdUsingMethod "Focus"
+'    chrome_.Focus (objectId_)
     Dim responseJson As String
     responseJson = CallFunction("function(){this.click();}", "")
     chrome_.SleepByWindowsAPIInner 1000

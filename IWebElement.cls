@@ -37,7 +37,7 @@ Public Sub SelectItemInSelectBoxByText(text As String)
 
 End Sub
 
-Public Function FindElementByName(Name As String) As IWebElement
+Public Function FindElementByName(name As String) As IWebElement
 
 End Function
 

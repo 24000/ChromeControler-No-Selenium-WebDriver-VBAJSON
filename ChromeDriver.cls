@@ -67,8 +67,8 @@ End Property
 Public Property Get CDPMethod() As a_0_x2_CDPMethods
     Set CDPMethod = CDPMethod_
 End Property
-Public Property Get Json() As a_0_x4_JSONHandler
-    Set Json = json_
+Public Property Get json() As a_0_x4_JSONHandler
+    Set json = json_
 End Property
 Public Property Get CDPEvents() As a_0_x1_x2_CDPEventHandler
     Set CDPEvents = events_
@@ -155,7 +155,7 @@ End Function
 'イベント通知の場合、responsにidが含まれないため、idの有無で送信に対する受信なのかイベント通知なのかを判断
 '補足:送信自体は成功しても、送信したJsonに不備がある場合も、responsにidが含まれない。
 Public Function ProcessMessage( _
-    sendId As Long, sendMsg As String, Json As a_0_x4_JSONHandler) As String
+    sendId As Long, sendMsg As String, json As a_0_x4_JSONHandler) As String
     
     Debug.Print vbCrLf & ">>>>>>" & "送信内容：" & sendMsg
     If webSocket_.SendMessage(sendMsg) = False Then GoTo quit
@@ -165,7 +165,7 @@ Public Function ProcessMessage( _
         response = webSocket_.GetMessage
         If response = "受信エラー発生" Then GoTo quit
         
-        responseId = Json.GetValueFrom(response, Array("id"))
+        responseId = json.GetValueFrom(response, Array("id"))
         If responseId = "" Then
             If InStr(response, "method") > 0 Then
                 events_.GetInfo response, Me
@@ -318,33 +318,23 @@ Public Sub DOMEnable()
     responseMsg = ProcessMessage(CDPMethod_.Id, sendMsg, json_)
 End Sub
 
-Public Sub Focus(objectId As String)
-    Dim sendMsg  As String, responseMsg As String
+Public Function Focus(objectId As String) As String
+    Dim sendMsg  As String
     sendMsg = CDPMethod_.Focus(objectId)
-    responseMsg = ProcessMessage(CDPMethod_.Id, sendMsg, json_)
-End Sub
-
-Public Function GetBoxModel(objectId As String) As Variant
-    Dim sendMsg  As String, responseMsg As String
-    sendMsg = CDPMethod_.GetBoxModel(objectId)
-    responseMsg = ProcessMessage(CDPMethod_.Id, sendMsg, json_)
-    Dim result As Variant
-    result = json_.GetValueFrom(responseMsg, Array("result", "model", "content"))
-    result = Split(result, ",")
-    Dim width As Long, height As Long
-    width = json_.GetValueFrom(responseMsg, Array("result", "model", "width"))
-    height = json_.GetValueFrom(responseMsg, Array("result", "model", "height"))
-    Dim xy(1) As Variant
-    xy(0) = result(0) + (width / 2)
-    xy(1) = result(1) + (height / 2)
-    GetBoxModel = xy
+    Focus = ProcessMessage(CDPMethod_.Id, sendMsg, json_)
 End Function
 
-Public Sub SetFileInputFiles(objectId As Variant, files As String)
+Public Function GetBoxModel(objectId As String) As Variant
+    Dim sendMsg  As String
+    sendMsg = CDPMethod_.GetBoxModel(objectId)
+    GetBoxModel = ProcessMessage(CDPMethod_.Id, sendMsg, json_)
+End Function
+
+Public Function SetFileInputFiles(objectId As Variant, files As String) As String
     Dim sendMsg  As String, responseMsg As String
     sendMsg = CDPMethod_.SetFileInputFiles(objectId, files)
-    responseMsg = ProcessMessage(CDPMethod_.Id, sendMsg, json_)
-End Sub
+    SetFileInputFiles = ProcessMessage(CDPMethod_.Id, sendMsg, json_)
+End Function
 
 Public Sub FindElementByQuerySelector(Selector As String)
     Dim sendMsg  As String, responseMsg As String
@@ -613,7 +603,7 @@ Private Function MakeAttributesDic(attributes As String) As Object
     Set MakeAttributesDic = attributesDic
 End Function
 'Find系メソッドで要素が見つからなかった場合のエラーメッセージを作成する
-Private Function MakeFindErrorMessage(wayString As String, way As String, Optional wait As String = "") As String
+Public Function MakeFindErrorMessage(wayString As String, way As String, Optional wait As String = "") As String
     Dim errMsg As String
     errMsg = _
     "＜FindElementBy" & wayString & "＞" & vbCrLf & _
@@ -774,14 +764,14 @@ End Sub
 '→frame(Pageの親フレーム)とChildFrames(配列の中にPageの子frame情報(オブジェクト)）の構成
 Private Function GetFrameInfos() As Collection
     Dim collect As Collection: Set collect = New Collection
-    Dim Json As String: Json = GetFrameTree
+    Dim json As String: json = GetFrameTree
 '    collect.add json_.GetObjectFrom(json, Array("result", "frameTree", "frame"))
     
     Dim frmInfo As String, frminfo2 As String
     Dim Count As Long
     Do
         'まずchildFramesから一つのFrame情報（オブジェクト）取得
-        frmInfo = json_.GetObjectFrom(Json, _
+        frmInfo = json_.GetObjectFrom(json, _
                         Array("result", "frameTree", "childFrames", Count))
         If frmInfo = "" Then Exit Do
         'そのオブジェクトの中のframeプロパティ(オブジェクト)を取得し、コレクションに加える
@@ -796,11 +786,11 @@ Private Function GetFrameInfos() As Collection
     Set GetFrameInfos = collect
 End Function
 'childFrameがある場合、再帰処理
-Public Sub GetChildFrameInfo(collect As Collection, Json As String)
+Public Sub GetChildFrameInfo(collect As Collection, json As String)
     Dim frmInfo As String, frminfo2 As String
     Dim Count As Long
     Do
-        frmInfo = json_.GetObjectFrom(Json, _
+        frmInfo = json_.GetObjectFrom(json, _
                         Array("childFrames", Count))
         If frmInfo = "" Then Exit Do
         frminfo2 = json_.GetObjectFrom(frmInfo, Array("frame"))

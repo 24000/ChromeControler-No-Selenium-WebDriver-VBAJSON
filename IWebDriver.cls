@@ -69,7 +69,7 @@ Public Sub SleepByWindowsAPI(milliSecond As Long)
 
 End Sub
 
-Public Sub SwitchTabByIndex(index As Long)
+Public Sub SwitchTabByIndex(Index As Long)
     
 End Sub
 

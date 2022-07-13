@@ -35,14 +35,14 @@ End Sub
 '各種イベント発生時に情報を取得する
 Public Sub GetInfo(EventInfo As String, chrome As ChromeDriver)
     Dim eventName As String
-    eventName = chrome.Json.GetValueFrom(EventInfo, Array("method"))
+    eventName = chrome.json.GetValueFrom(EventInfo, Array("method"))
     
     If InStr(eventName, "frame") > 0 Then
         Dim Id As String
         If InStr(eventName, "Navigated") = 0 Then
-            Id = chrome.Json.GetValueFrom(EventInfo, Array("params", "frameId"))
+            Id = chrome.json.GetValueFrom(EventInfo, Array("params", "frameId"))
         Else
-            Id = chrome.Json.GetValueFrom(EventInfo, Array("params", "frame", "id"))
+            Id = chrome.json.GetValueFrom(EventInfo, Array("params", "frame", "id"))
         End If
         Dim isCurrentTarget As Boolean
         isCurrentTarget = (Id = chrome.TargetId)
@@ -52,17 +52,17 @@ Public Sub GetInfo(EventInfo As String, chrome As ChromeDriver)
     
     Select Case eventName
         Case "Page.javascriptDialogOpening"
-            SetDialogInfo EventInfo, chrome.Json
+            SetDialogInfo EventInfo, chrome.json
             Debug.Print "★★DialogOpening"
         Case "Page.javascriptDialogClosed"
             InitializeDialogInfo
             Debug.Print "★★DialogClosed"
         Case "Target.targetCreated"
-            AddTargetInfo EventInfo, chrome.Json
+            AddTargetInfo EventInfo, chrome.json
         Case "Target.targetInfoChanged"
-            ChangeTargetInfo EventInfo, chrome.Json
+            ChangeTargetInfo EventInfo, chrome.json
         Case "Target.targetDestroyed"
-            RemoveTargetInfo EventInfo, chrome.Json
+            RemoveTargetInfo EventInfo, chrome.json
             
         Case "Page.frameScheduledNavigation" '非推奨となっているがこれが返ってくる。
             If InStr(EventInfo, "anchorClick") > 0 Then
@@ -89,7 +89,7 @@ Public Sub GetInfo(EventInfo As String, chrome As ChromeDriver)
             End If
         Case "Runtime.executionContextDestroyed"
             Dim contextId As Long
-            contextId = chrome.Json.GetValueFrom(EventInfo, Array("params", "executionContextId"))
+            contextId = chrome.json.GetValueFrom(EventInfo, Array("params", "executionContextId"))
             If contextId = chrome.executionContextId_ Then
                 IsCurrentContextIdDestroyed = True
                 Debug.Print "★★IsCurrentContextIdDestroyed"
@@ -97,16 +97,16 @@ Public Sub GetInfo(EventInfo As String, chrome As ChromeDriver)
     End Select
 End Sub
 'アラートダイアログ出現時に情報を取得
-Private Sub SetDialogInfo(ByVal EventInfo As String, Json As a_0_x4_JSONHandler)
+Private Sub SetDialogInfo(ByVal EventInfo As String, json As a_0_x4_JSONHandler)
     DialogInfoDic("IsExistDialog") = True
-    DialogInfoDic("DialogMessage") = Json.GetValueFrom(EventInfo, Array("params", "message"))
-    DialogInfoDic("DialogType") = Json.GetValueFrom(EventInfo, Array("params", "type"))
-    If Json.GetValueFrom(EventInfo, Array("params", "hasBrowserHandler")) = "True" Then
+    DialogInfoDic("DialogMessage") = json.GetValueFrom(EventInfo, Array("params", "message"))
+    DialogInfoDic("DialogType") = json.GetValueFrom(EventInfo, Array("params", "type"))
+    If json.GetValueFrom(EventInfo, Array("params", "hasBrowserHandler")) = "True" Then
         DialogInfoDic("HasBrowserHandler") = True
     Else
         DialogInfoDic("HasBrowserHandler") = False
     End If
-    DialogInfoDic("DefaultPrompt") = Json.GetValueFrom(EventInfo, Array("params", "defaultPrompt"))
+    DialogInfoDic("DefaultPrompt") = json.GetValueFrom(EventInfo, Array("params", "defaultPrompt"))
 End Sub
 'アラートダイアログ出現時に情報を格納する辞書の初期化
 Private Sub InitializeDialogInfo()
@@ -119,26 +119,26 @@ Private Sub InitializeDialogInfo()
 End Sub
 
 'TargetのTypeにより､それぞれコレクションに情報を取得する｡
-Private Sub AddTargetInfo(ByVal EventInfo As String, Json As a_0_x4_JSONHandler)
+Private Sub AddTargetInfo(ByVal EventInfo As String, json As a_0_x4_JSONHandler)
     Dim tempdic As Object
     Set tempdic = CreateObject("Scripting.Dictionary")
-    tempdic.add "targetId", Json.GetValueFrom(EventInfo, Array("params", "targetInfo", "targetId"))
-    tempdic.add "title", Json.GetValueFrom(EventInfo, Array("params", "targetInfo", "title"))
-    tempdic.add "url", Json.GetValueFrom(EventInfo, Array("params", "targetInfo", "url"))
-    tempdic.add "browserContextId", Json.GetValueFrom(EventInfo, Array("params", "targetInfo", "browserContextId"))
+    tempdic.add "targetId", json.GetValueFrom(EventInfo, Array("params", "targetInfo", "targetId"))
+    tempdic.add "title", json.GetValueFrom(EventInfo, Array("params", "targetInfo", "title"))
+    tempdic.add "url", json.GetValueFrom(EventInfo, Array("params", "targetInfo", "url"))
+    tempdic.add "browserContextId", json.GetValueFrom(EventInfo, Array("params", "targetInfo", "browserContextId"))
     
     Dim targetType As String
-    targetType = Json.GetValueFrom(EventInfo, Array("params", "targetInfo", "type"))
+    targetType = json.GetValueFrom(EventInfo, Array("params", "targetInfo", "type"))
     Select Case targetType
       Case "page"
-        AddInfoOf PageInfos, tempdic, EventInfo, Json
+        AddInfoOf PageInfos, tempdic, EventInfo, json
       Case "iframe"
-        AddInfoOf IframeInfos, tempdic, EventInfo, Json
+        AddInfoOf IframeInfos, tempdic, EventInfo, json
     End Select
 End Sub
 'Chrome上でTargetが追加されたら、各TargetTypeの情報を管理するCollectionにその情報をDictionaryとしてまとめて追加する。
 Private Sub AddInfoOf(infos As Collection, tempdic As Object, _
-                                    ByVal EventInfo As String, Json As a_0_x4_JSONHandler)
+                                    ByVal EventInfo As String, json As a_0_x4_JSONHandler)
                                         
     '本来targetInfoChangedで来るべき内容がtargetCreatedで来るケースあり。
     'SetDiscoverTarget使用すると既に開かれているPageもCreateされる模様
@@ -155,47 +155,47 @@ Private Sub AddInfoOf(infos As Collection, tempdic As Object, _
 End Sub
 
 'Chrome上でPage(タブ)の情報が変更されたら、Page情報を管理するCollection内の該当Pageの情報を変更する。
-Private Sub ChangeTargetInfo(ByVal EventInfo As String, Json As a_0_x4_JSONHandler)
+Private Sub ChangeTargetInfo(ByVal EventInfo As String, json As a_0_x4_JSONHandler)
     Dim targetType As String
-    targetType = Json.GetValueFrom(EventInfo, Array("params", "targetInfo", "type"))
+    targetType = json.GetValueFrom(EventInfo, Array("params", "targetInfo", "type"))
     
     Select Case targetType
       Case "page"
-        ChangeInfoOf PageInfos, EventInfo, Json
+        ChangeInfoOf PageInfos, EventInfo, json
       Case "iframe"
-        ChangeInfoOf IframeInfos, EventInfo, Json
+        ChangeInfoOf IframeInfos, EventInfo, json
     End Select
 End Sub
 Private Sub ChangeInfoOf(infos As Collection, _
-                                        ByVal EventInfo As String, Json As a_0_x4_JSONHandler)
+                                        ByVal EventInfo As String, json As a_0_x4_JSONHandler)
     Dim TargetId As String
-    TargetId = Json.GetValueFrom(EventInfo, Array("params", "targetInfo", "targetId"))
+    TargetId = json.GetValueFrom(EventInfo, Array("params", "targetInfo", "targetId"))
     Dim info As Variant
     For Each info In infos
         If info("targetId") = TargetId Then
-            info("title") = Json.GetValueFrom(EventInfo, Array("params", "targetInfo", "title"))
-            info("url") = Json.GetValueFrom(EventInfo, Array("params", "targetInfo", "url"))
-            info("browserContextId") = Json.GetValueFrom(EventInfo, Array("params", "targetInfo", "browserContextId"))
+            info("title") = json.GetValueFrom(EventInfo, Array("params", "targetInfo", "title"))
+            info("url") = json.GetValueFrom(EventInfo, Array("params", "targetInfo", "url"))
+            info("browserContextId") = json.GetValueFrom(EventInfo, Array("params", "targetInfo", "browserContextId"))
         End If
     Next
 End Sub
 
 'Chrome上でPage(タブ)が削除されたら、Page情報を管理するCollectionからその情報を削除する。
-Private Sub RemoveTargetInfo(ByVal EventInfo As String, Json As a_0_x4_JSONHandler)
+Private Sub RemoveTargetInfo(ByVal EventInfo As String, json As a_0_x4_JSONHandler)
     Dim targetType As String
-    targetType = Json.GetValueFrom(EventInfo, Array("params", "targetInfo", "type"))
+    targetType = json.GetValueFrom(EventInfo, Array("params", "targetInfo", "type"))
     
     Select Case targetType
       Case "page"
-        RemoveInfoOf PageInfos, EventInfo, Json
+        RemoveInfoOf PageInfos, EventInfo, json
       Case "iframe"
-        RemoveInfoOf IframeInfos, EventInfo, Json
+        RemoveInfoOf IframeInfos, EventInfo, json
     End Select
 End Sub
 Private Sub RemoveInfoOf(infos As Collection, _
-                                        ByVal EventInfo As String, Json As a_0_x4_JSONHandler)
+                                        ByVal EventInfo As String, json As a_0_x4_JSONHandler)
     Dim TargetId As String
-    TargetId = Json.GetValueFrom(EventInfo, Array("params", "targetInfo", "targetId"))
+    TargetId = json.GetValueFrom(EventInfo, Array("params", "targetInfo", "targetId"))
     
     Dim i As Long
     For i = 1 To infos.Count

@@ -50,14 +50,39 @@ Public Property Get FrameId() As String
     FrameId = frameId_
 End Property
 
+'CallJavaScriptFunction呼出しの共通関数
+Private Function CallFunction(functionCode As String, args As String) As String
+    Dim responseMsg As String
+    responseMsg = chrome_.CallJavaScriptFunctionForElement(functionCode, objectId_, args)
+    If InStr(responseMsg, "Cannot find context with specified id") > 0 Then
+        chrome_.ReCreateIsolatedFrameWorld
+        ReGetObjectId
+        responseMsg = chrome_.CallJavaScriptFunctionForElement(functionCode, objectId_, args)
+    End If
+    CallFunction = responseMsg
+End Function
+Public Function ReGetObjectId()
+    Dim codes As Variant
+    Select Case findInfo_(1)
+      Case "id"
+        codes = chrome_.GetIdCodes(findInfo_(2))
+      Case "xpath"
+        codes = chrome_.GetXpathCodes(findInfo_(2))
+      Case "name"
+        codes = chrome_.GetNameCodes(findInfo_(2))
+      Case "tag"
+        codes = chrome_.GetTagCodes(findInfo_(2), findInfo_(3))
+    End Select
+    objectId_ = chrome_.GetObjectIdOfElementBy(findInfo_(2), codes)
+End Function
+
 '***********************************************
 'Public
-'チェックボックス要素についてチェックChecked属性の設定
+'チェックボックス要素についてChecked属性の設定
 Private Property Let IWebElement_Checked(RHS As Boolean)
     Dim responseJson As String
     'checkedプロパティを持っているか事前にチェック。持っていない場合はじく。
-    responseJson = chrome_.JavaScritpCallFunction( _
-        "function(value){return this.checked;}", objectId_, "")
+    responseJson = CallFunction("function(){return this.checked;}", "")
     If InStr(responseJson, """type"":""boolean""") = 0 Then GoTo quit
     
     Dim boolString As String
@@ -67,8 +92,7 @@ Private Property Let IWebElement_Checked(RHS As Boolean)
         boolString = "false"
     End If
 
-    responseJson = chrome_.JavaScritpCallFunction( _
-        "function(value){ this.checked = value;}", objectId_, boolString)
+    responseJson = CallFunction("function(value){ this.checked = value;}", boolString)
 
 Exit Property
 quit:
@@ -79,8 +103,7 @@ End Property
 'チェックボックス要素についてチェック状態取得
 Private Property Get IWebElement_Checked() As Boolean
     Dim responseJson As String
-    responseJson = chrome_.JavaScritpCallFunction( _
-        "function(value){return this.checked;}", objectId_, "")
+    responseJson = CallFunction("function(){return this.checked;}", "")
     If InStr(responseJson, """type"":""boolean""") = 0 Then GoTo quit
     
     Dim Checked As Boolean
@@ -103,8 +126,7 @@ End Property
 '要素の状態(有効or無効)を取得
 Private Property Get IWebElement_IsEnabled() As Boolean
     Dim responseJson As String
-    responseJson = chrome_.JavaScritpCallFunction( _
-        "function(value){return this.disabled;}", objectId_, "")
+    responseJson = CallFunction("function(){return this.disabled;}", "")
     If InStr(responseJson, """type"":""boolean""") = 0 Then GoTo quit
     
     Dim Enabled As Boolean
@@ -124,12 +146,10 @@ End Property
 Private Sub IWebElement_Click()
     chrome_.Focus (objectId_)
     Dim responseJson As String
-    responseJson = chrome_.JavaScritpCallFunction("function(value){this.click();}", objectId_, "")
+    responseJson = CallFunction("function(){this.click();}", "")
     
     If InStr(responseJson, "this.click is not a function") Then
-        Dim javaScriptCode As String
-        javaScriptCode = "function(value){this.dispatchEvent(new MouseEvent( 'click' ));}"
-        responseJson = chrome_.JavaScritpCallFunction(javaScriptCode, objectId_, "")
+        responseJson = CallFunction("function(){this.dispatchEvent(new MouseEvent( 'click' ));}", "")
     End If
     
     If InStr(responseJson, "this.dispatchEvent is not a function") Then
@@ -218,24 +238,16 @@ Private Sub IWebElement_SetText(text As String)
     chrome_.DispatchKeyEvent_DOMKeyCode "keyUp", "Enter"
 
     Dim encodingText As String: encodingText = chrome_.Json.EncodeURL(text)
-    chrome_.JavaScritpCallFunction _
-    "function(value){" & _
-        "value = decodeURI(value);" & _
-        "this.value = value;" & _
-    "}", _
-    objectId_, encodingText
+    CallFunction _
+        "function(value){value = decodeURI(value);this.value = value;}", encodingText
 End Sub
 
 'Public
 '要素のTextContentに文字列を設定
 Private Sub IWebElement_SetTextContent(text As String)
     Dim encodingText As String: encodingText = chrome_.Json.EncodeURL(text)
-    chrome_.JavaScritpCallFunction _
-    "function(value){" & _
-        "value = decodeURI(value);" & _
-        "this.textContent  = value;" & _
-    "}", _
-    objectId_, encodingText
+    CallFunction _
+        "function(value){value = decodeURI(value);this.textContent  = value;}", encodingText
 End Sub
 
 'Public
@@ -257,7 +269,7 @@ Private Sub IWebElement_SelectItemInSelectBoxByText(text As String)
     "return false;}"
     
     Dim responseJson As String
-    responseJson = chrome_.JavaScritpCallFunction(javaScriptCode, objectId_, encodingText)
+    responseJson = CallFunction(javaScriptCode, encodingText)
     
     Dim IsSelect As Boolean
     IsSelect = chrome_.Json.GetValueFrom(responseJson, Array("result", "result", "value"))
@@ -271,7 +283,7 @@ Private Sub IWebElement_SelectItemInSelectBoxByText(text As String)
     
     javaScriptCode = _
     "function(value){this.onchange();}"
-    responseJson = chrome_.JavaScritpCallFunction(javaScriptCode, objectId_, encodingText)
+    responseJson = CallFunction(javaScriptCode, encodingText)
     
     If InStr(responseJson, "this.onchange is not a function") Then
         javaScriptCode = _
@@ -279,16 +291,16 @@ Private Sub IWebElement_SelectItemInSelectBoxByText(text As String)
             "const event = new CustomEvent('change', {bubbles: false, cancelable: false});" & _
             "this.dispatchEvent(event);" & _
         "}"
-        responseJson = chrome_.JavaScritpCallFunction(javaScriptCode, objectId_, encodingText)
+        responseJson = CallFunction(javaScriptCode, encodingText)
     End If
 
 End Sub
 
 'Public
 Private Function IWebElement_FindElementByName(name As String) As IWebElement
-    Dim FunctionCode As String, responseJson As String
-    FunctionCode = "function(name){return  this.getElementsByName(name)[0];}"
-    responseJson = chrome_.JavaScritpCallFunction(FunctionCode, objectId_, name)
+    Dim functionCode As String, responseJson As String
+    functionCode = "function(name){return  this.getElementsByName(name)[0];}"
+    responseJson = CallFunction(functionCode, name)
     
     Dim findObjectId As String
     findObjectId = chrome_.Json.GetValueFrom( _
@@ -303,7 +315,7 @@ chrome_.DisplayErrorAndEnd "＜FindElementByName＞" & vbCrLf & _
                                 "指定された以下Nameの要素は存在しませんでした。" & vbCrLf & _
                                 name & vbCrLf & vbCrLf & _
                                 "※要素の出現前に取得しようとすると失敗します。" & vbCrLf & _
-                                "　 必要であればWaitForElementToAppearByXpathで" & vbCrLf & _
+                                "　 必要であればWaitForElementToAppearByNameで" & vbCrLf & _
                                 "　 要素の出現を確認する処理を入れましょう。" & vbCrLf
 End Function
 
@@ -331,7 +343,7 @@ Private Function GetElementsCount(tagName As String) As Long
     Dim javaScriptCode As String, responseJson As String
     javaScriptCode = _
     "function(tagName){return  this.getElementsByTagName('" & tagName & "').length;}"
-    responseJson = chrome_.JavaScritpCallFunction(javaScriptCode, objectId_, tagName)
+    responseJson = CallFunction(javaScriptCode, tagName)
     GetElementsCount = chrome_.Json.GetValueFrom(responseJson, Array("result", "result", "value"))
 End Function
 Private Function CreateElementsItemByIndex(tagName As String, Index As Long) As IWebElement
@@ -341,7 +353,7 @@ Private Function CreateElementsItemByIndex(tagName As String, Index As Long) As 
 
     javaScriptCode = _
     "function(tagName){return  this.getElementsByTagName(tagName)[" & Index & "];}"
-    responseJson = chrome_.JavaScritpCallFunction(javaScriptCode, objectId_, tagName)
+    responseJson = CallFunction(javaScriptCode, tagName)
 
     objectId = chrome_.Json.GetValueFrom(responseJson, Array("result", "result", "objectId"))
     Dim findInfoInElem As Collection: Set findInfoInElem = chrome_.MakeFindInfo("tag", tagName, Index)
@@ -351,8 +363,8 @@ End Function
 'Public
 Private Function IWebElement_GetTextContent() As String
     Dim javaScriptCode As String, responseJson As String
-    javaScriptCode = "function(value){return this.textContent.replace(/\\s/g, ' ');}"
-    responseJson = chrome_.JavaScritpCallFunction(javaScriptCode, objectId_, "")
+    javaScriptCode = "function(){return this.textContent.replace(/\\s/g, ' ');}"
+    responseJson = CallFunction(javaScriptCode, "")
     
     Dim text As String
     text = chrome_.Json.GetValueFrom(responseJson, Array("result", "result", "value"))
@@ -362,8 +374,8 @@ End Function
 'Public
 Private Function IWebElement_GetSelectedValue() As String
     Dim javaScriptCode As String, responseJson As String
-    javaScriptCode = "function(value){return this.value.replace(/\\s/g, ' ');}"
-    responseJson = chrome_.JavaScritpCallFunction(javaScriptCode, objectId_, "")
+    javaScriptCode = "function(){return this.value.replace(/\\s/g, ' ');}"
+    responseJson = CallFunction(javaScriptCode, "")
     
     Dim text As String
     text = chrome_.Json.GetValueFrom(responseJson, Array("result", "result", "value"))
@@ -374,14 +386,14 @@ End Function
 Private Function IWebElement_GetSelectedTextContent() As String
     Dim javaScriptCode As String, responseJson As String
     javaScriptCode = _
-    "function(value){" & _
+    "function(){" & _
         "for(let i = 0; i < this.options.length; i++){" & _
             "if(this.options[i].selected){" & _
                 "return this.options[i].textContent.replace(/\\s/g, ' ');" & _
             "}" & _
         "}" & _
     "}"
-    responseJson = chrome_.JavaScritpCallFunction(javaScriptCode, objectId_, "")
+    responseJson = CallFunction(javaScriptCode, "")
     
     Dim text As String
     text = chrome_.Json.GetValueFrom(responseJson, Array("result", "result", "value"))
@@ -441,7 +453,7 @@ End Sub
 Private Sub IWebElement_ClickAndThenAlertDialogErase()
     chrome_.Focus (objectId_)
     Dim responseJson As String
-    responseJson = chrome_.JavaScritpCallFunction("function(value){this.click();}", objectId_, "")
+    responseJson = CallFunction("function(){this.click();}", "")
     chrome_.SleepByWindowsAPIInner 1000
     
     Dim ChromeInterFace As IWebDriver

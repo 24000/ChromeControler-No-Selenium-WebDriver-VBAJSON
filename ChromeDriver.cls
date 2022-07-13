@@ -269,17 +269,24 @@ Private Function ExecuteJavaScript_Inner(script As String) As String
 End Function
 
 'JavaScript_Function実行
-Public Function JavaScritpCallFunction(funcName As String, objectId As Variant, args As Variant) As String
+Private Function CallJavaScriptFunction(funcName As String, objectId As Variant, args As Variant) As String
     Dim sendMsg  As String, responseMsg As String
-    sendMsg = CDPMethod_.JavaScritpCallFunction(funcName, objectId, args)
+    sendMsg = CDPMethod_.CallJavaScriptFunction(funcName, objectId, args)
     responseMsg = ProcessMessage(CDPMethod_.Id, sendMsg, json_)
     '↓このエラーメッセージが返ってくるのはexecutionContextIdが渡ってきた場合のみなので、ObjectIdが渡ってくるときは問題なし
     If InStr(responseMsg, "Cannot find context with specified id") > 0 Then
         ReCreateIsolatedFrameWorld
-        sendMsg = CDPMethod_.JavaScritpCallFunction(funcName, executionContextId_, args)
+        sendMsg = CDPMethod_.CallJavaScriptFunction(funcName, executionContextId_, args)
         responseMsg = ProcessMessage(CDPMethod_.Id, sendMsg, json_)
     End If
-    JavaScritpCallFunction = responseMsg
+    CallJavaScriptFunction = responseMsg
+End Function
+'JavaScript_Function実行(WebElementから呼ばれる用）
+Public Function CallJavaScriptFunctionForElement(funcName As String, objectId As Variant, args As Variant) As String
+    Dim sendMsg  As String, responseMsg As String
+    sendMsg = CDPMethod_.CallJavaScriptFunction(funcName, objectId, args)
+    responseMsg = ProcessMessage(CDPMethod_.Id, sendMsg, json_)
+    CallJavaScriptFunctionForElement = responseMsg
 End Function
 '************************************************
 'Input Domain*******************************************************************
@@ -354,7 +361,7 @@ End Sub
 
 'Input系************************************************
 Public Function Click(objId As String) As String
-    JavaScritpCallFunction "function(value){this.click();}", objId, ""
+    CallJavaScriptFunction "function(value){this.click();}", objId, ""
 End Function
 '************************************************
 
@@ -547,7 +554,7 @@ End Function
 
 
 '指定の方法で要素を探し(最大４秒間探す）、オブジェクトIDを返す
-Private Function GetObjectIdOfElementBy(way As String, codes As Variant) As String
+Public Function GetObjectIdOfElementBy(way As String, codes As Variant) As String
     
     Dim startTime As Date: startTime = Timer()
     Dim responseMsg As String, objectId As String
@@ -555,7 +562,7 @@ Private Function GetObjectIdOfElementBy(way As String, codes As Variant) As Stri
         If executionContextId_ = 0 Then
             responseMsg = ExecuteJavaScript_Inner((codes(0)))
         Else
-            responseMsg = JavaScritpCallFunction((codes(1)), executionContextId_, way)
+            responseMsg = CallJavaScriptFunction((codes(1)), executionContextId_, way)
         End If
         objectId = json_.GetValueFrom(responseMsg, Array("result", "result", "objectId"))
     
@@ -628,7 +635,7 @@ DisplayErrorAndEnd "＜FindElementById＞" & vbCrLf & _
                                 "　 必要であればWaitForElementToAppearByIdで" & vbCrLf & _
                                 "　 要素の出現を確認する処理を入れましょう。" & vbCrLf
 End Function
-Private Function GetIdCodes(Id As String) As Variant
+Public Function GetIdCodes(Id As String) As Variant
     Dim codes(1) As String
     codes(0) = "document.getElementById('" & Id & "');"
     codes(1) = "function(id){return  document.getElementById(id);}"
@@ -653,7 +660,7 @@ DisplayErrorAndEnd "＜FindElementByName＞" & vbCrLf & _
                                 "　 必要であればWaitForElementToAppearByNameで" & vbCrLf & _
                                 "　 要素の出現を確認する処理を入れましょう。" & vbCrLf
 End Function
-Private Function GetNameCodes(name As String) As Variant
+Public Function GetNameCodes(name As String) As Variant
     Dim codes(1) As String
     codes(0) = "document.getElementsByName('" & name & "')[0];"
     codes(1) = "function(name){return  document.getElementsByName(name)[0];}"
@@ -699,11 +706,11 @@ Private Function GetElementsCountBy(way As String, codes As Variant) As Long
     If executionContextId_ = 0 Then
         responseMsg = ExecuteJavaScript_Inner((codes(0)))
     Else
-        responseMsg = JavaScritpCallFunction((codes(1)), executionContextId_, way)
+        responseMsg = CallJavaScriptFunction((codes(1)), executionContextId_, way)
     End If
     GetElementsCountBy = json_.GetValueFrom(responseMsg, Array("result", "result", "value"))
 End Function
-Private Function GetTagCodes(tagName As String, Index As Long) As Variant
+Public Function GetTagCodes(tagName As String, Index As Long) As Variant
     Dim codes(1) As String
     codes(0) = "document.getElementsByTagName('" & tagName & "')[" & Index & "];"
     codes(1) = "function(tagName){return  document.getElementsByTagName(tagName)[" & Index & "];}"
@@ -842,7 +849,7 @@ Private Sub IWebDriver_SwitchFrameByIframeElement(IframeElement As IWebElement)
 '    Dim docElem As WebElement
 '    Dim functionCode As String, responseMsg As String, docObjectId As String
 '    functionCode = "function(name){return  this.contentDocument;}"
-'    responseMsg = JavaScritpCallFunction(functionCode, elem.ObjectId, "")
+'    responseMsg = CallJavaScriptFunction(functionCode, elem.ObjectId, "")
 '    docObjectId = json_.GetValueFrom(responseMsg, Array("result", "result", "objectId"))
 '    Dim info  As String
 '    info = DescribeNode(docObjectId)
@@ -930,7 +937,7 @@ Private Function IsExistsElementBy(way As String, way_stringSpecify As String) A
     If executionContextId_ = 0 Then
         responseMsg = ExecuteJavaScript_Inner((codes(0)))
     Else
-        responseMsg = JavaScritpCallFunction((codes(1)), executionContextId_, way)
+        responseMsg = CallJavaScriptFunction((codes(1)), executionContextId_, way)
     End If
     Dim objectId As String
     objectId = json_.GetValueFrom(responseMsg, Array("result", "result", "objectId"))

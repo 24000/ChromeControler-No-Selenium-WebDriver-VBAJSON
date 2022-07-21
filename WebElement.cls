@@ -170,6 +170,7 @@ Private Sub IWebElement_Click()
     
     If InStr(responseJson, "this.dispatchEvent is not a function") Then
         CallObjectIdUsingMethod "Focus"
+        chrome_.DispatchKeyEvent_DOMKeyCode "keyDown", "Enter"
         chrome_.DispatchKeyEvent_DOMKeyCode "keyUp", "Enter"
     End If
     
@@ -251,11 +252,19 @@ End Sub
 'óvëfÇÃValueëÆê´Ç…ï∂éöóÒÇê›íË
 Private Sub IWebElement_SetText(text As String)
     CallObjectIdUsingMethod "Focus"
+    chrome_.DispatchKeyEvent_DOMKeyCode "keyDown", "Enter"
     chrome_.DispatchKeyEvent_DOMKeyCode "keyUp", "Enter"
-
+    
     Dim encodingText As String: encodingText = chrome_.json.EncodeURL(text)
     CallFunction _
         "function(value){value = decodeURI(value);this.value = value;}", encodingText
+    
+    CallFunction _
+    "function(value){" & _
+        "const event = new CustomEvent('change', {bubbles: false, cancelable: false});" & _
+        "this.dispatchEvent(event);" & _
+    "}", encodingText
+
 End Sub
 
 'Public
@@ -264,6 +273,12 @@ Private Sub IWebElement_SetTextContent(text As String)
     Dim encodingText As String: encodingText = chrome_.json.EncodeURL(text)
     CallFunction _
         "function(value){value = decodeURI(value);this.textContent  = value;}", encodingText
+    
+     CallFunction _
+    "function(value){" & _
+        "const event = new CustomEvent('change', {bubbles: false, cancelable: false});" & _
+        "this.dispatchEvent(event);" & _
+    "}", encodingText
 End Sub
 
 'Public
@@ -425,21 +440,21 @@ Private Sub IWebElement_DispatchLeftClickEvent()
     Dim ChromeInterFace As IWebDriver: Set ChromeInterFace = chrome_
     ChromeInterFace.ScrollWindow y - 50
     
-    Dim result As String
-    result = chrome_.DispatchMouseEvent("mousePressed", x, y, "left", 1)
-    result = chrome_.DispatchMouseEvent("mouseReleased", x, y, "left", 1)
+    Dim Result As String
+    Result = chrome_.DispatchMouseEvent("mousePressed", x, y, "left", 1)
+    Result = chrome_.DispatchMouseEvent("mouseReleased", x, y, "left", 1)
 End Sub
 
 Public Function GetCenterPositionXY(responseMsg As String)
-    Dim result As Variant
-    result = chrome_.json.GetValueFrom(responseMsg, Array("result", "model", "content"))
-    result = Split(result, ",")
+    Dim Result As Variant
+    Result = chrome_.json.GetValueFrom(responseMsg, Array("result", "model", "content"))
+    Result = Split(Result, ",")
     Dim width As Long, height As Long
     width = chrome_.json.GetValueFrom(responseMsg, Array("result", "model", "width"))
     height = chrome_.json.GetValueFrom(responseMsg, Array("result", "model", "height"))
     Dim xy(1) As Variant
-    xy(0) = result(0) + (width / 2)
-    xy(1) = result(1) + (height / 2)
+    xy(0) = Result(0) + (width / 2)
+    xy(1) = Result(1) + (height / 2)
     GetCenterPositionXY = xy
 End Function
 

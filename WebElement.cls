@@ -138,6 +138,8 @@ End Property
 
 
 
+
+
 'Public
 '—v‘f‚Ìó‘Ô(—LŒøor–³Œø)‚ðŽæ“¾
 Private Property Get IWebElement_IsEnabled() As Boolean
@@ -504,4 +506,15 @@ Private Sub IWebElement_ClickAndThenAlertDialogErase()
     ChromeInterFace.HandleAlertDialog
 End Sub
 
-
+'Public
+Private Function IWebElement_GetAttribute(AttributeName As String) As String
+    Dim responseJson As String
+    responseJson = _
+        CallFunction("function(name){return this.getAttribute(name);}", AttributeName)
+    If InStr(responseJson, """value"":null") > 0 Then
+        IWebElement_GetAttribute = ""
+    Else
+        IWebElement_GetAttribute = _
+            chrome_.json.GetValueFrom(responseJson, Array("result", "result", "value"))
+    End If
+End Function

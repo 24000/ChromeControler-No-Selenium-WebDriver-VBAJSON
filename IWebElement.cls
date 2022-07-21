@@ -69,5 +69,7 @@ Public Sub ClickAndThenAlertDialogErase()
 
 End Sub
 
+Public Function GetAttribute(AttributeName As String) As String
 
+End Function
 

@@ -34,13 +34,13 @@ Public Property Get ResourcePath() As String
     ResourcePath = RESOURCE_PATH
 End Property
 
-Public Sub Init(Json As a_0_x4_JSONHandler)
+Public Sub Init(json As a_0_x4_JSONHandler)
     TargetInfoJSON = GetTragetInfoJSON
     
-    WebSocketURL = Json.GetValueFrom( _
+    WebSocketURL = json.GetValueFrom( _
                                 TargetInfoJSON, Array(0, KEY_WEBSOCKETURL))
                                 
-    TargetId = Json.GetValueFrom(TargetInfoJSON, Array(0, "id"))
+    TargetId = json.GetValueFrom(TargetInfoJSON, Array(0, "id"))
     
     PageDefaultTargetId = TargetId
     
@@ -53,43 +53,51 @@ End Sub
 Private Function GetTragetInfoJSON() As String
     Dim client As Object
     Set client = CreateObject("MSXML2.ServerXMLHTTP")
+
+On Error GoTo Loop_
+do_:
     client.Open "GET", HTTP_SCHEMA & HOST_ & ":" & DEBUGGING_PORT & RESOURCE_PATH
     client.setRequestHeader "Content-Type", "application/json"
     client.send
     GetTragetInfoJSON = client.responsetext
+    Exit Function
+Loop_:
+DoEvents
+Resume do_
+
 End Function
 
 
-Public Function Update(newTargetId As String, Json As a_0_x4_JSONHandler, _
+Public Function Update(newTargetId As String, json As a_0_x4_JSONHandler, _
                                     isPageSwitch As Boolean) As Collection
     If isPageSwitch Then PageDefaultTargetId = newTargetId
     
     TargetId = newTargetId
     TargetInfoJSON = GetTragetInfoJSON
-    WebSocketURL = GetWebSocketDebuggerUrl(Json)
+    WebSocketURL = GetWebSocketDebuggerUrl(json)
     WebSocketUrlPath = Replace(WebSocketURL, WEBSOCKET_SCHEMA & HOST_ & ":" & DEBUGGING_PORT, "")
     Context = Replace(WebSocketUrlPath, TargetId, "")
 End Function
 
-Private Function GetWebSocketDebuggerUrl(Json As a_0_x4_JSONHandler) As String
+Private Function GetWebSocketDebuggerUrl(json As a_0_x4_JSONHandler) As String
     Dim collect As Collection: Set collect = New Collection
     Dim targetInfo As String
     Dim Count As Long
     Do
-        targetInfo = Json.GetObjectFrom(TargetInfoJSON, Array(Count))
+        targetInfo = json.GetObjectFrom(TargetInfoJSON, Array(Count))
         If targetInfo = "" Then Exit Do
         collect.add targetInfo
         Count = Count + 1
     Loop
     
     Dim i As Long
-    Dim targetType As String, id As String
+    Dim targetType As String, Id As String
     For i = 1 To collect.Count
-            targetType = Json.GetValueFrom(collect(i), Array("type"))
+            targetType = json.GetValueFrom(collect(i), Array("type"))
             If targetType <> "page" Then GoTo next_
-            id = Json.GetValueFrom(collect(i), Array("id"))
-            If id <> TargetId Then GoTo next_
-            GetWebSocketDebuggerUrl = Json.GetValueFrom(collect(i), Array(KEY_WEBSOCKETURL))
+            Id = json.GetValueFrom(collect(i), Array("id"))
+            If Id <> TargetId Then GoTo next_
+            GetWebSocketDebuggerUrl = json.GetValueFrom(collect(i), Array(KEY_WEBSOCKETURL))
             Exit Function
 next_:
     Next

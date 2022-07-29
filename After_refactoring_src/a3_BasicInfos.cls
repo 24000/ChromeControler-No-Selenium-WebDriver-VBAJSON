@@ -122,5 +122,6 @@ End Function
 Public Sub UpdateExecutionContextId(ExecCDP As a4_ExecuteCDP)
     If IsolatedFrameId <> "" Then
         ExecutionContextId = ExecCDP.CreateIsolatedFrameWorld(IsolatedFrameId)
+        DoEvents
     End If
 End Sub

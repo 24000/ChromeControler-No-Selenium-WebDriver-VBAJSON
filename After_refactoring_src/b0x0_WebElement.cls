@@ -25,9 +25,9 @@ Private Declare PtrSafe Function SendMessage Lib "user32" Alias "SendMessageA" (
 
 Private Json_ As a2_JSONHandler
 Private basicInfo_ As a3_BasicInfos
-Private execCDP_ As a4_ExecuteCDP
+Private CDP_ As a4_ExecuteCDP
 Private events_ As a5_CDPEventHandler
-Private execHelper_ As a6_ExecuteHelperFunction
+Private Helper_ As a6_ExecuteHelperFunction
 
 Private objectId_ As String
 Private findInfo_ As Collection
@@ -51,9 +51,9 @@ Public Sub Init(Json As a2_JSONHandler, _
                        
     Set Json_ = Json
     Set basicInfo_ = basicInfo
-    Set execCDP_ = ExecCDP
+    Set CDP_ = ExecCDP
     Set events_ = events
-    Set execHelper_ = execHelper
+    Set Helper_ = execHelper
     
     objectId_ = ObjectId
     Set findInfo_ = findInfo
@@ -72,11 +72,11 @@ End Property
 '戻り値が"Cannot find context with specified id"となる場合、ObjectIdの再取得が必要なため共通化
 Private Function CallFunction(functionCode As String, args As String) As String
     Dim res As String
-    res = execCDP_.CallJavascriptFunction(functionCode, objectId_, args)
+    res = CDP_.CallJavascriptFunction(functionCode, objectId_, args)
     If InStr(res, "Cannot find context with specified id") > 0 Then
-        basicInfo_.UpdateExecutionContextId execCDP_
+        basicInfo_.UpdateExecutionContextId CDP_
         ReGetObjectId
-        res = execCDP_.CallJavascriptFunction(functionCode, objectId_, args)
+        res = CDP_.CallJavascriptFunction(functionCode, objectId_, args)
     End If
     CallFunction = res
 End Function
@@ -84,15 +84,15 @@ Public Function ReGetObjectId()
     Dim codes As Variant
     Select Case findInfo_(1)
       Case "id"
-        codes = execHelper_.GetIdCodes(findInfo_(2))
+        codes = Helper_.GetIdCodes(findInfo_(2))
       Case "xpath"
-        codes = execHelper_.GetXpathCodes(findInfo_(2))
+        codes = Helper_.GetXpathCodes(findInfo_(2))
       Case "name"
-        codes = execHelper_.GetNameCodes(findInfo_(2))
+        codes = Helper_.GetNameCodes(findInfo_(2))
       Case "tag"
-        codes = execHelper_.GetTagCodes(findInfo_(2), findInfo_(3))
+        codes = Helper_.GetTagCodes(findInfo_(2), findInfo_(3))
     End Select
-    objectId_ = execCDP_.GetObjectIdOfElementBy(findInfo_(2), basicInfo_, codes)
+    objectId_ = CDP_.GetObjectIdOfElementBy(findInfo_(2), basicInfo_, codes)
 End Function
 
 'CDPMethodを呼出す場合に、引数にObjectIdを使用して呼出すMethodの共通管理のための関数
@@ -100,12 +100,12 @@ End Function
 '現在FocusとGetGetBoxModelの呼び出しのみ
 Private Function CallObjectIdUsingMethod(methodName As String) As String
     Dim res As String
-    res = CallByName(execCDP_, methodName, VbMethod, objectId_)
+    res = CallByName(CDP_, methodName, VbMethod, objectId_)
 
     If InStr(res, "Cannot find context with specified id") > 0 Then
-        basicInfo_.UpdateExecutionContextId execCDP_
+        basicInfo_.UpdateExecutionContextId CDP_
         ReGetObjectId
-        res = CallByName(execCDP_, methodName, VbMethod, objectId_)
+        res = CallByName(CDP_, methodName, VbMethod, objectId_)
     End If
     CallObjectIdUsingMethod = res
 End Function
@@ -130,7 +130,7 @@ Private Property Let IWebElement_Checked(RHS As Boolean)
 Exit Property
 
 quit:
-execHelper_.DisplayErrorAndEnd _
+Helper_.DisplayErrorAndEnd _
     "<WebElement：Checkedプロパティ>" & vbCrLf & _
     "このElementはCheckedプロパティを持ちません。" & vbCrLf & _
     "※CheckedはCheckBoxで使用可能" & vbCrLf
@@ -148,7 +148,7 @@ Private Property Get IWebElement_Checked() As Boolean
 Exit Property
 
 quit:
-execHelper_.DisplayErrorAndEnd "このElementはCheckedプロパティを持ちません。" & vbCrLf & _
+Helper_.DisplayErrorAndEnd "このElementはCheckedプロパティを持ちません。" & vbCrLf & _
                                             "※CheckedはCheckBoxで使用可能" & vbCrLf
 End Property
 
@@ -173,7 +173,7 @@ Private Property Get IWebElement_IsEnabled() As Boolean
 Exit Property
     
 quit:
-execHelper_.DisplayErrorAndEnd "このElementはEnabledプロパティを持ちません。" & vbCrLf
+Helper_.DisplayErrorAndEnd "このElementはEnabledプロパティを持ちません。" & vbCrLf
 End Property
 
 
@@ -199,13 +199,13 @@ Private Sub IWebElement_Click()
 End Sub
 Private Sub FocusAndEnterKey()
     CallObjectIdUsingMethod "Focus"
-    execCDP_.DispatchKeyEvent_DOMKeyCode "keyDown", "Enter"
-    execCDP_.DispatchKeyEvent_DOMKeyCode "keyUp", "Enter"
+    CDP_.DispatchKeyEvent_DOMKeyCode "keyDown", "Enter"
+    CDP_.DispatchKeyEvent_DOMKeyCode "keyUp", "Enter"
 End Sub
 
 
 Private Function IsPageChanging() As Boolean
-    execCDP_.PageEnable '一回無害なメソッドを投げて、イベント発生状況更新
+    CDP_.PageEnable '一回無害なメソッドを投げて、イベント発生状況更新
     
     If events_.IsCurrentTargetScheduledNavigation _
     Or events_.IsCurrentTargetStartedLoading Then
@@ -224,7 +224,7 @@ Private Sub WaitPageChangeToComplete()
 '                                Or　chrome_.CDPEvents.IsCurrentTargetClearedScheduledNavigation
         If isEndChange Then Exit Do
         
-        execCDP_.RuntimeEnable
+        CDP_.RuntimeEnable
         Sleep 1000
         failSafeCounter = failSafeCounter + 1
     Loop While (isEndChange = False And failSafeCounter <= 4)
@@ -235,7 +235,7 @@ Private Sub WaitPageChangeToComplete()
     events_.IsCurrentTargetNavigated = False
 End Sub
 Private Function IsIsolatedFrameChanging() As Boolean
-    execCDP_.DOMEnable '一回無害なメソッド(frameなのでDOM系)を投げて、イベント発生状況更新
+    CDP_.DOMEnable '一回無害なメソッド(frameなのでDOM系)を投げて、イベント発生状況更新
     
     If events_.IsIsolatedFrameScheduledNavigation _
     Or events_.IsIsolatedFrameStartedLoading Then
@@ -254,8 +254,8 @@ Private Sub WaitIsolatedFrameChangeToComplete()
 '                               Or chrome_.CDPEvents.IsIsolatedFrameClearedScheduledNavigation
         If isEndChange Then Exit Do
         
-        execCDP_.DOMEnable
-        execCDP_.RuntimeEnable
+        CDP_.DOMEnable
+        CDP_.RuntimeEnable
         Sleep 1000
         failSafeCounter = failSafeCounter + 1
     Loop While (isEndChange = False And failSafeCounter <= 4)
@@ -277,7 +277,7 @@ Private Sub IWebElement_SetText(text As String)
     Dim encodingText As String: encodingText = Json_.EncodeURL(text)
     CallFunction "function(value){value = decodeURI(value);this.value = value;}", encodingText
     
-    CallFunction execHelper_.GetDispatchChangeEventCode, encodingText
+    CallFunction Helper_.GetDispatchChangeEventCode, encodingText
 End Sub
 
 'Public
@@ -287,7 +287,7 @@ Private Sub IWebElement_SetTextContent(text As String)
     Dim encodingText As String: encodingText = Json_.EncodeURL(text)
     CallFunction "function(value){value = decodeURI(value);this.textContent  = value;}", encodingText
     
-    CallFunction execHelper_.GetDispatchChangeEventCode, encodingText
+    CallFunction Helper_.GetDispatchChangeEventCode, encodingText
 End Sub
 
 'Public
@@ -295,7 +295,7 @@ End Sub
 Private Sub IWebElement_SelectItemInSelectBoxByText(text As String)
     Dim encodingText As String: encodingText = Json_.EncodeURL(text)
     
-    Dim res As String: res = CallFunction(execHelper_.GetSelectItemCode, encodingText)
+    Dim res As String: res = CallFunction(Helper_.GetSelectItemCode, encodingText)
     
     Dim IsSelect As Boolean: IsSelect = Json_.GetValue(res, "result", "result", "value")
     If IsSelect = False Then
@@ -305,7 +305,7 @@ Private Sub IWebElement_SelectItemInSelectBoxByText(text As String)
     End If
     
 '    CallFunction "function(value){this.onchange();}", encodingText
-    CallFunction execHelper_.GetDispatchChangeEventCode, encodingText
+    CallFunction Helper_.GetDispatchChangeEventCode, encodingText
 End Sub
 
 'Public
@@ -319,16 +319,16 @@ Private Function IWebElement_FindElementByName(name As String) As IWebElement
     If ObjectId = "" Then GoTo quit
     
     Dim findInfoInElem As Collection
-    Set findInfoInElem = execHelper_.MakeFindInfo("name", name)
+    Set findInfoInElem = Helper_.MakeFindInfo("name", name)
     
     Set IWebElement_FindElementByName = _
-        execCDP_.MakeElementObject(ObjectId, findInfoInElem, basicInfo_, events_, execHelper_)
+        CDP_.MakeElementObject(ObjectId, findInfoInElem, basicInfo_, events_, Helper_)
 Exit Function
 
 quit:
 Debug.Print vbCrLf & ">>見つからなかった要素" & vbCrLf & name
 Beep
-execHelper_.DisplayErrorAndEnd execHelper_.MakeFindErrorMessage("Name", name)
+Helper_.DisplayErrorAndEnd Helper_.MakeFindErrorMessage("Name", name)
 End Function
 
 'Public
@@ -351,7 +351,7 @@ Exit Function
 quit:
 Debug.Print vbCrLf & ">>見つからなかった要素" & vbCrLf & tagName
 Beep
-execHelper_.DisplayErrorAndEnd execHelper_.MakeFindErrorMessage("Tag", tagName, "○○")
+Helper_.DisplayErrorAndEnd Helper_.MakeFindErrorMessage("Tag", tagName, "○○")
 End Function
 Private Function GetElementsCount(tagName As String) As Long
     Dim funcCode As String, res As String
@@ -366,10 +366,10 @@ Private Function CreateElementsItemByIndex(tagName As String, Index As Long) As 
     
     Dim ObjectId As String
     ObjectId = Json_.GetValue(res, "result", "result", "objectId")
-    Dim findInfoInElem As Collection: Set findInfoInElem = execHelper_.MakeFindInfo("tag", tagName, Index)
+    Dim findInfoInElem As Collection: Set findInfoInElem = Helper_.MakeFindInfo("tag", tagName, Index)
 
     Set CreateElementsItemByIndex = _
-        execCDP_.MakeElementObject(ObjectId, findInfoInElem, basicInfo_, events_, execHelper_)
+        CDP_.MakeElementObject(ObjectId, findInfoInElem, basicInfo_, events_, Helper_)
 End Function
 
 'Public
@@ -396,7 +396,7 @@ End Function
 'セレクトボックスの選択中オプションのTextContentを取得
 Private Function IWebElement_GetSelectedTextContent() As String
     Dim funcCode As String, res As String
-    funcCode = execHelper_.GetSelectedTextContentCode
+    funcCode = Helper_.GetSelectedTextContentCode
     res = CallFunction(funcCode, "")
 
     IWebElement_GetSelectedTextContent = Json_.GetValue(res, "result", "result", "value")
@@ -409,11 +409,11 @@ Private Sub IWebElement_DispatchLeftClickEvent()
     Dim x As Long: x = centerXY(0)
     Dim y As Long: y = centerXY(1)
     
-    execCDP_.DispatchMouseEvent "mouseWheel", 0, 0, "none", 0, 0, 0, y - 50
+    CDP_.DispatchMouseEvent "mouseWheel", 0, 0, "none", 0, 0, 0, y - 50
     
     Dim Result As String
-    Result = execCDP_.DispatchMouseEvent("mousePressed", x, y, "left", 1)
-    Result = execCDP_.DispatchMouseEvent("mouseReleased", x, y, "left", 1)
+    Result = CDP_.DispatchMouseEvent("mousePressed", x, y, "left", 1)
+    Result = CDP_.DispatchMouseEvent("mouseReleased", x, y, "left", 1)
 End Sub
 'エレメントの中心位置のxy座標を取得
 Private Function GetCenterPositionXY(res As String)
@@ -441,7 +441,7 @@ Private Sub IWebElement_SetFileToFileSelectInputButton(filePath As String)
     Dim res As String: res = CallObjectIdUsingMethod("GetBoxModel")
     Dim centerXY As Variant: centerXY = GetCenterPositionXY(res)
     
-    execCDP_.DispatchMouseEvent "mouseWheel", 0, 0, "none", 0, 0, 0, CLng(centerXY(1)) - 50
+    CDP_.DispatchMouseEvent "mouseWheel", 0, 0, "none", 0, 0, 0, CLng(centerXY(1)) - 50
     
     IWebElement_DispatchLeftClickEvent
     Sleep 1000
@@ -470,7 +470,7 @@ Private Sub IWebElement_ClickAndThenAlertDialogErase()
     res = CallFunction("function(){this.click();}", "")
     Sleep 1000
     
-    execCDP_.HandleAlertDialog
+    CDP_.HandleAlertDialog
 End Sub
 
 'Public

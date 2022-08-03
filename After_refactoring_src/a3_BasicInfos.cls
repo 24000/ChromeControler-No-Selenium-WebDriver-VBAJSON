@@ -119,9 +119,9 @@ End Function
 
 
 'çƒìxCreateIsolatedWorldÇ∑ÇÈèàóùÅB
-Public Sub UpdateExecutionContextId(ExecCDP As a4_ExecuteCDP)
+Public Sub UpdateExecutionContextId(CDP As a4_ExecuteCDP)
     If IsolatedFrameId <> "" Then
-        ExecutionContextId = ExecCDP.CreateIsolatedFrameWorld(IsolatedFrameId)
+        ExecutionContextId = CDP.CreateIsolatedFrameWorld(IsolatedFrameId)
         DoEvents
     End If
 End Sub

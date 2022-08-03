@@ -66,8 +66,6 @@ Public Sub DisplayErrorAndEnd(displayText As String)
     End
 End Sub
 
-
-
 Public Function GetSelectItemCode() As String
     GetSelectItemCode = _
     "function(value){value = decodeURI(value);" & _

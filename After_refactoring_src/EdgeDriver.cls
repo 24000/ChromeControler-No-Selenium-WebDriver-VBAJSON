@@ -2,18 +2,19 @@ VERSION 1.0 CLASS
 BEGIN
   MultiUse = -1  'True
 END
-Attribute VB_Name = "ChromeDriver"
+Attribute VB_Name = "EdgeDriver"
 Attribute VB_GlobalNameSpace = False
 Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = False
 Attribute VB_Exposed = False
 Option Explicit
+
 Implements IWebDriver
 
 Private Declare PtrSafe Function FindWindow Lib "user32" Alias "FindWindowA" ( _
         ByVal lpClassName As String, ByVal lpWindowName As String) As Long
-Private Const CLASS_NAME As String = "Chrome_WidgetWin_1"
-Private Const CAPTION_NAME As String = "新しいタブ - Google Chrome" '"data:, - Google Chrome"
+'Private Const CLASS_NAME As String = "Chrome_WidgetWin_1"
+'Private Const CAPTION_NAME As String = "新しいタブ - Google Chrome" '"data:, - Google Chrome"
 
 'Private Declare PtrSafe Function GetWindowText Lib "user32" Alias "GetWindowTextA" ( _
 '        ByVal hWnd As LongPtr, ByVal lpString As String, ByVal cch As Long) As Long
@@ -33,11 +34,11 @@ Private events_ As a5_CDPEventHandler
 Private Helper_ As a6_ExecuteHelperFunction
 
 Private processId_ As Long
-Private chromeHwnd_ As LongPtr
+'Private chromeHwnd_ As LongPtr
 
 Private Sub Class_Initialize()
     Dim userDataDir As String
-    userDataDir = ThisWorkbook.Path & "\マクロ実行専用UserDataフォルダForChrome\"
+    userDataDir = ThisWorkbook.Path & "\マクロ実行専用UserDataフォルダForEdge\"
     
     Dim isFirst As Boolean
     If Dir(userDataDir, vbDirectory) = "" Then
@@ -45,16 +46,16 @@ Private Sub Class_Initialize()
         isFirst = True
     End If
     
-    processId_ = StartChrome(userDataDir)
+    processId_ = StartEdge(userDataDir)
     
     '適切に取得ができないケースあり、要改善（よってまだどこでもhwndは使用しない）
-    chromeHwnd_ = FindWindow(CLASS_NAME, CAPTION_NAME)
+'    chromeHwnd_ = FindWindow(CLASS_NAME, CAPTION_NAME)
     
     New_InnerObjects
     
     If isFirst Then  'この位置で判定必要（CloseWindowするため通信確立後）
         CDP_.SessionClose
-        ChromeFirstLaunch
+        EdgeFirstLaunch
     End If
     
     CDP_.SetDiscoverTargets
@@ -63,21 +64,21 @@ Private Sub Class_Initialize()
     Helper_.SleepByWinAPI 2000
 End Sub
 
-Private Function StartChrome(userDataDir As String) As Long
-    Const CHROME_EXE_REG_KEY As String = "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\App Paths\chrome.exe\"
-    Const CHROME_EXE As String = """chrome.exe"""
+Private Function StartEdge(userDataDir As String) As Long
+    Const EDGE_EXE_REG_KEY As String = "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\App Paths\msedge.exe\"
+    Const EDGE_EXE As String = """msedge.exe"""
     Const DEBUG_MODE_OPTION As String = " --remote-debugging-Port=9222"
     Const USER_DATA_DIR_OPTION As String = " --user-data-dir="
     Const ENABLE_AUTOMATION_OPTION As String = " --enable-automation"
     
-    Dim chromeExe As String
+    Dim edgeExe As String
     Dim objExec As Object
     With CreateObject("WScript.Shell")
-        chromeExe = """" & .RegRead(CHROME_EXE_REG_KEY) & """"
+        edgeExe = """" & .RegRead(EDGE_EXE_REG_KEY) & """"
         Set objExec = .Exec( _
-                            chromeExe & DEBUG_MODE_OPTION & ENABLE_AUTOMATION_OPTION _
+                            edgeExe & DEBUG_MODE_OPTION & ENABLE_AUTOMATION_OPTION _
                             & USER_DATA_DIR_OPTION & "" & userDataDir & "")
-        StartChrome = objExec.ProcessId
+        StartEdge = objExec.ProcessId
         Set objExec = Nothing
     End With
 End Function
@@ -104,7 +105,7 @@ Private Sub New_InnerObjects()
 End Sub
 
 'クロームの真の初回起動時の画面遷移
-Private Sub ChromeFirstLaunch()
+Private Sub EdgeFirstLaunch()
     MsgBox "今回、初回起動のため、このファイルと同一フォルダ内に" & vbCrLf & _
                 "マクロ実行専用のUserDataフォルダを作成しました。" & vbCrLf & vbCrLf & _
                 "お手数ですが、再度マクロを実行してください。" & vbCrLf & _
@@ -284,7 +285,7 @@ Helper_.DisplayErrorAndEnd "＜SwitchFrameByNameOrUrlOrIndex＞" & vbCrLf & _
 End Sub
 
 'frameツリーを取得し、各フレームの情報（JSONオブジェクト文字列）をコレクションとして集約
-'frameツリーはresult→frameTree
+'frameTreeはresult→frameTree
 '→frame(Pageの親フレーム)とChildFrames(配列の中にPageの子frame情報(オブジェクト)）の構成
 Private Function GetFrameInfos() As Collection
     Dim collect As Collection: Set collect = New Collection
@@ -567,3 +568,5 @@ Private Sub IWebDriver_AllowPopUpWindowForURL(targetUrl As String)
                         Type:="REG_SZ"
     End With
 End Sub
+
+

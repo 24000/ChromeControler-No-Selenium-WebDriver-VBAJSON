@@ -283,7 +283,7 @@ Public Function GetObjectIdOfElementBy(way As String, basicInfo As a3_BasicInfos
     GetObjectIdOfElementBy = ObjectId
 End Function
 
-'ChromeDriverがCallJavaScriptFunctionを呼ぶ場合のラッパ―関数。エラー対応が必須のため
+'CallJavaScriptFunctionを呼ぶ場合のラッパ―関数。エラー対応が必須のため
 Public Function CallJavascriptFunctionWrapper(funcCode As String, basicInfo As a3_BasicInfos, args As Variant) As String
     Dim res As String
     res = CallJavascriptFunction(funcCode, basicInfo.ExecutionContextId, args)
@@ -303,7 +303,7 @@ Public Function MakeElementObject( _
         findInfo As Collection, _
         basicInfo As a3_BasicInfos, _
         events As a5_CDPEventHandler, _
-        execHelper As a6_ExecuteHelperFunction) As IWebElement
+        Helper As a6_ExecuteHelperFunction) As IWebElement
     
     Dim info  As String
     info = DescribeNode(ObjectId)
@@ -317,7 +317,7 @@ Public Function MakeElementObject( _
     End If
     
     Dim element As b0x0_WebElement: Set element = New b0x0_WebElement
-    element.Init Json_, basicInfo, Me, events, execHelper, _
+    element.Init Json_, basicInfo, Me, events, Helper, _
                        ObjectId, findInfo, attributes, FrameId
     Set MakeElementObject = element
 End Function

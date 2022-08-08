@@ -8,6 +8,9 @@ Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = False
 Attribute VB_Exposed = False
 Option Explicit
+
+Private Declare PtrSafe Sub Sleep Lib "kernel32" (ByVal ms As LongPtr)
+
 Private Const HOST_ As String = "127.0.0.1"
 Private Const DEBUGGING_PORT As Long = 9222
 Private Const RESOURCE_PATH As String = "/json" 'タブのリスト
@@ -57,10 +60,12 @@ Public Sub Init(Json As a2_JSONHandler)
 End Sub
 
 Private Function GetTragetInfoJSON() As String
-    Dim client As Object: Set client = CreateObject("MSXML2.ServerXMLHTTP")
+    Dim client As Object:
 
 On Error GoTo Loop_
 Do_:
+    Set client = Nothing
+    Set client = CreateObject("MSXML2.ServerXMLHTTP")
     client.Open "GET", HTTP_SCHEMA & HOST_ & ":" & DEBUGGING_PORT & RESOURCE_PATH
     client.setRequestHeader "Content-Type", "application/json"
     client.send
@@ -68,6 +73,7 @@ Do_:
     Exit Function
 Loop_:
 DoEvents
+Sleep 500
 Resume Do_
 
 End Function

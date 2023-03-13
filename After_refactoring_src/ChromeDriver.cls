@@ -145,7 +145,7 @@ End Sub
 Private Property Get IWebDriver_URL() As String
     CDP_.SetDiscoverTargets  'これを使ってPage情報最新化
     Dim i As Long
-    For i = 1 To events_.PageInfos.Count
+    For i = 1 To events_.PageInfos.count
         If events_.PageInfos(i)("targetId") = basicInfo_.targetId Then
             IWebDriver_URL = events_.PageInfos(i)("url")
             Exit Property
@@ -276,14 +276,21 @@ End Function
 'Public
 '第1引数で指定される値のフレームにフレームを切替
 Private Sub IWebDriver_SwitchFrameByNameOrUrlOrIndex(value As Variant)
-    Dim frameInfos As Collection: Set frameInfos = GetFrameInfos
+    Dim frameInfos As Collection
     Dim FrameId As String
-    If IsNumeric(value) Then
-        If frameInfos.Count < value Then GoTo quit
-        FrameId = Json_.GetValue(frameInfos(value), "id")
-    Else
-        FrameId = GetTargetFrameId(frameInfos, value)
-    End If
+    Dim count As Long
+    
+    Do 'frame関連イベント発生タイミングによって情報取得に失敗するケースあり。念のため3回までループ。
+        Set frameInfos = GetFrameInfos
+        If IsNumeric(value) Then
+            If frameInfos.count < value Then GoTo quit
+            FrameId = Json_.GetValue(frameInfos(value), "id")
+        Else
+            FrameId = GetTargetFrameId(frameInfos, value)
+        End If
+        count = count + 1
+    Loop While FrameId = "" And count < 3
+    
     If FrameId = "" Then GoTo quit
     
     Dim ExecutionContextId As Long
@@ -315,10 +322,10 @@ Private Function GetFrameInfos() As Collection
 '    collect.add json_.GetObject(json, "result", "frameTree", "frame"))
     
     Dim frmInfo As String, frminfo2 As String
-    Dim Count As Long
+    Dim count As Long
     Do
         'まずchildFramesから一つのFrame情報（オブジェクト）取得
-        frmInfo = Json_.GetObject(Json, "result", "frameTree", "childFrames", Count)
+        frmInfo = Json_.GetObject(Json, "result", "frameTree", "childFrames", count)
         If frmInfo = "" Then Exit Do
         'そのオブジェクトの中のframeプロパティ(オブジェクト)を取得し、コレクションに加える
         frminfo2 = Json_.GetObject(frmInfo, "frame")
@@ -327,23 +334,23 @@ Private Function GetFrameInfos() As Collection
         If InStr(frmInfo, "childFrames") > 0 Then
             GetChildFrameInfo collect, frmInfo
         End If
-        Count = Count + 1
+        count = count + 1
     Loop
     Set GetFrameInfos = collect
 End Function
 'childFrameがある場合、再帰処理
 Private Sub GetChildFrameInfo(collect As Collection, Json As String)
     Dim frmInfo As String, frminfo2 As String
-    Dim Count As Long
+    Dim count As Long
     Do
-        frmInfo = Json_.GetObject(Json, "childFrames", Count)
+        frmInfo = Json_.GetObject(Json, "childFrames", count)
         If frmInfo = "" Then Exit Do
         frminfo2 = Json_.GetObject(frmInfo, "frame")
         collect.add frminfo2
         If InStr(frmInfo, "childFrames") > 0 Then
             GetChildFrameInfo collect, frmInfo
         End If
-        Count = Count + 1
+        count = count + 1
     Loop
 End Sub
 '各フレームのname,urlと指定された値を比較。一致するフレームのIdを返す。
@@ -367,7 +374,7 @@ Private Sub IWebDriver_DebugPrintAccessibleFrameInfo()
     CDP_.RuntimeEnable
     Dim frameInfos As Collection: Set frameInfos = GetFrameInfos
     Dim i As Long
-    For i = 1 To frameInfos.Count
+    For i = 1 To frameInfos.count
         Debug.Print "index：" & i & _
                            "　name：" & Json_.GetValue(frameInfos(i), "name") & _
                            "　url：" & Json_.GetValue(frameInfos(i), "url")

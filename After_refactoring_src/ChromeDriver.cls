@@ -37,7 +37,7 @@ Private chromeHwnd_ As LongPtr
 
 Private Sub Class_Initialize()
     Dim userDataDir As String
-    userDataDir = ThisWorkbook.Path & "\マクロ実行専用UserDataフォルダForChrome\"
+    userDataDir = CreateObject("Shell.Application").Namespace("shell:Downloads").Self.Path & "\マクロ実行専用UserDataフォルダForChrome\"
     
     Dim isFirst As Boolean
     If Dir(userDataDir, vbDirectory) = "" Then
@@ -46,10 +46,6 @@ Private Sub Class_Initialize()
     End If
     
     processId_ = StartChrome(userDataDir)
-    
-    '適切に取得ができないケースあり、要改善（よってまだどこでもhwndは使用しない）
-    chromeHwnd_ = FindWindow(CLASS_NAME, CAPTION_NAME)
-    
     New_InnerObjects
     
     If isFirst Then  'この位置で判定必要（CloseWindowするため通信確立後）
@@ -60,27 +56,52 @@ Private Sub Class_Initialize()
     CDP_.SetDiscoverTargets
     CDP_.AttachToTarget basicInfo_.targetId
     
-    Helper_.SleepByWinAPI 2000
+    WaitForActivation
+    '適切に取得ができないケースあり、要改善（よってまだどこでもhwndは使用しない）
+    chromeHwnd_ = FindWindow(CLASS_NAME, CAPTION_NAME)
+    
 End Sub
 
 Private Function StartChrome(userDataDir As String) As Long
     Const CHROME_EXE_REG_KEY As String = "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\App Paths\chrome.exe\"
-    Const CHROME_EXE As String = """chrome.exe"""
     Const DEBUG_MODE_OPTION As String = " --remote-debugging-Port=9222"
     Const USER_DATA_DIR_OPTION As String = " --user-data-dir="
     Const ENABLE_AUTOMATION_OPTION As String = " --enable-automation"
     
-    Dim chromeExe As String
+    Dim chromeExePath As String
     Dim objExec As Object
     With CreateObject("WScript.Shell")
-        chromeExe = """" & .RegRead(CHROME_EXE_REG_KEY) & """"
+        chromeExePath = """" & .RegRead(CHROME_EXE_REG_KEY) & """"
         Set objExec = .Exec( _
-                            chromeExe & DEBUG_MODE_OPTION & ENABLE_AUTOMATION_OPTION _
+                            chromeExePath & DEBUG_MODE_OPTION & ENABLE_AUTOMATION_OPTION _
                             & USER_DATA_DIR_OPTION & "" & userDataDir & "")
         StartChrome = objExec.ProcessId
         Set objExec = Nothing
     End With
 End Function
+
+'ブラウザ起動待ち＆SetForeGroundWindowにも使用
+Private Sub WaitForActivation()
+On Error Resume Next
+    
+    Dim counter As Long
+recheck:
+    AppActivate processId_
+    If Err.Number <> 0 Then
+        counter = counter + 1
+        If counter > 20 Then
+            MsgBox "10秒経過しましたがブラウザが有効になりませんでした。" & vbCrLf & _
+                        "処理を終了します"
+            End
+        End If
+        Debug.Print Err.Number & ":" & Err.Description
+        Helper_.SleepByWinAPI 500
+        Err.Number = 0
+        GoTo recheck
+    End If
+        
+On Error GoTo 0
+End Sub
 
 '内部オブジェクトの生成
 Private Sub New_InnerObjects()
@@ -105,10 +126,12 @@ End Sub
 
 'クロームの真の初回起動時の画面遷移
 Private Sub ChromeFirstLaunch()
-    MsgBox "今回、初回起動のため、このファイルと同一フォルダ内に" & vbCrLf & _
+    MsgBox "今回、初回起動のため、DownLoadフォルダ内に" & vbCrLf & _
                 "マクロ実行専用のUserDataフォルダを作成しました。" & vbCrLf & vbCrLf & _
                 "お手数ですが、再度マクロを実行してください。" & vbCrLf & _
-                "※次回以降、このメッセージは表示されません。", _
+                "※次回以降、このメッセージは表示されません。" & vbCrLf & _
+                "※作成されたフォルダは削除しても問題ありませんが、" & vbCrLf & _
+                "   マクロ再実行時には再作成されます。", _
                 vbInformation, "Chrome初回起動メッセージ"
     End
 End Sub
@@ -554,9 +577,9 @@ Private Sub IWebDriver_ScrollWindow(yPixel As Long, Optional xPixel As Long = 0&
     CDP_.DispatchMouseEvent "mouseWheel", 0, 0, "none", 0, 0, xPixel, yPixel
 End Sub
 
-'Private Sub IWebDriver_SetForeGroundWindow()
-'    SetForeGroundWindow chromeHwnd_
-'End Sub
+Private Sub IWebDriver_SetForeGroundWindow()
+    WaitForActivation
+End Sub
 
 Private Sub IWebDriver_AllowPopUpWindowForURL(targetUrl As String)
     Dim chromeExe As String

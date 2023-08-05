@@ -37,6 +37,10 @@ Public Function FindElementsByTag(tagName As String) As IWebElements
 
 End Function
 
+Public Function FindElementsByClassName(className As String) As IWebElements
+
+End Function
+
 Public Function IsExistsElementByXpath(xPath As String) As Boolean
 
 End Function

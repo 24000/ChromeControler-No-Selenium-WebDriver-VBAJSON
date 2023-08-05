@@ -49,12 +49,28 @@ Public Function GetTagCodes(tagName As String, Index As Long) As Variant
     GetTagCodes = codes
 End Function
 
+'FindByClassNameのJavaScriptCode(通常のコードとFunction版のコード)を返す
+Public Function GetClassNameCodes(className As String, Index As Long) As Variant
+    Dim codes(1) As String
+    codes(0) = "document.getElementsByClassName('" & className & "')[" & Index & "];"
+    codes(1) = "function(className){return  document.getElementsByClassName(tagName)[" & Index & "];}"
+    GetClassNameCodes = codes
+End Function
+
 'FindByTagのJavaScriptCode(通常のコードとFunction版のコード)を返す
 Public Function GetTagCountCodes(tagName As String) As Variant
     Dim countCodes(1) As String
     countCodes(0) = "document.getElementsByTagName('" & tagName & "').length;"
     countCodes(1) = "function(tagName){return  document.getElementsByTagName('" & tagName & "').length;}"
     GetTagCountCodes = countCodes
+End Function
+
+'FindByClassのJavaScriptCode(通常のコードとFunction版のコード)を返す
+Public Function GetClassNameCountCodes(className As String) As Variant
+    Dim countCodes(1) As String
+    countCodes(0) = "document.getElementsByClassName('" & className & "').length;"
+    countCodes(1) = "function(className){return  document.getElementsByClassName('" & className & "').length;}"
+    GetClassNameCountCodes = countCodes
 End Function
 
 

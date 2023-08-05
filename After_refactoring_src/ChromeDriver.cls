@@ -271,6 +271,37 @@ Beep
 Helper_.DisplayErrorAndEnd Helper_.MakeFindErrorMessage("Tag", tagName, "○○")
 End Function
 
+'Public
+'class名で要素コレクションを取得（要素グループのLengthを取得し、Length分要素作成ループ）
+Private Function IWebDriver_FindElementsByClassName(className As String) As IWebElements
+    Dim countCodes As Variant: countCodes = Helper_.GetClassNameCountCodes(className)
+    Dim elemsCount As Long: elemsCount = CDP_.GetElementsCountBy(className, basicInfo_, countCodes)
+    If elemsCount = 0 Then GoTo quit
+    
+    Dim elements As Collection: Set elements = New Collection
+    
+    Dim ObjectId As String
+    Dim codes As Variant
+    Dim Index As Long
+    For Index = 0 To elemsCount - 1
+        codes = Helper_.GetClassNameCodes(className, Index)
+        ObjectId = CDP_.GetObjectIdOfElementBy(className, basicInfo_, codes)
+        Dim findInfo As Collection: Set findInfo = Helper_.MakeFindInfo("className", className, Index)
+        elements.add _
+            CDP_.MakeElementObject(ObjectId, findInfo, basicInfo_, events_, Helper_)
+    Next
+    
+    Dim elems As c0x0_WebElements: Set elems = New c0x0_WebElements
+    elems.Init elements
+    
+    Set IWebDriver_FindElementsByClassName = elems
+Exit Function
+
+quit:
+Debug.Print vbCrLf & ">>見つからなかった要素" & vbCrLf & className
+Beep
+Helper_.DisplayErrorAndEnd Helper_.MakeFindErrorMessage("className", className, "○○")
+End Function
 
 
 'Public

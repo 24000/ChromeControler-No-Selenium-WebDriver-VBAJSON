@@ -10,10 +10,10 @@ Attribute VB_Exposed = False
 Option Explicit
 Private Declare PtrSafe Sub Sleep Lib "kernel32" (ByVal ms As LongPtr)
 
-Private Json_ As a2_JSONHandler
+Private json_ As a2_JSONHandler
 Private basicInfo_ As a3_BasicInfos
 
-'ダイアログ情報
+''ダイアログ情報
 Public DialogInfoDic As Object
 Public PageInfos As Collection
 Public IframeInfos As Collection
@@ -32,8 +32,8 @@ Public IsCurrentContextIdDestroyed As Boolean
 
 
 
-Public Sub Init(Json As a2_JSONHandler, basicInfo As a3_BasicInfos)
-    Set Json_ = Json
+Public Sub Init(json As a2_JSONHandler, basicInfo As a3_BasicInfos)
+    Set json_ = json
     Set basicInfo_ = basicInfo
     
     Set DialogInfoDic = CreateObject("Scripting.Dictionary")
@@ -45,17 +45,17 @@ End Sub
 '各種イベント発生時に情報を取得する
 Public Sub GetInfo(EventInfo As String)
     Dim eventName As String
-    eventName = Json_.GetValue(EventInfo, "method")
+    eventName = json_.GetValue(EventInfo, "method")
     
     If InStr(eventName, "frame") > 0 Then
         Dim Id As String
         If InStr(eventName, "Navigated") = 0 Then
-            Id = Json_.GetValue(EventInfo, "params", "frameId")
+            Id = json_.GetValue(EventInfo, "params", "frameId")
         Else
-            Id = Json_.GetValue(EventInfo, "params", "frame", "id")
+            Id = json_.GetValue(EventInfo, "params", "frame", "id")
         End If
         Dim isCurrentTarget As Boolean
-        isCurrentTarget = (Id = basicInfo_.targetId)
+        isCurrentTarget = (Id = basicInfo_.TargetId)
         Dim isIsolatedFrameId
         isIsolatedFrameId = (Id = basicInfo_.IsolatedFrameId)
     End If
@@ -100,7 +100,7 @@ Public Sub GetInfo(EventInfo As String)
             End If
         Case "Runtime.executionContextDestroyed"
             Dim contextId As Long
-            contextId = Json_.GetValue(EventInfo, "params", "executionContextId")
+            contextId = json_.GetValue(EventInfo, "params", "executionContextId")
             If contextId = basicInfo_.ExecutionContextId Then
                 IsCurrentContextIdDestroyed = True
                 Debug.Print "★★IsCurrentContextIdDestroyed"
@@ -110,14 +110,14 @@ End Sub
 'アラートダイアログ出現時に情報を取得
 Private Sub SetDialogInfo(ByVal EventInfo As String)
     DialogInfoDic("IsExistDialog") = True
-    DialogInfoDic("DialogMessage") = Json_.GetValue(EventInfo, "params", "message")
-    DialogInfoDic("DialogType") = Json_.GetValue(EventInfo, "params", "type")
-    If Json_.GetValue(EventInfo, "params", "hasBrowserHandler") = "True" Then
+    DialogInfoDic("DialogMessage") = json_.GetValue(EventInfo, "params", "message")
+    DialogInfoDic("DialogType") = json_.GetValue(EventInfo, "params", "type")
+    If json_.GetValue(EventInfo, "params", "hasBrowserHandler") = "True" Then
         DialogInfoDic("HasBrowserHandler") = True
     Else
         DialogInfoDic("HasBrowserHandler") = False
     End If
-    DialogInfoDic("DefaultPrompt") = Json_.GetValue(EventInfo, "params", "defaultPrompt")
+    DialogInfoDic("DefaultPrompt") = json_.GetValue(EventInfo, "params", "defaultPrompt")
 End Sub
 'アラートダイアログ出現時に情報を格納する辞書の初期化
 Private Sub InitializeDialogInfo()
@@ -133,13 +133,13 @@ End Sub
 Private Sub AddTargetInfo(ByVal EventInfo As String)
     Dim tempdic As Object
     Set tempdic = CreateObject("Scripting.Dictionary")
-    tempdic.add "targetId", Json_.GetValue(EventInfo, "params", "targetInfo", "targetId")
-    tempdic.add "title", Json_.GetValue(EventInfo, "params", "targetInfo", "title")
-    tempdic.add "url", Json_.GetValue(EventInfo, "params", "targetInfo", "url")
-    tempdic.add "browserContextId", Json_.GetValue(EventInfo, "params", "targetInfo", "browserContextId")
+    tempdic.add "targetId", json_.GetValue(EventInfo, "params", "targetInfo", "targetId")
+    tempdic.add "title", json_.GetValue(EventInfo, "params", "targetInfo", "title")
+    tempdic.add "url", json_.GetValue(EventInfo, "params", "targetInfo", "url")
+    tempdic.add "browserContextId", json_.GetValue(EventInfo, "params", "targetInfo", "browserContextId")
     
     Dim targetType As String
-    targetType = Json_.GetValue(EventInfo, "params", "targetInfo", "type")
+    targetType = json_.GetValue(EventInfo, "params", "targetInfo", "type")
     Select Case targetType
       Case "page"
         AddInfoOf PageInfos, tempdic, EventInfo
@@ -168,7 +168,7 @@ End Sub
 'Chrome上でPage(タブ)の情報が変更されたら、Page情報を管理するCollection内の該当Pageの情報を変更する。
 Private Sub ChangeTargetInfo(ByVal EventInfo As String)
     Dim targetType As String
-    targetType = Json_.GetValue(EventInfo, "params", "targetInfo", "type")
+    targetType = json_.GetValue(EventInfo, "params", "targetInfo", "type")
     
     Select Case targetType
       Case "page"
@@ -179,14 +179,14 @@ Private Sub ChangeTargetInfo(ByVal EventInfo As String)
 End Sub
 Private Sub ChangeInfoOf(infos As Collection, _
                                         ByVal EventInfo As String)
-    Dim targetId As String
-    targetId = Json_.GetValue(EventInfo, "params", "targetInfo", "targetId")
+    Dim TargetId As String
+    TargetId = json_.GetValue(EventInfo, "params", "targetInfo", "targetId")
     Dim info As Variant
     For Each info In infos
-        If info("targetId") = targetId Then
-            info("title") = Json_.GetValue(EventInfo, "params", "targetInfo", "title")
-            info("url") = Json_.GetValue(EventInfo, "params", "targetInfo", "url")
-            info("browserContextId") = Json_.GetValue(EventInfo, "params", "targetInfo", "browserContextId")
+        If info("targetId") = TargetId Then
+            info("title") = json_.GetValue(EventInfo, "params", "targetInfo", "title")
+            info("url") = json_.GetValue(EventInfo, "params", "targetInfo", "url")
+            info("browserContextId") = json_.GetValue(EventInfo, "params", "targetInfo", "browserContextId")
         End If
     Next
 End Sub
@@ -194,7 +194,7 @@ End Sub
 'Chrome上でPage(タブ)が削除されたら、Page情報を管理するCollectionからその情報を削除する。
 Private Sub RemoveTargetInfo(ByVal EventInfo As String)
     Dim targetType As String
-    targetType = Json_.GetValue(EventInfo, "params", "targetInfo", "type")
+    targetType = json_.GetValue(EventInfo, "params", "targetInfo", "type")
     
     Select Case targetType
       Case "page"
@@ -205,12 +205,12 @@ Private Sub RemoveTargetInfo(ByVal EventInfo As String)
 End Sub
 Private Sub RemoveInfoOf(infos As Collection, _
                                         ByVal EventInfo As String)
-    Dim targetId As String
-    targetId = Json_.GetValue(EventInfo, "params", "targetInfo", "targetId")
+    Dim TargetId As String
+    TargetId = json_.GetValue(EventInfo, "params", "targetInfo", "targetId")
     
     Dim i As Long
     For i = 1 To infos.Count
-        If infos(i)("targetId") = targetId Then
+        If infos(i)("targetId") = TargetId Then
             infos.Remove i
         End If
     Next

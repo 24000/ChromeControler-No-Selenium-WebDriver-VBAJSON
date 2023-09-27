@@ -8,12 +8,13 @@ Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = False
 Attribute VB_Exposed = False
 Option Explicit
+'
 
 Public Property Get URL() As String
 
 End Property
 
-Public Sub OpenURL(targetUrl As String)
+Public Sub OpenURL(targetURL As String)
 
 End Sub
 
@@ -105,6 +106,6 @@ Public Sub SetForeGroundWindow()
 
 End Sub
 
-Public Sub AllowPopUpWindowForURL(targetUrl As String)
+Public Sub AllowPopUpWindowForURL(targetURL As String)
 
 End Sub

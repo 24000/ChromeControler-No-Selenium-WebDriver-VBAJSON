@@ -15,7 +15,7 @@ Public Property Get Id() As Long
     Id = id_
 End Property
 
-'TargetDomain*******************************************************************
+''TargetDomain*******************************************************************
 'pageDomainの通知を有効にする。
 Public Function PageEnable() As String
     id_ = id_ + 1
@@ -32,35 +32,35 @@ Public Function SetDiscoverTargets() As String
     SetDiscoverTargets = message
 End Function
 
-Public Function AttachToTarget(targetId As String) As String
+Public Function AttachToTarget(TargetId As String) As String
     id_ = id_ + 1
     Dim message As String
     message = "{""id"": " & id_ & ",""method"": ""Target.attachToTarget""," & _
-                      """params"": {""targetId"": """ & targetId & """}}"
+                      """params"": {""targetId"": """ & TargetId & """}}"
     AttachToTarget = message
 End Function
 
-Public Function ActivateTarget(targetId As String) As String
+Public Function ActivateTarget(TargetId As String) As String
     id_ = id_ + 1
     Dim message As String
     message = "{""id"": " & id_ & ",""method"": ""Target.activateTarget""," & _
-                      """params"": {""targetId"": """ & targetId & """}}"
+                      """params"": {""targetId"": """ & TargetId & """}}"
     ActivateTarget = message
 End Function
 
-Public Function DetachFromTarget(targetId As String) As String
+Public Function DetachFromTarget(TargetId As String) As String
     id_ = id_ + 1
     Dim message As String
     message = "{""id"": " & id_ & ",""method"": ""Target.detachFromTarget""," & _
-                      """params"": {""targetId"": """ & targetId & """}}"
+                      """params"": {""targetId"": """ & TargetId & """}}"
     DetachFromTarget = message
 End Function
 
-Public Function TargetClose(targetId As String) As String
+Public Function TargetClose(TargetId As String) As String
     id_ = id_ + 1
     Dim message As String
     message = "{""id"": " & id_ & ",""method"": ""Target.closeTarget""," & _
-                      """params"": {""targetId"": """ & targetId & """}}"
+                      """params"": {""targetId"": """ & TargetId & """}}"
     TargetClose = message
 End Function
 '利用可能なターゲットのリストを取得する。
@@ -162,11 +162,11 @@ Public Function DOM_Enable()
 End Function
 
 '指定された要素にフォーカスを当てる。
-Public Function Focus(ObjectId As String) As String
+Public Function Focus(objectId As String) As String
     id_ = id_ + 1
     Dim message As String
     message = "{""id"": " & id_ & ",""method"": ""DOM.focus""," & _
-                      """params"": {""objectId"":  """ & ObjectId & """}}"
+                      """params"": {""objectId"":  """ & objectId & """}}"
     Focus = message
 End Function
 
@@ -189,11 +189,11 @@ Public Function querySelector(Selector As String, Optional nodeId As Long = 1) A
 End Function
 
 'objectIdからnodeId取得
-Public Function RequestNode(ObjectId As String) As String
+Public Function RequestNode(objectId As String) As String
     id_ = id_ + 1
     Dim message As String
     message = "{""id"": " & id_ & ",""method"": ""DOM.requestNode""," & _
-                      """params"": {""objectId"":  """ & ObjectId & """}}"
+                      """params"": {""objectId"":  """ & objectId & """}}"
     RequestNode = message
 End Function
 
@@ -237,23 +237,23 @@ Public Function RequestChildNodes() As String
 End Function
 
 '指定された要素にフォーカスを当てる。
-Public Function GetBoxModel(ObjectId As String) As String
+Public Function GetBoxModel(objectId As String) As String
     id_ = id_ + 1
     Dim message As String
     message = "{""id"": " & id_ & ",""method"": ""DOM.getBoxModel""," & _
-                      """params"": {""objectId"":  """ & ObjectId & """}}"
+                      """params"": {""objectId"":  """ & objectId & """}}"
     GetBoxModel = message
 End Function
 
 'ファイル登録インプットボックスへファイルPath登録
-Public Function SetFileInputFiles(ObjectId As Variant, files As String) As String
+Public Function SetFileInputFiles(objectId As Variant, files As String) As String
     id_ = id_ + 1
     files = "[""" & files & """]"
     
     Dim message As String
     message = "{""id"": " & id_ & ",""method"": ""DOM.setFileInputFiles""," & _
                       """params"": " & _
-                     "{""files"": " & files & ",""objectId"": """ & ObjectId & """}}"
+                     "{""files"": " & files & ",""objectId"": """ & objectId & """}}"
     
     SetFileInputFiles = message
 End Function
@@ -273,7 +273,7 @@ Public Function JavaScritpEvaluate(script As String)
     JavaScritpEvaluate = message
 End Function
 
-Public Function CallJavascriptFunction(funcDeclear As String, ObjectId As Variant, argments As Variant)
+Public Function CallJavaScriptFunction(funcDeclear As String, objectId As Variant, argments As Variant)
     id_ = id_ + 1
     Dim JavaScriptObjectArgs As String
     
@@ -287,11 +287,12 @@ Public Function CallJavascriptFunction(funcDeclear As String, ObjectId As Varian
     message = "{""id"": " & id_ & ",""method"": ""Runtime.callFunctionOn""," & _
                       """params"": " & _
                      "{""functionDeclaration"": """ & funcDeclear & """,""arguments"": " & JavaScriptObjectArgs
-    If IsNumeric(ObjectId) Then
-        message = message & ",""executionContextId"": " & ObjectId & "}}"
+    If IsNumeric(objectId) Then
+        message = message & ",""executionContextId"": " & objectId & "}}"
     Else
-        message = message & ",""objectId"": """ & ObjectId & """}}"
+        message = message & ",""objectId"": """ & objectId & """}}"
     End If
-    CallJavascriptFunction = message
+    CallJavaScriptFunction = message
 End Function
 '*******************************************************************
+

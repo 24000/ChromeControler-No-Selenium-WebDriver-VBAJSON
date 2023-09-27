@@ -15,46 +15,46 @@ Public Sub SleepByWinAPI(ms As Long)
     Sleep ms
 End Sub
 
-'FindByXPathのJavaScriptCode(通常のコードとFunction版のコード)を返す
+''FindByXPathのJavaScriptCode(通常のコードとFunction版のコード)を返す
 Public Function GetXpathCodes(xPath As String) As Variant
-    Dim codes(1) As String
-    codes(0) = "document.evaluate('" & xPath & "', document, null, " & _
+    Dim Codes(1) As String
+    Codes(0) = "document.evaluate('" & xPath & "', document, null, " & _
                         "XPathResult.FIRST_ORDERED_NODE_TYPE, null ).singleNodeValue;"
-    codes(1) = "function(xpath){return  document.evaluate(xpath, document, null, " & _
+    Codes(1) = "function(xpath){return  document.evaluate(xpath, document, null, " & _
                             "XPathResult.FIRST_ORDERED_NODE_TYPE, null ).singleNodeValue;}"
-    GetXpathCodes = codes
+    GetXpathCodes = Codes
 End Function
 
 'FindByIdのJavaScriptCode(通常のコードとFunction版のコード)を返す
 Public Function GetIdCodes(Id As String) As Variant
-    Dim codes(1) As String
-    codes(0) = "document.getElementById('" & Id & "');"
-    codes(1) = "function(id){return  document.getElementById(id);}"
-    GetIdCodes = codes
+    Dim Codes(1) As String
+    Codes(0) = "document.getElementById('" & Id & "');"
+    Codes(1) = "function(id){return  document.getElementById(id);}"
+    GetIdCodes = Codes
 End Function
 
 'FindByNameのJavaScriptCode(通常のコードとFunction版のコード)を返す
 Public Function GetNameCodes(name As String) As Variant
-    Dim codes(1) As String
-    codes(0) = "document.getElementsByName('" & name & "')[0];"
-    codes(1) = "function(name){return  document.getElementsByName(name)[0];}"
-    GetNameCodes = codes
+    Dim Codes(1) As String
+    Codes(0) = "document.getElementsByName('" & name & "')[0];"
+    Codes(1) = "function(name){return  document.getElementsByName(name)[0];}"
+    GetNameCodes = Codes
 End Function
 
 'FindByTagのJavaScriptCode(通常のコードとFunction版のコード)を返す
 Public Function GetTagCodes(tagName As String, Index As Long) As Variant
-    Dim codes(1) As String
-    codes(0) = "document.getElementsByTagName('" & tagName & "')[" & Index & "];"
-    codes(1) = "function(tagName){return  document.getElementsByTagName(tagName)[" & Index & "];}"
-    GetTagCodes = codes
+    Dim Codes(1) As String
+    Codes(0) = "document.getElementsByTagName('" & tagName & "')[" & Index & "];"
+    Codes(1) = "function(tagName){return  document.getElementsByTagName(tagName)[" & Index & "];}"
+    GetTagCodes = Codes
 End Function
 
 'FindByClassNameのJavaScriptCode(通常のコードとFunction版のコード)を返す
 Public Function GetClassNameCodes(className As String, Index As Long) As Variant
-    Dim codes(1) As String
-    codes(0) = "document.getElementsByClassName('" & className & "')[" & Index & "];"
-    codes(1) = "function(className){return  document.getElementsByClassName(tagName)[" & Index & "];}"
-    GetClassNameCodes = codes
+    Dim Codes(1) As String
+    Codes(0) = "document.getElementsByClassName('" & className & "')[" & Index & "];"
+    Codes(1) = "function(className){return  document.getElementsByClassName(tagName)[" & Index & "];}"
+    GetClassNameCodes = Codes
 End Function
 
 'FindByTagのJavaScriptCode(通常のコードとFunction版のコード)を返す

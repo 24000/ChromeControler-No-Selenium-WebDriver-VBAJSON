@@ -10,24 +10,24 @@ Attribute VB_Exposed = False
 Option Explicit
 
 Private webSocket_ As a1_WebSocketCommunicator
-Private Json_ As a2_JSONHandler
+Private json_ As a2_JSONHandler
 Private events_ As a5_CDPEventHandler
 
 Public Sub Init(WebSocket As a1_WebSocketCommunicator, _
-                        Json As a2_JSONHandler, _
+                        json As a2_JSONHandler, _
                         events As a5_CDPEventHandler)
     Set webSocket_ = WebSocket
-    Set Json_ = Json
+    Set json_ = json
     Set events_ = events
 End Sub
 
-'message処理送信＆受信
+''message処理送信＆受信
 '受信時には、送信に対する受信だけではなく、クロームからのイベント通知も混ざってくる。
 'イベント通知の場合、responsにidが含まれないため、idの有無で送信に対する受信なのかイベント通知なのかを判断
 '注意:送信に成功しても、もし送信したJsonに不備がある場合、responsにはidが含まれない。
 Public Function SendAndReceive(sendMsg As String) As String
     
-    Dim sendId As Long: sendId = Json_.GetValue(sendMsg, "id")
+    Dim sendId As Long: sendId = json_.GetValue(sendMsg, "id")
     
     Debug.Print vbCrLf & ">>>>>>" & "送信内容：" & sendMsg
     If webSocket_.SendMessage(sendMsg) = False Then GoTo quit
@@ -37,7 +37,7 @@ Public Function SendAndReceive(sendMsg As String) As String
         res = webSocket_.GetMessage
         If res = "受信エラー発生" Then GoTo quit
         
-        resId = Json_.GetValue(res, "id")
+        resId = json_.GetValue(res, "id")
         If resId = "" Then
             If InStr(res, "method") > 0 Then
                 events_.GetInfo res
@@ -53,6 +53,9 @@ Public Function SendAndReceive(sendMsg As String) As String
     Loop While (sendId <> resId)
     
     SendAndReceive = res
+    
+    Dim resobj As Object
+    Set resobj = parseJSON(res)
 Exit Function
 
 quit:
@@ -70,3 +73,58 @@ End
 End Function
 
 
+Function parseJSON(jsonString As Variant) As Object
+    Dim result As Object
+    Dim regex As Object
+    Dim matches As Object
+    Dim match As Object
+    Dim value As Variant
+    Dim key As String
+    
+    Set regex = CreateObject("VBScript.RegExp")
+    
+    regex.Pattern = "(?:\{[^\[\]\{\}\:\,]*\})|(?:\[[^\[\]\{\}\:\,]*\])|(?:[^\[\]\{\}\:\,]+)"
+    Set matches = regex.Execute(jsonString)
+    Set result = CreateObject("Scripting.Dictionary")
+    
+    For Each match In matches
+        value = match
+        If Left(value, 1) = """" And Right(value, 1) = """" Then
+            value = Mid(value, 2, Len(value) - 2)
+        ElseIf IsNumeric(value) Then
+            value = CDbl(value)
+        ElseIf value = "true" Then
+            value = True
+        ElseIf value = "false" Then
+            value = False
+        ElseIf value = "null" Then
+            value = Null
+        End If
+        
+        If IsObject(value) Then
+            Set value = parseJSON(value)
+        End If
+        
+        If IsArray(value) Then
+            Dim i As Long
+            Dim tempDict As Object
+            Set tempDict = CreateObject("Scripting.Dictionary")
+            For i = 0 To UBound(value)
+                tempDict.add i, value(i)
+            Next i
+            Set value = tempDict
+        End If
+        
+        If result.Count Mod 2 = 0 Then
+            If IsObject(value) Then
+                Set result(value("key")) = value("value")
+            Else
+                key = value
+            End If
+        Else
+            result(key) = value
+        End If
+    Next match
+    
+    Set parseJSON = result
+End Function

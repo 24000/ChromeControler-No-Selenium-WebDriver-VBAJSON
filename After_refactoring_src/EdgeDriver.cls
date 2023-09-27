@@ -13,7 +13,7 @@ Implements IWebDriver
 
 Private Declare PtrSafe Function FindWindow Lib "user32" Alias "FindWindowA" ( _
         ByVal lpClassName As String, ByVal lpWindowName As String) As Long
-'Private Const CLASS_NAME As String = "Chrome_WidgetWin_1"
+''Private Const CLASS_NAME As String = "Chrome_WidgetWin_1"
 'Private Const CAPTION_NAME As String = "新しいタブ - Google Chrome" '"data:, - Google Chrome"
 
 'Private Declare PtrSafe Function GetWindowText Lib "user32" Alias "GetWindowTextA" ( _
@@ -27,7 +27,7 @@ Private Declare PtrSafe Sub SetForeGroundWindow Lib "user32" Alias "SetForegroun
 
 
 Private webSocket_ As a1_WebSocketCommunicator
-Private Json_ As a2_JSONHandler
+Private json_ As a2_JSONHandler
 Private basicInfo_ As a3_BasicInfos
 Private CDP_ As a4_ExecuteCDP
 Private events_ As a5_CDPEventHandler
@@ -55,7 +55,7 @@ Private Sub Class_Initialize()
     End If
     
     CDP_.SetDiscoverTargets
-    CDP_.AttachToTarget basicInfo_.targetId
+    CDP_.AttachToTarget basicInfo_.TargetId
     
     WaitForActivation
     
@@ -106,21 +106,21 @@ End Sub
 
 '内部オブジェクトの生成
 Private Sub New_InnerObjects()
-    Set Json_ = New a2_JSONHandler
-    Set basicInfo_ = New a3_BasicInfos: basicInfo_.Init Json_
+    Set json_ = New a2_JSONHandler
+    Set basicInfo_ = New a3_BasicInfos: basicInfo_.Init json_
     Set webSocket_ = New a1_WebSocketCommunicator
     If webSocket_.Init(basicInfo_.Host, basicInfo_.WebSocketUrlPath, basicInfo_.DebuggingPort) = False Then End
     
     Set events_ = New a5_CDPEventHandler
-    events_.Init Json_, basicInfo_
+    events_.Init json_, basicInfo_
     
     Dim msgGenerator As a4x1_CDPMessageGenerator
     Set msgGenerator = New a4x1_CDPMessageGenerator
     Dim Handler As a4x2_CDPMessageHandler
     Set Handler = New a4x2_CDPMessageHandler
-    Handler.Init webSocket_, Json_, events_
+    Handler.Init webSocket_, json_, events_
     Set CDP_ = New a4_ExecuteCDP
-    CDP_.Init msgGenerator, Handler, Json_
+    CDP_.Init msgGenerator, Handler, json_
     
     Set Helper_ = New a6_ExecuteHelperFunction
 End Sub
@@ -145,8 +145,8 @@ End Sub
 Private Property Get IWebDriver_URL() As String
     CDP_.SetDiscoverTargets  'これを使ってPage情報最新化
     Dim i As Long
-    For i = 1 To events_.PageInfos.count
-        If events_.PageInfos(i)("targetId") = basicInfo_.targetId Then
+    For i = 1 To events_.PageInfos.Count
+        If events_.PageInfos(i)("targetId") = basicInfo_.TargetId Then
             IWebDriver_URL = events_.PageInfos(i)("url")
             Exit Property
         End If
@@ -156,14 +156,14 @@ End Property
 
 'Public
 '第1引数で指定のURLを開く
-Private Sub IWebDriver_OpenURL(targetUrl As String)
+Private Sub IWebDriver_OpenURL(targetURL As String)
     Dim res As String
-    res = CDP_.OpenURL(targetUrl)
+    res = CDP_.OpenURL(targetURL)
     If InStr(res, "invalid URL") > 0 Then
         Helper_.DisplayErrorAndEnd _
             "＜OpenURL＞" & vbCrLf & _
             "指定された以下URLは無効なURLです。" & vbCrLf & _
-            targetUrl & vbCrLf
+            targetURL & vbCrLf
     End If
     
     CDP_.WaitingForWebPageDisplay
@@ -180,7 +180,7 @@ End Sub
 Private Function IWebDriver_ExecuteScript(script As String) As String
     Dim responseMsg As String
     responseMsg = CDP_.ExecuteJavaScript(script)
-    IWebDriver_ExecuteScript = Json_.GetValue(responseMsg, "result")
+    IWebDriver_ExecuteScript = json_.GetValue(responseMsg, "result")
 End Function
 
 'Public
@@ -189,12 +189,12 @@ Private Function IWebDriver_FindElementByXpath(xPath As String) As IWebElement
     
     If InStr(xPath, """") > 0 Then xPath = Replace(xPath, """", "\""")
     
-    Dim codes As Variant: codes = Helper_.GetXpathCodes(xPath)
-    Dim ObjectId As String: ObjectId = CDP_.GetObjectIdOfElementBy(xPath, basicInfo_, codes)
-    If ObjectId = "" Then GoTo quit
+    Dim Codes As Variant: Codes = Helper_.GetXpathCodes(xPath)
+    Dim objectId As String: objectId = CDP_.GetObjectIdOfElementBy(xPath, basicInfo_, Codes)
+    If objectId = "" Then GoTo quit
     Dim findInfo As Collection: Set findInfo = Helper_.MakeFindInfo("xpath", xPath)
     Set IWebDriver_FindElementByXpath = _
-        CDP_.MakeElementObject(ObjectId, findInfo, basicInfo_, events_, Helper_)
+        CDP_.MakeElementObject(objectId, findInfo, basicInfo_, events_, Helper_)
 Exit Function
 
 quit:
@@ -206,12 +206,12 @@ End Function
 'Public
 '第1引数で指定されるIdの要素を取得し、エレメントObjectとして返却
 Private Function IWebDriver_FindElementById(Id As String) As IWebElement
-    Dim codes As Variant: codes = Helper_.GetIdCodes(Id)
-    Dim ObjectId As String: ObjectId = CDP_.GetObjectIdOfElementBy(Id, basicInfo_, codes)
-    If ObjectId = "" Then GoTo quit
+    Dim Codes As Variant: Codes = Helper_.GetIdCodes(Id)
+    Dim objectId As String: objectId = CDP_.GetObjectIdOfElementBy(Id, basicInfo_, Codes)
+    If objectId = "" Then GoTo quit
     Dim findInfo As Collection: Set findInfo = Helper_.MakeFindInfo("id", Id)
     Set IWebDriver_FindElementById = _
-        CDP_.MakeElementObject(ObjectId, findInfo, basicInfo_, events_, Helper_)
+        CDP_.MakeElementObject(objectId, findInfo, basicInfo_, events_, Helper_)
 Exit Function
 
 quit:
@@ -224,12 +224,12 @@ End Function
 '第1引数で指定されるNameの要素を取得し、エレメントObjectとして返却
 Private Function IWebDriver_FindElementByName(name As String) As IWebElement
 
-    Dim codes As Variant: codes = Helper_.GetNameCodes(name)
-    Dim ObjectId As String: ObjectId = CDP_.GetObjectIdOfElementBy(name, basicInfo_, codes)
-    If ObjectId = "" Then GoTo quit
+    Dim Codes As Variant: Codes = Helper_.GetNameCodes(name)
+    Dim objectId As String: objectId = CDP_.GetObjectIdOfElementBy(name, basicInfo_, Codes)
+    If objectId = "" Then GoTo quit
     Dim findInfo As Collection: Set findInfo = Helper_.MakeFindInfo("name", name)
     Set IWebDriver_FindElementByName = _
-        CDP_.MakeElementObject(ObjectId, findInfo, basicInfo_, events_, Helper_)
+        CDP_.MakeElementObject(objectId, findInfo, basicInfo_, events_, Helper_)
 Exit Function
 
 quit:
@@ -248,15 +248,15 @@ Private Function IWebDriver_FindElementsByTag(tagName As String) As IWebElements
     
     Dim elements As Collection: Set elements = New Collection
     
-    Dim ObjectId As String
-    Dim codes As Variant
+    Dim objectId As String
+    Dim Codes As Variant
     Dim Index As Long
     For Index = 0 To elemsCount - 1
-        codes = Helper_.GetTagCodes(tagName, Index)
-        ObjectId = CDP_.GetObjectIdOfElementBy(tagName, basicInfo_, codes)
+        Codes = Helper_.GetTagCodes(tagName, Index)
+        objectId = CDP_.GetObjectIdOfElementBy(tagName, basicInfo_, Codes)
         Dim findInfo As Collection: Set findInfo = Helper_.MakeFindInfo("tag", tagName, Index)
         elements.add _
-            CDP_.MakeElementObject(ObjectId, findInfo, basicInfo_, events_, Helper_)
+            CDP_.MakeElementObject(objectId, findInfo, basicInfo_, events_, Helper_)
     Next
     
     Dim elems As c0x0_WebElements: Set elems = New c0x0_WebElements
@@ -280,15 +280,15 @@ Private Function IWebDriver_FindElementsByClassName(className As String) As IWeb
     
     Dim elements As Collection: Set elements = New Collection
     
-    Dim ObjectId As String
-    Dim codes As Variant
+    Dim objectId As String
+    Dim Codes As Variant
     Dim Index As Long
     For Index = 0 To elemsCount - 1
-        codes = Helper_.GetClassNameCodes(className, Index)
-        ObjectId = CDP_.GetObjectIdOfElementBy(className, basicInfo_, codes)
+        Codes = Helper_.GetClassNameCodes(className, Index)
+        objectId = CDP_.GetObjectIdOfElementBy(className, basicInfo_, Codes)
         Dim findInfo As Collection: Set findInfo = Helper_.MakeFindInfo("className", className, Index)
         elements.add _
-            CDP_.MakeElementObject(ObjectId, findInfo, basicInfo_, events_, Helper_)
+            CDP_.MakeElementObject(objectId, findInfo, basicInfo_, events_, Helper_)
     Next
     
     Dim elems As c0x0_WebElements: Set elems = New c0x0_WebElements
@@ -309,18 +309,18 @@ End Function
 Private Sub IWebDriver_SwitchFrameByNameOrUrlOrIndex(value As Variant)
     Dim frameInfos As Collection
     Dim FrameId As String
-    Dim count As Long
+    Dim Count As Long
     
     Do 'frame関連イベント発生タイミングによって情報取得に失敗するケースあり。念のため3回までループ。
         Set frameInfos = GetFrameInfos
         If IsNumeric(value) Then
-            If frameInfos.count < value Then GoTo quit
-            FrameId = Json_.GetValue(frameInfos(value), "id")
+            If frameInfos.Count < value Then GoTo quit
+            FrameId = json_.GetValue(frameInfos(value), "id")
         Else
             FrameId = GetTargetFrameId(frameInfos, value)
         End If
-        count = count + 1
-    Loop While FrameId = "" And count < 3
+        Count = Count + 1
+    Loop While FrameId = "" And Count < 3
     
     If FrameId = "" Then GoTo quit
     
@@ -349,39 +349,39 @@ End Sub
 '→frame(Pageの親フレーム)とChildFrames(配列の中にPageの子frame情報(オブジェクト)）の構成
 Private Function GetFrameInfos() As Collection
     Dim collect As Collection: Set collect = New Collection
-    Dim Json As String: Json = CDP_.GetFrameTree
+    Dim json As String: json = CDP_.GetFrameTree
 '    collect.add json_.GetObject(json, "result", "frameTree", "frame"))
     
     Dim frmInfo As String, frminfo2 As String
-    Dim count As Long
+    Dim Count As Long
     Do
         'まずchildFramesから一つのFrame情報（オブジェクト）取得
-        frmInfo = Json_.GetObject(Json, "result", "frameTree", "childFrames", count)
+        frmInfo = json_.GetObject(json, "result", "frameTree", "childFrames", Count)
         If frmInfo = "" Then Exit Do
         'そのオブジェクトの中のframeプロパティ(オブジェクト)を取得し、コレクションに加える
-        frminfo2 = Json_.GetObject(frmInfo, "frame")
+        frminfo2 = json_.GetObject(frmInfo, "frame")
         collect.add frminfo2
         'childFramesプロパティがある場合、再帰構造なので再帰関数で同様の処理を回す
         If InStr(frmInfo, "childFrames") > 0 Then
             GetChildFrameInfo collect, frmInfo
         End If
-        count = count + 1
+        Count = Count + 1
     Loop
     Set GetFrameInfos = collect
 End Function
 'childFrameがある場合、再帰処理
-Private Sub GetChildFrameInfo(collect As Collection, Json As String)
+Private Sub GetChildFrameInfo(collect As Collection, json As String)
     Dim frmInfo As String, frminfo2 As String
-    Dim count As Long
+    Dim Count As Long
     Do
-        frmInfo = Json_.GetObject(Json, "childFrames", count)
+        frmInfo = json_.GetObject(json, "childFrames", Count)
         If frmInfo = "" Then Exit Do
-        frminfo2 = Json_.GetObject(frmInfo, "frame")
+        frminfo2 = json_.GetObject(frmInfo, "frame")
         collect.add frminfo2
         If InStr(frmInfo, "childFrames") > 0 Then
             GetChildFrameInfo collect, frmInfo
         End If
-        count = count + 1
+        Count = Count + 1
     Loop
 End Sub
 '各フレームのname,urlと指定された値を比較。一致するフレームのIdを返す。
@@ -389,10 +389,10 @@ Private Function GetTargetFrameId(frameInfos As Collection, value As Variant) As
     Dim frameInfo As Variant
     Dim name As String, URL As String
     For Each frameInfo In frameInfos
-        name = Json_.GetValue(frameInfo, "name")
-        URL = Json_.GetValue(frameInfo, "url")
+        name = json_.GetValue(frameInfo, "name")
+        URL = json_.GetValue(frameInfo, "url")
         If name = value Or URL = value Then
-            GetTargetFrameId = Json_.GetValue(frameInfo, "id")
+            GetTargetFrameId = json_.GetValue(frameInfo, "id")
             Exit Function
         End If
     Next
@@ -405,10 +405,10 @@ Private Sub IWebDriver_DebugPrintAccessibleFrameInfo()
     CDP_.RuntimeEnable
     Dim frameInfos As Collection: Set frameInfos = GetFrameInfos
     Dim i As Long
-    For i = 1 To frameInfos.count
+    For i = 1 To frameInfos.Count
         Debug.Print "index：" & i & _
-                           "　name：" & Json_.GetValue(frameInfos(i), "name") & _
-                           "　url：" & Json_.GetValue(frameInfos(i), "url")
+                           "　name：" & json_.GetValue(frameInfos(i), "name") & _
+                           "　url：" & json_.GetValue(frameInfos(i), "url")
     Next
 End Sub
 
@@ -591,15 +591,15 @@ End Sub
 Private Sub IWebDriver_SwitchTabByIndex(Index As Long)
     Dim newTargetId As String
     newTargetId = events_.PageInfos(Index)("targetId")
-    basicInfo_.Update newTargetId, Json_, True
+    basicInfo_.Update newTargetId, json_, True
     
     webSocket_.CloseWebSocket
     Set webSocket_ = Nothing
     Set webSocket_ = New a1_WebSocketCommunicator
     If webSocket_.Init(basicInfo_.Host, basicInfo_.WebSocketUrlPath, basicInfo_.DebuggingPort) = False Then End
     
-    CDP_.ActivateTarget basicInfo_.targetId
-    CDP_.AttachToTarget basicInfo_.targetId
+    CDP_.ActivateTarget basicInfo_.TargetId
+    CDP_.AttachToTarget basicInfo_.TargetId
     CDP_.PageEnable
     CDP_.DOMEnable
     
@@ -619,12 +619,12 @@ Private Sub IWebDriver_SetForeGroundWindow()
     WaitForActivation
 End Sub
 
-Private Sub IWebDriver_AllowPopUpWindowForURL(targetUrl As String)
+Private Sub IWebDriver_AllowPopUpWindowForURL(targetURL As String)
     Dim chromeExe As String
     Dim objExec As Object
     With CreateObject("WScript.Shell")
         .RegWrite name:="HKEY_LOCAL_MACHINE\SOFTWARE\Policies\{Google}", _
-                        value:=targetUrl, _
+                        value:=targetURL, _
                         Type:="REG_SZ"
     End With
 End Sub

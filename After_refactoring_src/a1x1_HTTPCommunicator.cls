@@ -142,13 +142,13 @@ Public Function Connect(Host As String, Path As String, port As Long) As Boolean
                                     StrPtr(GET_METHOD), StrPtr(Path), StrPtr(HTTP_VERSION), 0, 0, 0)
     If hRequestHandle_ = 0 Then GoTo quit
 
-    Dim Result As Long
-    Result = WinHttpSendRequest(hRequestHandle_, WINHTTP_NO_ADDITIONAL_HEADERS, _
+    Dim result As Long
+    result = WinHttpSendRequest(hRequestHandle_, WINHTTP_NO_ADDITIONAL_HEADERS, _
                     0, WINHTTP_NO_REQUEST_DATA, 0, 0, 0)
-    If (Result = 0) Then GoTo quit
+    If (result = 0) Then GoTo quit
 
-    Result = WinHttpReceiveResponse(hRequestHandle_, 0)
-    If (Result = 0) Then GoTo quit
+    result = WinHttpReceiveResponse(hRequestHandle_, 0)
+    If (result = 0) Then GoTo quit
 
     If IsResponseStatus(200) = False Then GoTo quit
     
@@ -159,42 +159,42 @@ quit:
     Connect = False
 End Function
 
-'Httpレスポンスのステータスコード確認
+''Httpレスポンスのステータスコード確認
 Public Function IsResponseStatus(CheckStatusNumber As Long) As Boolean
     Dim statusCodeBuffer As Long
     Dim BufferSize As Long: BufferSize = 4
-    Dim Result As Long
-    Result = WinHttpQueryHeaders(hRequestHandle_, _
+    Dim result As Long
+    result = WinHttpQueryHeaders(hRequestHandle_, _
                     (WINHTTP_QUERY_STATUS_CODE Or WINHTTP_QUERY_FLAG_NUMBER), _
                     WINHTTP_HEADER_NAME_BY_INDEX, _
                     statusCodeBuffer, BufferSize, WINHTTP_NO_HEADER_INDEX)
                     
-    If Result = False Then GoTo quit
+    If result = False Then GoTo quit
     If statusCodeBuffer <> CheckStatusNumber Then GoTo quit
 
     IsResponseStatus = True
     
 Exit Function
 quit:
-    If Result = False Then Debug.Print Result
+    If result = False Then Debug.Print result
     If statusCodeBuffer <> CheckStatusNumber Then Debug.Print _
         "ステータスコード:" & statusCodeBuffer & "/" & CheckStatusNumber & "以外"
     IsResponseStatus = False
 End Function
 
 Public Function UpgradeToWebSocket() As Boolean
-    Dim Result As Long
-    Result = WinHttpSetOption(hRequestHandle_, _
+    Dim result As Long
+    result = WinHttpSetOption(hRequestHandle_, _
                     WINHTTP_OPTION_UPGRADE_TO_WEB_SOCKET, 0, 0)
-    If Result = 0 Then GoTo quit
+    If result = 0 Then GoTo quit
     
-    Result = WinHttpSendRequest(hRequestHandle_, _
+    result = WinHttpSendRequest(hRequestHandle_, _
                     WINHTTP_NO_ADDITIONAL_HEADERS, _
                     0, WINHTTP_NO_REQUEST_DATA, 0, 0, 0)
-    If Result = 0 Then GoTo quit
+    If result = 0 Then GoTo quit
 
-    Result = WinHttpReceiveResponse(hRequestHandle_, 0)
-    If Result = 0 Then GoTo quit
+    result = WinHttpReceiveResponse(hRequestHandle_, 0)
+    If result = 0 Then GoTo quit
     
     If IsResponseStatus(101) = False Then GoTo quit
 
@@ -206,7 +206,7 @@ Public Function UpgradeToWebSocket() As Boolean
 
 Exit Function
 quit:
-    If Result = 0 Then Debug.Print "Upgrade：" & Result
+    If result = 0 Then Debug.Print "Upgrade：" & result
     If hwebsockethandle_ = 0 Then Debug.Print "Upgrade：" & Err.LastDllError
     UpgradeToWebSocket = False
 End Function
@@ -233,10 +233,10 @@ Public Sub CloseHInternetHandles()
         hSessionHandle_ = 0
     End If
 
-    Dim Result As Long
-    Result = Err.LastDllError
-    If (Result <> ERROR_SUCCESS) Then
-          MsgBox "quitting with result: " & Result
+    Dim result As Long
+    result = Err.LastDllError
+    If (result <> ERROR_SUCCESS) Then
+          MsgBox "quitting with result: " & result
     End If
 
 End Sub

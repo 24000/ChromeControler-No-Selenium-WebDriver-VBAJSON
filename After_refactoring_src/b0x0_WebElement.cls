@@ -23,7 +23,7 @@ Private Declare PtrSafe Function SendMessage Lib "user32" Alias "SendMessageA" (
         ByVal hWnd As Long, ByVal wMsg As Long, _
         ByVal wParam As Long, lParam As Any) As LongPtr
 
-Private Json_ As a2_JSONHandler
+Private json_ As a2_JSONHandler
 Private basicInfo_ As a3_BasicInfos
 Private CDP_ As a4_ExecuteCDP
 Private events_ As a5_CDPEventHandler
@@ -39,60 +39,60 @@ Private xpath_ As String
 Private name_
 
 
-Public Sub Init(Json As a2_JSONHandler, _
+Public Sub Init(json As a2_JSONHandler, _
                        basicInfo As a3_BasicInfos, _
                        ExecCDP As a4_ExecuteCDP, _
                        events As a5_CDPEventHandler, _
                        execHelper As a6_ExecuteHelperFunction, _
-                       ObjectId As String, _
+                       objectId As String, _
                        findInfo As Collection, _
                        Optional attributes As Object = Nothing, _
                        Optional FrameId As String)
                        
-    Set Json_ = Json
+    Set json_ = json
     Set basicInfo_ = basicInfo
     Set CDP_ = ExecCDP
     Set events_ = events
     Set Helper_ = execHelper
     
-    objectId_ = ObjectId
+    objectId_ = objectId
     Set findInfo_ = findInfo
     Set attributes_ = attributes
     frameId_ = FrameId
 End Sub
 
-Public Property Get ObjectId() As String
-    ObjectId = objectId_
+Public Property Get objectId() As String
+    objectId = objectId_
 End Property
 Public Property Get FrameId() As String
     FrameId = frameId_
 End Property
 
-'CallJavaScriptFunction呼出しの共通関数
+''CallJavaScriptFunction呼出しの共通関数
 '戻り値が"Cannot find context with specified id"となる場合、ObjectIdの再取得が必要なため共通化
 Private Function CallFunction(functionCode As String, args As String) As String
     Dim res As String
-    res = CDP_.CallJavascriptFunction(functionCode, objectId_, args)
+    res = CDP_.CallJavaScriptFunction(functionCode, objectId_, args)
     If InStr(res, "Cannot find context with specified id") > 0 Then
         basicInfo_.UpdateExecutionContextId CDP_
         ReGetObjectId
-        res = CDP_.CallJavascriptFunction(functionCode, objectId_, args)
+        res = CDP_.CallJavaScriptFunction(functionCode, objectId_, args)
     End If
     CallFunction = res
 End Function
 Public Function ReGetObjectId()
-    Dim codes As Variant
+    Dim Codes As Variant
     Select Case findInfo_(1)
       Case "id"
-        codes = Helper_.GetIdCodes(findInfo_(2))
+        Codes = Helper_.GetIdCodes(findInfo_(2))
       Case "xpath"
-        codes = Helper_.GetXpathCodes(findInfo_(2))
+        Codes = Helper_.GetXpathCodes(findInfo_(2))
       Case "name"
-        codes = Helper_.GetNameCodes(findInfo_(2))
+        Codes = Helper_.GetNameCodes(findInfo_(2))
       Case "tag"
-        codes = Helper_.GetTagCodes(findInfo_(2), findInfo_(3))
+        Codes = Helper_.GetTagCodes(findInfo_(2), findInfo_(3))
     End Select
-    objectId_ = CDP_.GetObjectIdOfElementBy(findInfo_(2), basicInfo_, codes)
+    objectId_ = CDP_.GetObjectIdOfElementBy(findInfo_(2), basicInfo_, Codes)
 End Function
 
 'CDPMethodを呼出す場合に、引数にObjectIdを使用して呼出すMethodの共通管理のための関数
@@ -143,7 +143,7 @@ Private Property Get IWebElement_Checked() As Boolean
     If InStr(res, """type"":""boolean""") = 0 Then GoTo quit
     
     Dim Checked As Boolean
-    Checked = Json_.GetValue(res, "result", "result", "value")
+    Checked = json_.GetValue(res, "result", "result", "value")
     IWebElement_Checked = Checked
 Exit Property
 
@@ -151,6 +151,8 @@ quit:
 Helper_.DisplayErrorAndEnd "このElementはCheckedプロパティを持ちません。" & vbCrLf & _
                                             "※CheckedはCheckBoxで使用可能" & vbCrLf
 End Property
+
+
 
 
 
@@ -168,7 +170,7 @@ Private Property Get IWebElement_IsEnabled() As Boolean
     If InStr(res, """type"":""boolean""") = 0 Then GoTo quit
     
     Dim Enabled As Boolean
-    Enabled = Json_.GetValue(res, "result", "result", "value")
+    Enabled = json_.GetValue(res, "result", "result", "value")
     IWebElement_IsEnabled = Not Enabled
 Exit Property
     
@@ -274,7 +276,7 @@ End Sub
 '要素のValue属性に文字列を設定
 Private Sub IWebElement_SetText(text As String)
     FocusAndEnterKey
-    Dim encodingText As String: encodingText = Json_.EncodeURL(text)
+    Dim encodingText As String: encodingText = json_.EncodeURL(text)
     CallFunction "function(value){value = decodeURI(value);this.value = value;}", encodingText
     
     CallFunction Helper_.GetDispatchChangeEventCode, encodingText
@@ -284,7 +286,7 @@ End Sub
 '要素のTextContentに文字列を設定
 Private Sub IWebElement_SetTextContent(text As String)
     FocusAndEnterKey
-    Dim encodingText As String: encodingText = Json_.EncodeURL(text)
+    Dim encodingText As String: encodingText = json_.EncodeURL(text)
     CallFunction "function(value){value = decodeURI(value);this.textContent  = value;}", encodingText
     
     CallFunction Helper_.GetDispatchChangeEventCode, encodingText
@@ -293,11 +295,11 @@ End Sub
 'Public
 'SelectBoxの選択肢を文字列で選択
 Private Sub IWebElement_SelectItemInSelectBoxByText(text As String)
-    Dim encodingText As String: encodingText = Json_.EncodeURL(text)
+    Dim encodingText As String: encodingText = json_.EncodeURL(text)
     
     Dim res As String: res = CallFunction(Helper_.GetSelectItemCode, encodingText)
     
-    Dim IsSelect As Boolean: IsSelect = Json_.GetValue(res, "result", "result", "value")
+    Dim IsSelect As Boolean: IsSelect = json_.GetValue(res, "result", "result", "value")
     If IsSelect = False Then
         MsgBox "<SelectItemInSelectBoxByText>" & vbCrLf & _
                     "「" & text & "」は選択肢の中に存在しません。" & vbCrLf & "処理を終了します。"
@@ -314,15 +316,15 @@ Private Function IWebElement_FindElementByName(name As String) As IWebElement
     funcCode = "function(name){return  this.getElementsByName(name)[0];}"
     res = CallFunction(funcCode, name)
     
-    Dim ObjectId As String
-    ObjectId = Json_.GetValue(res, "result", "result", "objectId")
-    If ObjectId = "" Then GoTo quit
+    Dim objectId As String
+    objectId = json_.GetValue(res, "result", "result", "objectId")
+    If objectId = "" Then GoTo quit
     
     Dim findInfoInElem As Collection
     Set findInfoInElem = Helper_.MakeFindInfo("name", name)
     
     Set IWebElement_FindElementByName = _
-        CDP_.MakeElementObject(ObjectId, findInfoInElem, basicInfo_, events_, Helper_)
+        CDP_.MakeElementObject(objectId, findInfoInElem, basicInfo_, events_, Helper_)
 Exit Function
 
 quit:
@@ -357,19 +359,19 @@ Private Function GetElementsCount(tagName As String) As Long
     Dim funcCode As String, res As String
     funcCode = "function(tagName){return  this.getElementsByTagName('" & tagName & "').length;}"
     res = CallFunction(funcCode, tagName)
-    GetElementsCount = Json_.GetValue(res, "result", "result", "value")
+    GetElementsCount = json_.GetValue(res, "result", "result", "value")
 End Function
 Private Function CreateElementsItemByIndex(tagName As String, Index As Long) As IWebElement
     Dim funcCode As String, res As String
     funcCode = "function(tagName){return  this.getElementsByTagName(tagName)[" & Index & "];}"
     res = CallFunction(funcCode, tagName)
     
-    Dim ObjectId As String
-    ObjectId = Json_.GetValue(res, "result", "result", "objectId")
+    Dim objectId As String
+    objectId = json_.GetValue(res, "result", "result", "objectId")
     Dim findInfoInElem As Collection: Set findInfoInElem = Helper_.MakeFindInfo("tag", tagName, Index)
 
     Set CreateElementsItemByIndex = _
-        CDP_.MakeElementObject(ObjectId, findInfoInElem, basicInfo_, events_, Helper_)
+        CDP_.MakeElementObject(objectId, findInfoInElem, basicInfo_, events_, Helper_)
 End Function
 
 'Public
@@ -379,7 +381,7 @@ Private Function IWebElement_GetTextContent() As String
     funcCode = "function(){return this.textContent.replace(/\\s/g, ' ');}"
     res = CallFunction(funcCode, "")
     
-    IWebElement_GetTextContent = Json_.GetValue(res, "result", "result", "value")
+    IWebElement_GetTextContent = json_.GetValue(res, "result", "result", "value")
 End Function
 
 'Public
@@ -389,7 +391,7 @@ Private Function IWebElement_GetSelectedValue() As String
     funcCode = "function(){return this.value.replace(/\\s/g, ' ');}"
     res = CallFunction(funcCode, "")
 
-    IWebElement_GetSelectedValue = Json_.GetValue(res, "result", "result", "value")
+    IWebElement_GetSelectedValue = json_.GetValue(res, "result", "result", "value")
 End Function
 
 'Public
@@ -399,7 +401,7 @@ Private Function IWebElement_GetSelectedTextContent() As String
     funcCode = Helper_.GetSelectedTextContentCode
     res = CallFunction(funcCode, "")
 
-    IWebElement_GetSelectedTextContent = Json_.GetValue(res, "result", "result", "value")
+    IWebElement_GetSelectedTextContent = json_.GetValue(res, "result", "result", "value")
 End Function
 
 'エレメントの中心位置のxy座標に左クリックイベント発行
@@ -411,21 +413,21 @@ Private Sub IWebElement_DispatchLeftClickEvent()
     
     CDP_.DispatchMouseEvent "mouseWheel", 0, 0, "none", 0, 0, 0, y - 50
     
-    Dim Result As String
-    Result = CDP_.DispatchMouseEvent("mousePressed", x, y, "left", 1)
-    Result = CDP_.DispatchMouseEvent("mouseReleased", x, y, "left", 1)
+    Dim result As String
+    result = CDP_.DispatchMouseEvent("mousePressed", x, y, "left", 1)
+    result = CDP_.DispatchMouseEvent("mouseReleased", x, y, "left", 1)
 End Sub
 'エレメントの中心位置のxy座標を取得
 Private Function GetCenterPositionXY(res As String)
-    Dim Result As Variant
-    Result = Json_.GetValue(res, "result", "model", "content")
-    Result = Split(Result, ",")
+    Dim result As Variant
+    result = json_.GetValue(res, "result", "model", "content")
+    result = Split(result, ",")
     Dim width As Long, height As Long
-    width = Json_.GetValue(res, "result", "model", "width")
-    height = Json_.GetValue(res, "result", "model", "height")
+    width = json_.GetValue(res, "result", "model", "width")
+    height = json_.GetValue(res, "result", "model", "height")
     Dim xy(1) As Variant
-    xy(0) = Result(0) + (width / 2)
-    xy(1) = Result(1) + (height / 2)
+    xy(0) = result(0) + (width / 2)
+    xy(1) = result(1) + (height / 2)
     GetCenterPositionXY = xy
 End Function
 
@@ -481,6 +483,6 @@ Private Function IWebElement_GetAttribute(AttributeName As String) As String
     If InStr(res, """value"":null") > 0 Then
         IWebElement_GetAttribute = ""
     Else
-        IWebElement_GetAttribute = Json_.GetValue(res, "result", "result", "value")
+        IWebElement_GetAttribute = json_.GetValue(res, "result", "result", "value")
     End If
 End Function

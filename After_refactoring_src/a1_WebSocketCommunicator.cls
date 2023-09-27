@@ -56,14 +56,14 @@ Private Declare PtrSafe Function WinHttpWebSocketQueryCloseStatus Lib "WinHttp" 
    ByRef pdwReasonLengthConsumed As Long _
    ) As Long
    
-'Websocket受信に使用(自作構造体)
+''Websocket受信に使用(自作構造体)
 Private Type response
-    Buffer(32767) As Byte   '第1引数　'fragment発生時に戻ってくるbyteとして32768が最大の模様
+    Buffer(4095) As Byte     '第1引数
     BufferLength As Long    '第2引数
     ReceiveBytes As Long    '第3引数
     Status As Long              '第4引数
     CurrentPointer As Long  '第5引数
-    Result As Long               '戻り値
+    result As Long               '戻り値
     collect As Collection
 End Type
 
@@ -87,14 +87,14 @@ Public Function SendMessage(message As String) As Boolean
     message = StrConv(message, vbFromUnicode)
     Dim ary() As Byte: ary = message
     Dim messageByteSize As Long: messageByteSize = LenB(message)
-    Dim Result As Long
-    Result = WinHttpWebSocketSend(Http.websockethandle, _
+    Dim result As Long
+    result = WinHttpWebSocketSend(Http.websockethandle, _
                         WINHTTP_WEB_SOCKET_UTF8_MESSAGE_BUFFER_TYPE, _
                         StrPtr(message), messageByteSize)
-    If Result = NO_ERROR Then
+    If result = NO_ERROR Then
         SendMessage = True
     Else
-        Debug.Print "送信エラー発生：(戻り値)" & Result & ":(LastDllError)" & Err.LastDllError
+        Debug.Print "送信エラー発生：(戻り値)" & result & ":(LastDllError)" & Err.LastDllError
         SendMessage = False
     End If
     
@@ -107,10 +107,10 @@ Public Function GetMessage() As String
     Set res.collect = New Collection
 
     Do 'レスポンス受信ループ
-        res.Result = WinHttpWebSocketReceive( _
+        res.result = WinHttpWebSocketReceive( _
                         Http.websockethandle, res.Buffer(res.CurrentPointer), res.BufferLength, _
                         res.ReceiveBytes, res.Status)
-        If res.Result <> NO_ERROR Then GoTo quit
+        If res.result <> NO_ERROR Then GoTo quit
 
         If res.Status = WINHTTP_WEB_SOCKET_UTF8_MESSAGE_BUFFER_TYPE Then
             res.collect.add res.Buffer
@@ -126,7 +126,7 @@ Public Function GetMessage() As String
     Loop
     
 quit:
-Debug.Print "受信エラー発生：(戻り値)" & res.Result
+Debug.Print "受信エラー発生：(戻り値)" & res.result
 GetMessage = "受信エラー発生"
 End Function
 'バッファ管理情報更新
@@ -155,10 +155,10 @@ End Function
 
 
 Public Function CloseWebSocket() As Boolean
-    Dim Result As Long
-    Result = WinHttpWebSocketClose(Http.websockethandle, _
+    Dim result As Long
+    result = WinHttpWebSocketClose(Http.websockethandle, _
                         WINHTTP_WEB_SOCKET_SUCCESS_CLOSE_STATUS, 0, 0)
-    If Result <> NO_ERROR Then GoTo quit
+    If result <> NO_ERROR Then GoTo quit
 
     ' サーバーから返されたクローズステータスを確認する。
     Dim CloseReasonBuffer(123) As Byte
@@ -166,16 +166,16 @@ Public Function CloseWebSocket() As Boolean
     Dim Status As Integer
     Dim CloseReasonLength As Long
     
-    Result = WinHttpWebSocketQueryCloseStatus(Http.websockethandle, Status, _
+    result = WinHttpWebSocketQueryCloseStatus(Http.websockethandle, Status, _
                         CloseReasonBuffer(0), BufferSize, CloseReasonLength)
-    If Result <> NO_ERROR Then GoTo quit
+    If result <> NO_ERROR Then GoTo quit
     If Status <> WINHTTP_WEB_SOCKET_SUCCESS_CLOSE_STATUS Then GoTo quit
 
     CloseWebSocket = True
 Exit Function
 
 quit:
-If Result <> NO_ERROR Then Debug.Print Result
+If result <> NO_ERROR Then Debug.Print result
 Debug.Print "The server closed the connection with status code: " & Status
 Dim strCloseReason As String
 Dim i As Long

@@ -30,7 +30,7 @@ Private Sub Class_Initialize()
             "return decodeURI(s);" & vbCrLf & _
             "}" & vbCrLf & _
         "</script>"
-'JSON操作
+''JSON操作
 '============================
     '配列からオブジェクト取り出す
     html.write _
@@ -79,58 +79,58 @@ Private Sub Class_Initialize()
         "</script>"
 End Sub
 
-Public Function EncodeURL(Json As String) As String
-    EncodeURL = html.EncodeURL(Json)
+Public Function EncodeURL(json As String) As String
+    EncodeURL = html.EncodeURL(json)
 End Function
 
-Public Function DecodeURL(Json As String) As String
-    DecodeURL = html.DecodeURL(Json)
+Public Function DecodeURL(json As String) As String
+    DecodeURL = html.DecodeURL(json)
 End Function
 
-Public Function GetValue(ByVal Json As String, ParamArray argsArray() As Variant) As String
+Public Function GetValue(ByVal json As String, ParamArray argsArray() As Variant) As String
     Dim i As Long
-    Dim Result As String
+    Dim result As String
     For i = LBound(argsArray) To UBound(argsArray)
-        If Json = "" Then
-            GetValue = Result
+        If json = "" Then
+            GetValue = result
             Exit Function
         End If
         If i <> UBound(argsArray) Then
             If IsNumeric(argsArray(i)) Then
-                Json = html.getObjectFromArrayBySetIndex(Json, argsArray(i))
+                json = html.getObjectFromArrayBySetIndex(json, argsArray(i))
             Else
-                Json = html.getObjectFromObjectBySetKey(Json, argsArray(i))
+                json = html.getObjectFromObjectBySetKey(json, argsArray(i))
             End If
         Else
             If IsNumeric(argsArray(i)) Then
-                Result = html.getValueFromArrayBySetIndex(Json, argsArray(i))
+                result = html.getValueFromArrayBySetIndex(json, argsArray(i))
             Else
-                Result = html.getValueFromObjectBySetKey(Json, argsArray(i))
+                result = html.getValueFromObjectBySetKey(json, argsArray(i))
             End If
         End If
     Next
-    GetValue = Result
+    GetValue = result
 End Function
 
-Public Function GetObject(ByVal Json As String, ParamArray argsArray() As Variant) As String
+Public Function GetObject(ByVal json As String, ParamArray argsArray() As Variant) As String
     Dim i As Long
-    Dim Result As String
+    Dim result As String
     For i = LBound(argsArray) To UBound(argsArray)
-        If Json = "" Then
-            GetObject = Json
+        If json = "" Then
+            GetObject = json
             Exit Function
         End If
      
         If IsNumeric(argsArray(i)) Then
-            Json = html.getObjectFromArrayBySetIndex(Json, argsArray(i))
+            json = html.getObjectFromArrayBySetIndex(json, argsArray(i))
         Else
-            Json = html.getObjectFromObjectBySetKey(Json, argsArray(i))
+            json = html.getObjectFromObjectBySetKey(json, argsArray(i))
         End If
     Next
-    GetObject = Json
+    GetObject = json
 End Function
 
 
-Public Function GetJsonLength(Json As String) As Long
-    GetJsonLength = html.GetJsonLength(Json)
+Public Function GetJsonLength(json As String) As Long
+    GetJsonLength = html.GetJsonLength(json)
 End Function

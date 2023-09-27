@@ -8,6 +8,7 @@ Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = False
 Attribute VB_Exposed = False
 Option Explicit
+'
 
 Public Property Get Checked() As Boolean
 
@@ -72,4 +73,3 @@ End Sub
 Public Function GetAttribute(AttributeName As String) As String
 
 End Function
-

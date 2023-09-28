@@ -2,15 +2,21 @@ VERSION 1.0 CLASS
 BEGIN
   MultiUse = -1  'True
 END
-Attribute VB_Name = "a2_JSONHandler"
+Attribute VB_Name = "xJson"
 Attribute VB_GlobalNameSpace = False
 Attribute VB_Creatable = False
-Attribute VB_PredeclaredId = False
+Attribute VB_PredeclaredId = True
 Attribute VB_Exposed = False
 Option Explicit
 
 Private html As Object
 Private Sub Class_Initialize()
+    If Not Me Is xJson Then
+        MsgBox "このクラスはSingletonとして設計されています。" & vbCrLf & _
+                    "インスタンス化しないでください。処理を終了します。"
+        End
+    End If
+    
     Set html = CreateObject("htmlfile")
     html.write "<meta http-equiv='X-UA-Compatible' content='IE=edge' />"
 
@@ -30,7 +36,7 @@ Private Sub Class_Initialize()
             "return decodeURI(s);" & vbCrLf & _
             "}" & vbCrLf & _
         "</script>"
-''JSON操作
+'JSON操作
 '============================
     '配列からオブジェクト取り出す
     html.write _

@@ -8,7 +8,6 @@ Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = False
 Attribute VB_Exposed = False
 Option Explicit
-'
 
 Public Property Get URL() As String
 
@@ -22,7 +21,7 @@ Public Function ExecuteScript(script As String) As String
 
 End Function
 
-Public Function FindElementById(Id As String) As IWebElement
+Public Function FindElementById(id As String) As IWebElement
 
 End Function
 
@@ -46,7 +45,7 @@ Public Function IsExistsElementByXpath(xPath As String) As Boolean
 
 End Function
 
-Public Function IsExistsElementById(Id As String) As Boolean
+Public Function IsExistsElementById(id As String) As Boolean
 
 End Function
 
@@ -58,7 +57,7 @@ Public Sub WaitForElementToAppearByXpath(xPath As String, maxWaitTime_sec As Lon
 
 End Sub
 
-Public Sub WaitForElementToAppearById(Id As String, maxWaitTime_sec As Long)
+Public Sub WaitForElementToAppearById(id As String, maxWaitTime_sec As Long)
 
 End Sub
 
@@ -102,7 +101,7 @@ Public Sub ScrollWindow(yPixel As Long, Optional xPixel As Long = 0)
 
 End Sub
 
-Public Sub SetForeGroundWindow()
+Public Sub SetForeGroundwindow()
 
 End Sub
 

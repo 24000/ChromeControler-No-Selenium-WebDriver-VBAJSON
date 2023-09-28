@@ -56,9 +56,9 @@ Private Declare PtrSafe Function WinHttpWebSocketQueryCloseStatus Lib "WinHttp" 
    ByRef pdwReasonLengthConsumed As Long _
    ) As Long
    
-''Websocket受信に使用(自作構造体)
+'Websocket受信に使用(自作構造体)
 Private Type response
-    Buffer(4095) As Byte     '第1引数
+    Buffer(4095) As Byte   '第1引数
     BufferLength As Long    '第2引数
     ReceiveBytes As Long    '第3引数
     Status As Long              '第4引数
@@ -67,17 +67,18 @@ Private Type response
     collect As Collection
 End Type
 
-Public Http As a1x1_HTTPCommunicator
+Public http_ As a1x1_HTTPCommunicator
 
 
-Public Function Init(Host As String, Path As String, port As Long) As Boolean
-    Set Http = New a1x1_HTTPCommunicator
-    If Http.Connect(Host, Path, port) = False Then GoTo quit
-    If Http.UpgradeToWebSocket() = False Then GoTo quit
+Public Function Init(http As a1x1_HTTPCommunicator, path As String) As Boolean
+    Set http_ = http
+    If http_.Connect(path) = False Then GoTo quit
+    If http_.UpgradeToWebSocket() = False Then GoTo quit
     
     Init = True
 Exit Function
 quit:
+    http_.CloseHInternetHandles
     Init = False
 End Function
 
@@ -88,7 +89,7 @@ Public Function SendMessage(message As String) As Boolean
     Dim ary() As Byte: ary = message
     Dim messageByteSize As Long: messageByteSize = LenB(message)
     Dim result As Long
-    result = WinHttpWebSocketSend(Http.websockethandle, _
+    result = WinHttpWebSocketSend(http_.websockethandle, _
                         WINHTTP_WEB_SOCKET_UTF8_MESSAGE_BUFFER_TYPE, _
                         StrPtr(message), messageByteSize)
     If result = NO_ERROR Then
@@ -108,7 +109,7 @@ Public Function GetMessage() As String
 
     Do 'レスポンス受信ループ
         res.result = WinHttpWebSocketReceive( _
-                        Http.websockethandle, res.Buffer(res.CurrentPointer), res.BufferLength, _
+                        http_.websockethandle, res.Buffer(res.CurrentPointer), res.BufferLength, _
                         res.ReceiveBytes, res.Status)
         If res.result <> NO_ERROR Then GoTo quit
 
@@ -156,7 +157,7 @@ End Function
 
 Public Function CloseWebSocket() As Boolean
     Dim result As Long
-    result = WinHttpWebSocketClose(Http.websockethandle, _
+    result = WinHttpWebSocketClose(http_.websockethandle, _
                         WINHTTP_WEB_SOCKET_SUCCESS_CLOSE_STATUS, 0, 0)
     If result <> NO_ERROR Then GoTo quit
 
@@ -166,7 +167,7 @@ Public Function CloseWebSocket() As Boolean
     Dim Status As Integer
     Dim CloseReasonLength As Long
     
-    result = WinHttpWebSocketQueryCloseStatus(Http.websockethandle, Status, _
+    result = WinHttpWebSocketQueryCloseStatus(http_.websockethandle, Status, _
                         CloseReasonBuffer(0), BufferSize, CloseReasonLength)
     If result <> NO_ERROR Then GoTo quit
     If Status <> WINHTTP_WEB_SOCKET_SUCCESS_CLOSE_STATUS Then GoTo quit
@@ -189,3 +190,6 @@ If Len(strCloseReason) > 0 Then
 End If
 CloseWebSocket = False
 End Function
+
+
+

@@ -117,10 +117,7 @@ Private Declare PtrSafe Function WinHttpCloseHandle Lib "WinHttp" ( _
    ByVal hRequest As LongPtr _
    ) As Long
 
-
-Private Const AGENT As String = "Client"
-Private Const GET_METHOD As String = "GET"
-Private Const HTTP_VERSION  As String = "HTTP/1.1"
+Private Declare PtrSafe Sub Sleep Lib "kernel32" (ByVal ms As LongPtr)
 
 Private hSessionHandle_ As LongPtr
 Private hConnectionHandle_ As LongPtr
@@ -131,15 +128,56 @@ Public Property Get websockethandle() As LongPtr
     websockethandle = hwebsockethandle_
 End Property
 
-'HTTP接続
-Public Function Connect(Host As String, Path As String, port As Long) As Boolean
+'ローカルサーバーとしてのブラウザに対してHTTPで/jsonにGETすると、ターゲット一覧がJSONとして取得。
+Public Function GetTargetList()
+    On Error GoTo Loop_
+Do_:
+    GetTargetList = GetJson("GET", "/json")
+    Exit Function
+Loop_:
+DoEvents
+Sleep 500
+Resume Do_
+End Function
 
-    hSessionHandle_ = WinHttpOpen(StrPtr(AGENT), WINHTTP_ACCESS_TYPE_DEFAULT_PROXY, 0, 0, 0)
+Private Function GetJson(method As String, path As String) As String
+    Dim client As Object: Set client = CreateObject("MSXML2.ServerXMLHTTP")
+    client.Open method, xG.LoopBackAddress & ":" & xG.PORT & path
+    client.setRequestHeader "Content-Type", "application/json"
+    client.send
+    
+    GetJson = client.responsetext
+End Function
+
+Public Sub SetForeGroundTabByTargetId(targetId As Variant)
+    
+    Dim res As String: res = GetJson("GET", "/json/activate/" & targetId)
+    If InStr(res, "No such target id") = 0 Then
+        Exit Sub
+    Else
+        Debug.Print "tab前面化失敗"
+    End If
+
+End Sub
+
+
+
+
+
+
+
+
+
+
+'生HTTP接続＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝
+Public Function Connect(path As String) As Boolean
+
+    hSessionHandle_ = WinHttpOpen(StrPtr(xG.AGENT), WINHTTP_ACCESS_TYPE_DEFAULT_PROXY, 0, 0, 0)
     If hSessionHandle_ = 0 Then GoTo quit
-    hConnectionHandle_ = WinHttpConnect(hSessionHandle_, StrPtr(Host), port, 0)
+    hConnectionHandle_ = WinHttpConnect(hSessionHandle_, StrPtr(xG.LoopBackAddressOnly), val(xG.PORT), 0)
     If hConnectionHandle_ = 0 Then GoTo quit
     hRequestHandle_ = WinHttpOpenRequest(hConnectionHandle_, _
-                                    StrPtr(GET_METHOD), StrPtr(Path), StrPtr(HTTP_VERSION), 0, 0, 0)
+                                    StrPtr(xG.GET_METHOD), StrPtr(path), StrPtr(xG.HTTP_VERSION), 0, 0, 0)
     If hRequestHandle_ = 0 Then GoTo quit
 
     Dim result As Long
@@ -156,10 +194,11 @@ Public Function Connect(Host As String, Path As String, port As Long) As Boolean
 Exit Function
 quit:
     Debug.Print "Http.Connect失敗"
+    CloseHInternetHandles
     Connect = False
 End Function
 
-''Httpレスポンスのステータスコード確認
+'Httpレスポンスのステータスコード確認
 Public Function IsResponseStatus(CheckStatusNumber As Long) As Boolean
     Dim statusCodeBuffer As Long
     Dim BufferSize As Long: BufferSize = 4
@@ -210,6 +249,7 @@ quit:
     If hwebsockethandle_ = 0 Then Debug.Print "Upgrade：" & Err.LastDllError
     UpgradeToWebSocket = False
 End Function
+
 
 Private Sub Class_Terminate()
     CloseHInternetHandles

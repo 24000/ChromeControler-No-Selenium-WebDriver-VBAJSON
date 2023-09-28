@@ -23,10 +23,9 @@ Private Declare PtrSafe Function SendMessage Lib "user32" Alias "SendMessageA" (
         ByVal hWnd As Long, ByVal wMsg As Long, _
         ByVal wParam As Long, lParam As Any) As LongPtr
 
-Private json_ As a2_JSONHandler
-Private basicInfo_ As a3_BasicInfos
+Private browser_ As a3_BrowserInfo
 Private CDP_ As a4_ExecuteCDP
-Private events_ As a5_CDPEventHandler
+Private events_ As a5_CDPEventNotifier
 Private Helper_ As a6_ExecuteHelperFunction
 
 Private objectId_ As String
@@ -39,18 +38,16 @@ Private xpath_ As String
 Private name_
 
 
-Public Sub Init(json As a2_JSONHandler, _
-                       basicInfo As a3_BasicInfos, _
+Public Sub Init(browser As a3_BrowserInfo, _
                        ExecCDP As a4_ExecuteCDP, _
-                       events As a5_CDPEventHandler, _
+                       events As a5_CDPEventNotifier, _
                        execHelper As a6_ExecuteHelperFunction, _
                        objectId As String, _
                        findInfo As Collection, _
                        Optional attributes As Object = Nothing, _
-                       Optional FrameId As String)
+                       Optional frameId As String)
                        
-    Set json_ = json
-    Set basicInfo_ = basicInfo
+    Set browser_ = browser
     Set CDP_ = ExecCDP
     Set events_ = events
     Set Helper_ = execHelper
@@ -58,23 +55,23 @@ Public Sub Init(json As a2_JSONHandler, _
     objectId_ = objectId
     Set findInfo_ = findInfo
     Set attributes_ = attributes
-    frameId_ = FrameId
+    frameId_ = frameId
 End Sub
 
 Public Property Get objectId() As String
     objectId = objectId_
 End Property
-Public Property Get FrameId() As String
-    FrameId = frameId_
+Public Property Get frameId() As String
+    frameId = frameId_
 End Property
 
-''CallJavaScriptFunction呼出しの共通関数
+'CallJavaScriptFunction呼出しの共通関数
 '戻り値が"Cannot find context with specified id"となる場合、ObjectIdの再取得が必要なため共通化
 Private Function CallFunction(functionCode As String, args As String) As String
     Dim res As String
     res = CDP_.CallJavaScriptFunction(functionCode, objectId_, args)
     If InStr(res, "Cannot find context with specified id") > 0 Then
-        basicInfo_.UpdateExecutionContextId CDP_
+        browser_.UpdateExecutionContextId CDP_
         ReGetObjectId
         res = CDP_.CallJavaScriptFunction(functionCode, objectId_, args)
     End If
@@ -92,7 +89,7 @@ Public Function ReGetObjectId()
       Case "tag"
         Codes = Helper_.GetTagCodes(findInfo_(2), findInfo_(3))
     End Select
-    objectId_ = CDP_.GetObjectIdOfElementBy(findInfo_(2), basicInfo_, Codes)
+    objectId_ = CDP_.GetObjectIdOfElementBy(findInfo_(2), browser_, Codes)
 End Function
 
 'CDPMethodを呼出す場合に、引数にObjectIdを使用して呼出すMethodの共通管理のための関数
@@ -103,7 +100,7 @@ Private Function CallObjectIdUsingMethod(methodName As String) As String
     res = CallByName(CDP_, methodName, VbMethod, objectId_)
 
     If InStr(res, "Cannot find context with specified id") > 0 Then
-        basicInfo_.UpdateExecutionContextId CDP_
+        browser_.UpdateExecutionContextId CDP_
         ReGetObjectId
         res = CallByName(CDP_, methodName, VbMethod, objectId_)
     End If
@@ -143,7 +140,7 @@ Private Property Get IWebElement_Checked() As Boolean
     If InStr(res, """type"":""boolean""") = 0 Then GoTo quit
     
     Dim Checked As Boolean
-    Checked = json_.GetValue(res, "result", "result", "value")
+    Checked = xJson.GetValue(res, "result", "result", "value")
     IWebElement_Checked = Checked
 Exit Property
 
@@ -170,7 +167,7 @@ Private Property Get IWebElement_IsEnabled() As Boolean
     If InStr(res, """type"":""boolean""") = 0 Then GoTo quit
     
     Dim Enabled As Boolean
-    Enabled = json_.GetValue(res, "result", "result", "value")
+    Enabled = xJson.GetValue(res, "result", "result", "value")
     IWebElement_IsEnabled = Not Enabled
 Exit Property
     
@@ -209,8 +206,8 @@ End Sub
 Private Function IsPageChanging() As Boolean
     CDP_.PageEnable '一回無害なメソッドを投げて、イベント発生状況更新
     
-    If events_.IsCurrentTargetScheduledNavigation _
-    Or events_.IsCurrentTargetStartedLoading Then
+    If browser_.GetPageStatus(IsTargetNavigated) _
+    Or browser_.GetPageStatus(IsStartedLoading) Then
         IsPageChanging = True
     Else
         IsPageChanging = False
@@ -222,7 +219,7 @@ Private Sub WaitPageChangeToComplete()
     Dim failSafeCounter As Long
     Dim isEndChange As Boolean
     Do
-        isEndChange = events_.IsCurrentTargetNavigated
+        isEndChange = browser_.GetPageStatus(IsTargetNavigated)
 '                                Or　chrome_.CDPEvents.IsCurrentTargetClearedScheduledNavigation
         If isEndChange Then Exit Do
         
@@ -231,16 +228,17 @@ Private Sub WaitPageChangeToComplete()
         failSafeCounter = failSafeCounter + 1
     Loop While (isEndChange = False And failSafeCounter <= 4)
     
-    events_.IsCurrentTargetScheduledNavigation = False
-    events_.IsCurrentTargetStartedLoading = False
-    events_.IsCurrentTargetClearedScheduledNavigation = False
-    events_.IsCurrentTargetNavigated = False
+    browser_.SetPageStatus IsScheduledNavigation, False
+    browser_.SetPageStatus IsStartedLoading, False
+    browser_.SetPageStatus IsScheduledNavigation, False
+    browser_.SetPageStatus IsTargetNavigated, False
 End Sub
 Private Function IsIsolatedFrameChanging() As Boolean
     CDP_.DOMEnable '一回無害なメソッド(frameなのでDOM系)を投げて、イベント発生状況更新
     
-    If events_.IsIsolatedFrameScheduledNavigation _
-    Or events_.IsIsolatedFrameStartedLoading Then
+    
+    If browser_.GetIframeStatus(IsScheduledNavigation) _
+    Or browser_.GetIframeStatus(IsStartedLoading) Then
         IsIsolatedFrameChanging = True
     Else
         IsIsolatedFrameChanging = False
@@ -252,7 +250,7 @@ Private Sub WaitIsolatedFrameChangeToComplete()
     Dim failSafeCounter As Long
     Dim isEndChange As Boolean
     Do
-        isEndChange = events_.IsIsolatedFrameNavigated
+        isEndChange = browser_.GetIframeStatus(IsTargetNavigated)
 '                               Or chrome_.CDPEvents.IsIsolatedFrameClearedScheduledNavigation
         If isEndChange Then Exit Do
         
@@ -262,10 +260,11 @@ Private Sub WaitIsolatedFrameChangeToComplete()
         failSafeCounter = failSafeCounter + 1
     Loop While (isEndChange = False And failSafeCounter <= 4)
     
-    events_.IsIsolatedFrameScheduledNavigation = False
-    events_.IsIsolatedFrameStartedLoading = False
-    events_.IsIsolatedFrameClearedScheduledNavigation = False
-    events_.IsIsolatedFrameNavigated = False
+    browser_.SetIframeStatus IsScheduledNavigation, False
+    browser_.SetIframeStatus IsStartedLoading, False
+    browser_.SetIframeStatus IsClearedScheduledNavigation, False
+    browser_.SetIframeStatus IsTargetNavigated, False
+
 End Sub
 
 
@@ -276,7 +275,7 @@ End Sub
 '要素のValue属性に文字列を設定
 Private Sub IWebElement_SetText(text As String)
     FocusAndEnterKey
-    Dim encodingText As String: encodingText = json_.EncodeURL(text)
+    Dim encodingText As String: encodingText = xJson.EncodeURL(text)
     CallFunction "function(value){value = decodeURI(value);this.value = value;}", encodingText
     
     CallFunction Helper_.GetDispatchChangeEventCode, encodingText
@@ -286,7 +285,7 @@ End Sub
 '要素のTextContentに文字列を設定
 Private Sub IWebElement_SetTextContent(text As String)
     FocusAndEnterKey
-    Dim encodingText As String: encodingText = json_.EncodeURL(text)
+    Dim encodingText As String: encodingText = xJson.EncodeURL(text)
     CallFunction "function(value){value = decodeURI(value);this.textContent  = value;}", encodingText
     
     CallFunction Helper_.GetDispatchChangeEventCode, encodingText
@@ -295,11 +294,11 @@ End Sub
 'Public
 'SelectBoxの選択肢を文字列で選択
 Private Sub IWebElement_SelectItemInSelectBoxByText(text As String)
-    Dim encodingText As String: encodingText = json_.EncodeURL(text)
+    Dim encodingText As String: encodingText = xJson.EncodeURL(text)
     
     Dim res As String: res = CallFunction(Helper_.GetSelectItemCode, encodingText)
     
-    Dim IsSelect As Boolean: IsSelect = json_.GetValue(res, "result", "result", "value")
+    Dim IsSelect As Boolean: IsSelect = xJson.GetValue(res, "result", "result", "value")
     If IsSelect = False Then
         MsgBox "<SelectItemInSelectBoxByText>" & vbCrLf & _
                     "「" & text & "」は選択肢の中に存在しません。" & vbCrLf & "処理を終了します。"
@@ -317,14 +316,14 @@ Private Function IWebElement_FindElementByName(name As String) As IWebElement
     res = CallFunction(funcCode, name)
     
     Dim objectId As String
-    objectId = json_.GetValue(res, "result", "result", "objectId")
+    objectId = xJson.GetValue(res, "result", "result", "objectId")
     If objectId = "" Then GoTo quit
     
     Dim findInfoInElem As Collection
     Set findInfoInElem = Helper_.MakeFindInfo("name", name)
     
     Set IWebElement_FindElementByName = _
-        CDP_.MakeElementObject(objectId, findInfoInElem, basicInfo_, events_, Helper_)
+        CDP_.MakeElementObject(objectId, findInfoInElem, browser_, events_, Helper_)
 Exit Function
 
 quit:
@@ -359,7 +358,7 @@ Private Function GetElementsCount(tagName As String) As Long
     Dim funcCode As String, res As String
     funcCode = "function(tagName){return  this.getElementsByTagName('" & tagName & "').length;}"
     res = CallFunction(funcCode, tagName)
-    GetElementsCount = json_.GetValue(res, "result", "result", "value")
+    GetElementsCount = xJson.GetValue(res, "result", "result", "value")
 End Function
 Private Function CreateElementsItemByIndex(tagName As String, Index As Long) As IWebElement
     Dim funcCode As String, res As String
@@ -367,11 +366,11 @@ Private Function CreateElementsItemByIndex(tagName As String, Index As Long) As 
     res = CallFunction(funcCode, tagName)
     
     Dim objectId As String
-    objectId = json_.GetValue(res, "result", "result", "objectId")
+    objectId = xJson.GetValue(res, "result", "result", "objectId")
     Dim findInfoInElem As Collection: Set findInfoInElem = Helper_.MakeFindInfo("tag", tagName, Index)
 
     Set CreateElementsItemByIndex = _
-        CDP_.MakeElementObject(objectId, findInfoInElem, basicInfo_, events_, Helper_)
+        CDP_.MakeElementObject(objectId, findInfoInElem, browser_, events_, Helper_)
 End Function
 
 'Public
@@ -381,7 +380,7 @@ Private Function IWebElement_GetTextContent() As String
     funcCode = "function(){return this.textContent.replace(/\\s/g, ' ');}"
     res = CallFunction(funcCode, "")
     
-    IWebElement_GetTextContent = json_.GetValue(res, "result", "result", "value")
+    IWebElement_GetTextContent = xJson.GetValue(res, "result", "result", "value")
 End Function
 
 'Public
@@ -391,7 +390,7 @@ Private Function IWebElement_GetSelectedValue() As String
     funcCode = "function(){return this.value.replace(/\\s/g, ' ');}"
     res = CallFunction(funcCode, "")
 
-    IWebElement_GetSelectedValue = json_.GetValue(res, "result", "result", "value")
+    IWebElement_GetSelectedValue = xJson.GetValue(res, "result", "result", "value")
 End Function
 
 'Public
@@ -401,7 +400,7 @@ Private Function IWebElement_GetSelectedTextContent() As String
     funcCode = Helper_.GetSelectedTextContentCode
     res = CallFunction(funcCode, "")
 
-    IWebElement_GetSelectedTextContent = json_.GetValue(res, "result", "result", "value")
+    IWebElement_GetSelectedTextContent = xJson.GetValue(res, "result", "result", "value")
 End Function
 
 'エレメントの中心位置のxy座標に左クリックイベント発行
@@ -420,11 +419,11 @@ End Sub
 'エレメントの中心位置のxy座標を取得
 Private Function GetCenterPositionXY(res As String)
     Dim result As Variant
-    result = json_.GetValue(res, "result", "model", "content")
+    result = xJson.GetValue(res, "result", "model", "content")
     result = Split(result, ",")
     Dim width As Long, height As Long
-    width = json_.GetValue(res, "result", "model", "width")
-    height = json_.GetValue(res, "result", "model", "height")
+    width = xJson.GetValue(res, "result", "model", "width")
+    height = xJson.GetValue(res, "result", "model", "height")
     Dim xy(1) As Variant
     xy(0) = result(0) + (width / 2)
     xy(1) = result(1) + (height / 2)
@@ -435,7 +434,7 @@ End Function
 'type=fileのInputBoxへファイル設定
 Private Sub IWebElement_SetFileToFileSelectInputButton(filePath As String)
 '    filePath = Replace(filePath, "\", "\\")
-'    filePath = Json_.EncodeURL(filePath)
+'    filePath = xJson.EncodeURL(filePath)
 '    filePath = Replace(filePath, "%5C", "\")
 '    chrome_.SetFileInputFiles objectId_,
 'CDPMethodで設定しようとしても、ファイルパスに日本語が含まれる場合、
@@ -483,6 +482,6 @@ Private Function IWebElement_GetAttribute(AttributeName As String) As String
     If InStr(res, """value"":null") > 0 Then
         IWebElement_GetAttribute = ""
     Else
-        IWebElement_GetAttribute = json_.GetValue(res, "result", "result", "value")
+        IWebElement_GetAttribute = xJson.GetValue(res, "result", "result", "value")
     End If
 End Function

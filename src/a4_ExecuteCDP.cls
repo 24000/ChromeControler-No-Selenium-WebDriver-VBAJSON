@@ -13,19 +13,17 @@ Private Declare PtrSafe Sub Sleep Lib "kernel32" (ByVal ms As LongPtr)
 
 Private MsgGenerate_ As a4x1_CDPMessageGenerator
 Private MsgHandler_ As a4x2_CDPMessageHandler
-Private json_ As a2_JSONHandler
 
 
 Public Sub Init(MsgGenerate As a4x1_CDPMessageGenerator, _
-                       Handler As a4x2_CDPMessageHandler, _
-                       json As a2_JSONHandler)
+                       Handler As a4x2_CDPMessageHandler)
                        
     Set MsgGenerate_ = MsgGenerate
     Set MsgHandler_ = Handler
-    Set json_ = json
 End Sub
 
-''Browser系************************************************
+'Browser系************************************************
+'ブラウザを閉じる
 Public Function SessionClose() As String
     Dim sendMsg  As String
     sendMsg = MsgGenerate_.SessionClose
@@ -39,28 +37,28 @@ End Function
 Public Function GetDocumentObjectID() As String
     Dim resMsg  As String
     resMsg = ExecuteJavaScript("document;")
-    GetDocumentObjectID = json_.GetValue(resMsg, "result", "result", "objectId")
+    GetDocumentObjectID = xJson.GetValue(resMsg, "result", "result", "objectId")
 End Function
 
 Public Function GetDocumentNodeID() As Long
     Dim sendMsg  As String, resMsg As String
     sendMsg = MsgGenerate_.GetDocumentID
     resMsg = MsgHandler_.SendAndReceive(sendMsg)
-    GetDocumentNodeID = json_.GetValue(resMsg, "result", "root", "nodeId")
+    GetDocumentNodeID = xJson.GetValue(resMsg, "result", "root", "nodeId")
 End Function
 
 Private Function ChangeObjectIdToNodeId(objectId As String) As String
     Dim sendMsg  As String, resMsg As String
     sendMsg = MsgGenerate_.RequestNode(objectId)
     resMsg = MsgHandler_.SendAndReceive(sendMsg)
-    ChangeObjectIdToNodeId = json_.GetValue(resMsg, "result", "nodeId")
+    ChangeObjectIdToNodeId = xJson.GetValue(resMsg, "result", "nodeId")
 End Function
 
 Private Function ChangeNodeIdToObjectId(nodeId As Long) As String
     Dim sendMsg  As String, resMsg As String
     sendMsg = MsgGenerate_.ResolveNode(nodeId)
     resMsg = MsgHandler_.SendAndReceive(sendMsg)
-    ChangeNodeIdToObjectId = json_.GetValue(resMsg, "result", "objectId")
+    ChangeNodeIdToObjectId = xJson.GetValue(resMsg, "result", "objectId")
 End Function
 '************************************************
 
@@ -71,16 +69,16 @@ Private Function GetAttributes(nodeId As Long) As String
     GetAttributes = MsgHandler_.SendAndReceive(sendMsg)
 End Function
 
-Public Function DescribeNode(Id As Variant) As Variant
+Public Function DescribeNode(id As Variant) As Variant
     Dim sendMsg  As String
-    sendMsg = MsgGenerate_.DescribeNode(Id)
+    sendMsg = MsgGenerate_.DescribeNode(id)
     DescribeNode = MsgHandler_.SendAndReceive(sendMsg)
 End Function
 '************************************************
 
 'Runtime************************************************
-'executionContextCreated イベントによる実行コンテキスト生成の報告を有効にします。
-'レポートが有効になると、イベントは既存の実行コンテキストごとに直ちに送信されます。
+'executionContextCreated イベントによる実行コンテキスト生成イベントの報告を有効する。
+'※有効にした辞典で、イベントは既存の実行コンテキストごとに直ちに送信される。
 Public Function RuntimeEnable() As String
     Dim sendMsg  As String
     sendMsg = MsgGenerate_.RunTime_Enable()
@@ -94,9 +92,9 @@ Public Function ExecuteJavaScript(script As String) As String
 End Function
 
 'JavaScript_Function実行
-Public Function CallJavaScriptFunction(funcName As String, Id As Variant, args As Variant) As String
+Public Function CallJavaScriptFunction(funcName As String, id As Variant, args As Variant) As String
     Dim sendMsg  As String
-    sendMsg = MsgGenerate_.CallJavaScriptFunction(funcName, Id, args)
+    sendMsg = MsgGenerate_.CallJavaScriptFunction(funcName, id, args)
     CallJavaScriptFunction = MsgHandler_.SendAndReceive(sendMsg)
 End Function
 
@@ -156,7 +154,7 @@ Public Sub FindElementByQuerySelector(Selector As String)
     resMsg = MsgHandler_.SendAndReceive(sendMsg)
     
     Dim nodeId As Long
-    nodeId = json_.GetValue(resMsg, "result", "nodeId")
+    nodeId = xJson.GetValue(resMsg, "result", "nodeId")
     Dim nodeInfoJson As String
     nodeInfoJson = DescribeNode(nodeId)
 End Sub
@@ -169,13 +167,14 @@ Public Function Click(objId As String) As String
 End Function
 '************************************************
 
-'Target:Page系************************************************
+'Page系************************************************
 Public Function OpenURL(targetURL As String) As String
     Dim sendMsg  As String
     sendMsg = MsgGenerate_.URLOpen(targetURL)
     OpenURL = MsgHandler_.SendAndReceive(sendMsg)
 End Function
 
+'CDPにおけるPageDomainのイベント通知を有効化する
 Public Function PageEnable() As String
     Dim sendMsg  As String
     sendMsg = MsgGenerate_.PageEnable()
@@ -188,45 +187,55 @@ Public Function GetFrameTree() As String
     GetFrameTree = MsgHandler_.SendAndReceive(sendMsg)
 End Function
 
-Public Function CreateIsolatedFrameWorld(FrameId As String) As Long
+Public Function CreateIsolatedFrameWorld(frameId As String) As Long
     Dim sendMsg  As String, resMsg As String
-    sendMsg = MsgGenerate_.CreateIsolatedFrameWorld(FrameId)
+    sendMsg = MsgGenerate_.CreateIsolatedFrameWorld(frameId)
     resMsg = MsgHandler_.SendAndReceive(sendMsg)
     If InStr(resMsg, "error") > 0 Then
         CreateIsolatedFrameWorld = 0
     Else
-        CreateIsolatedFrameWorld = json_.GetValue(resMsg, "result", "executionContextId")
+        CreateIsolatedFrameWorld = xJson.GetValue(resMsg, "result", "executionContextId")
         Sleep 200
     End If
 End Function
 
+'Target系************************************************
+'targetCreated/targetInfoChanged/targetDestroyed イベントの通知を有効化
 Public Function SetDiscoverTargets() As String
     Dim sendMsg  As String
     sendMsg = MsgGenerate_.SetDiscoverTargets()
     SetDiscoverTargets = MsgHandler_.SendAndReceive(sendMsg)
 End Function
 
-Public Function AttachToTarget(TargetId As String) As String
+'指定された id のターゲットにアタッチする。戻り値のJSON内にSessionIDが含まれる。
+Public Function AttachToTarget(targetId As String) As String
     Dim sendMsg  As String
-    sendMsg = MsgGenerate_.AttachToTarget(TargetId)
-    AttachToTarget = MsgHandler_.SendAndReceive(sendMsg)
+    sendMsg = MsgGenerate_.AttachToTarget(targetId)
+    Dim res As String
+    res = MsgHandler_.SendAndReceive(sendMsg)
+    Dim sessionId As String
+    sessionId = xJson.GetValue(res, "result", "sessionId")
+    AttachToTarget = sessionId
 End Function
 
-Public Function ActivateTarget(TargetId As String) As String
+'ターゲットを活性化（フォーカス）する。
+Public Function ActivateTarget(targetId As String) As String
     Dim sendMsg  As String
-    sendMsg = MsgGenerate_.ActivateTarget(TargetId)
+    sendMsg = MsgGenerate_.ActivateTarget(targetId)
     ActivateTarget = MsgHandler_.SendAndReceive(sendMsg)
 End Function
 
-Public Function DetachFromTarget(TargetId As String) As String
+'指定された ID のセッションを削除。
+Public Function DetachFromTarget(targetId As String) As String
     Dim sendMsg  As String
-    sendMsg = MsgGenerate_.DetachFromTarget(TargetId)
+    sendMsg = MsgGenerate_.DetachFromTarget(targetId)
     DetachFromTarget = MsgHandler_.SendAndReceive(sendMsg)
 End Function
 
-Public Function TargetClose(TargetId As String) As String
+'ターゲットを閉じる。ターゲットがページの場合、そのページも閉じられる。
+Public Function TargetClose(targetId As String) As String
     Dim sendMsg  As String
-    sendMsg = MsgGenerate_.TargetClose(TargetId)
+    sendMsg = MsgGenerate_.TargetClose(targetId)
     TargetClose = MsgHandler_.SendAndReceive(sendMsg)
 End Function
 Public Function GetTargetInfo() As String
@@ -252,7 +261,7 @@ Public Function WaitingForWebPageDisplay()
         Sleep 800
         javaScriptCode = "document.readyState;"
         responseMsg = ExecuteJavaScript(javaScriptCode)
-        state = json_.GetValue(responseMsg, "result", "result", "value")
+        state = xJson.GetValue(responseMsg, "result", "result", "value")
         DoEvents
     Loop Until (state = "complete")
 End Function
@@ -271,7 +280,7 @@ Public Function GetObjectIdOfElementBy(way As String, basicInfo As a3_BasicInfos
             res = CallJavascriptFunctionWrapper((Codes(1)), basicInfo, way)
         End If
 
-        objectId = json_.GetValue(res, "result", "result", "objectId")
+        objectId = xJson.GetValue(res, "result", "result", "objectId")
     
         If objectId <> "" Then Exit Do
         
@@ -302,23 +311,23 @@ Public Function MakeElementObject( _
         objectId As String, _
         findInfo As Collection, _
         basicInfo As a3_BasicInfos, _
-        events As a5_CDPEventHandler, _
+        events As a5_CDPEventNotifier, _
         Helper As a6_ExecuteHelperFunction) As IWebElement
     
     Dim info  As String
     info = DescribeNode(objectId)
     If InStr(info, "attributes") > 0 Then
         Dim attributes As Object
-        Set attributes = MakeAttributesDic(json_.GetValue(info, "result", "node", "attributes"))
+        Set attributes = MakeAttributesDic(xJson.GetValue(info, "result", "node", "attributes"))
     End If
     If InStr(info, "frameId") > 0 Then
-        Dim FrameId As String
-        FrameId = json_.GetValue(info, "result", "node", "frameId")
+        Dim frameId As String
+        frameId = xJson.GetValue(info, "result", "node", "frameId")
     End If
     
     Dim element As b0x0_WebElement: Set element = New b0x0_WebElement
-    element.Init json_, basicInfo, Me, events, Helper, _
-                       objectId, findInfo, attributes, FrameId
+    element.Init basicInfo, Me, events, Helper, _
+                       objectId, findInfo, attributes, frameId
     Set MakeElementObject = element
 End Function
 'elementの属性情報を辞書にして返す。
@@ -327,7 +336,7 @@ Private Function MakeAttributesDic(attributes As String) As Object
     Dim attributesDic As Object: Set attributesDic = CreateObject("Scripting.Dictionary")
     Dim i As Long
     For i = LBound(ary) To UBound(ary) - 1 Step 2
-        If attributesDic.exists(ary(i)) = False Then
+        If attributesDic.Exists(ary(i)) = False Then
             attributesDic.add ary(i), ary(i + 1)
         End If
     Next
@@ -342,7 +351,7 @@ Public Function GetElementsCountBy(way As String, basicInfo As a3_BasicInfos, Co
     Else
         responseMsg = CallJavascriptFunctionWrapper((Codes(1)), basicInfo, way)
     End If
-    GetElementsCountBy = json_.GetValue(responseMsg, "result", "result", "value")
+    GetElementsCountBy = xJson.GetValue(responseMsg, "result", "result", "value")
 End Function
 
 
@@ -356,7 +365,7 @@ Public Function IsExistsElementBy(way As String, basicInfo As a3_BasicInfos, Cod
         responseMsg = CallJavascriptFunctionWrapper((Codes(1)), basicInfo, way)
     End If
     Dim objectId As String
-    objectId = json_.GetValue(responseMsg, "result", "result", "objectId")
+    objectId = xJson.GetValue(responseMsg, "result", "result", "objectId")
 
     If objectId = "" Then
         IsExistsElementBy = False

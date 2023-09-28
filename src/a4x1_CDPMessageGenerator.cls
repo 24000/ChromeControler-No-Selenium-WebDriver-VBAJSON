@@ -11,11 +11,11 @@ Option Explicit
 
 Private id_ As Long
 
-Public Property Get Id() As Long
-    Id = id_
+Public Property Get id() As Long
+    id = id_
 End Property
 
-''TargetDomain*******************************************************************
+'TargetDomain*******************************************************************
 'pageDomainの通知を有効にする。
 Public Function PageEnable() As String
     id_ = id_ + 1
@@ -32,35 +32,35 @@ Public Function SetDiscoverTargets() As String
     SetDiscoverTargets = message
 End Function
 
-Public Function AttachToTarget(TargetId As String) As String
+Public Function AttachToTarget(targetId As String) As String
     id_ = id_ + 1
     Dim message As String
     message = "{""id"": " & id_ & ",""method"": ""Target.attachToTarget""," & _
-                      """params"": {""targetId"": """ & TargetId & """}}"
+                      """params"": {""targetId"": """ & targetId & """}}"
     AttachToTarget = message
 End Function
 
-Public Function ActivateTarget(TargetId As String) As String
+Public Function ActivateTarget(targetId As String) As String
     id_ = id_ + 1
     Dim message As String
     message = "{""id"": " & id_ & ",""method"": ""Target.activateTarget""," & _
-                      """params"": {""targetId"": """ & TargetId & """}}"
+                      """params"": {""targetId"": """ & targetId & """}}"
     ActivateTarget = message
 End Function
 
-Public Function DetachFromTarget(TargetId As String) As String
+Public Function DetachFromTarget(targetId As String) As String
     id_ = id_ + 1
     Dim message As String
     message = "{""id"": " & id_ & ",""method"": ""Target.detachFromTarget""," & _
-                      """params"": {""targetId"": """ & TargetId & """}}"
+                      """params"": {""targetId"": """ & targetId & """}}"
     DetachFromTarget = message
 End Function
 
-Public Function TargetClose(TargetId As String) As String
+Public Function TargetClose(targetId As String) As String
     id_ = id_ + 1
     Dim message As String
     message = "{""id"": " & id_ & ",""method"": ""Target.closeTarget""," & _
-                      """params"": {""targetId"": """ & TargetId & """}}"
+                      """params"": {""targetId"": """ & targetId & """}}"
     TargetClose = message
 End Function
 '利用可能なターゲットのリストを取得する。
@@ -106,11 +106,11 @@ Public Function GetFrameTree() As String
     GetFrameTree = message
 End Function
 
-Public Function CreateIsolatedFrameWorld(FrameId As String) As String
+Public Function CreateIsolatedFrameWorld(frameId As String) As String
     id_ = id_ + 1
     Dim message As String
     message = "{""id"": " & id_ & ",""method"": ""Page.createIsolatedWorld""," & _
-                     """params"": {""frameId"": """ & FrameId & """,""grantUniveralAccess"": true}}"
+                     """params"": {""frameId"": """ & frameId & """,""grantUniveralAccess"": true}}"
     CreateIsolatedFrameWorld = message
 End Function
 
@@ -215,15 +215,15 @@ Public Function GetAttributes(nodeId As Long)
 End Function
 
 'id で指定されたノード情報を叙述
-Public Function DescribeNode(Id As Variant) As Variant
+Public Function DescribeNode(id As Variant) As Variant
     id_ = id_ + 1
     Dim message As String
-    If IsNumeric(Id) Then
+    If IsNumeric(id) Then
         message = "{""id"": " & id_ & ",""method"": ""DOM.describeNode""," & _
-                          """params"": {""nodeId"":  " & Id & ",""depth"": 1,""pierce"": false}}"
+                          """params"": {""nodeId"":  " & id & ",""depth"": 1,""pierce"": false}}"
     Else
         message = "{""id"": " & id_ & ",""method"": ""DOM.describeNode""," & _
-                         """params"": {""objectId"":  """ & Id & """,""depth"": 1,""pierce"": false}}"
+                         """params"": {""objectId"":  """ & id & """,""depth"": 1,""pierce"": false}}"
     End If
     DescribeNode = message
 End Function

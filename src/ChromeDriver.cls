@@ -15,29 +15,31 @@ Private Declare PtrSafe Function FindWindow Lib "user32" Alias "FindWindowA" ( _
 Private Const CLASS_NAME As String = "Chrome_WidgetWin_1"
 Private Const CAPTION_NAME As String = "新しいタブ - Google Chrome" '"data:, - Google Chrome"
 
-''Private Declare PtrSafe Function GetWindowText Lib "user32" Alias "GetWindowTextA" ( _
-'        ByVal hWnd As LongPtr, ByVal lpString As String, ByVal cch As Long) As Long
-'
-
 Private Declare PtrSafe Function GetWindowThreadProcessId Lib "USER32.DLL" ( _
         ByVal hWnd As LongPtr, ByRef ProcessId As Long) As Long
 
-Private Declare PtrSafe Sub SetForeGroundWindow Lib "user32" Alias "SetForegroundWindow" (ByVal ms As LongPtr)
+Private Declare PtrSafe Sub SetForeGroundwindow Lib "user32" Alias "SetForegroundWindow" (ByVal ms As LongPtr)
 
 
+
+
+Private http_ As a1x1_HTTPCommunicator
 Private webSocket_ As a1_WebSocketCommunicator
-Private json_ As a2_JSONHandler
 Private basicInfo_ As a3_BasicInfos
+Private event_ As a5_CDPEventNotifier
+Private browser_ As a3_BrowserInfo
 Private CDP_ As a4_ExecuteCDP
-Private events_ As a5_CDPEventHandler
 Private Helper_ As a6_ExecuteHelperFunction
+
+Private pageNum_ As Long
+Private sessionId_ As String
 
 Private processId_ As Long
 Private chromeHwnd_ As LongPtr
 
 Private Sub Class_Initialize()
     Dim userDataDir As String
-    userDataDir = CreateObject("Shell.Application").Namespace("shell:Downloads").Self.Path & "\マクロ実行専用UserDataフォルダForChrome\"
+    userDataDir = CreateObject("Shell.Application").Namespace("shell:Downloads").Self.path & "\マクロ実行専用UserDataフォルダForChrome\"
     
     Dim isFirst As Boolean
     If Dir(userDataDir, vbDirectory) = "" Then
@@ -53,8 +55,9 @@ Private Sub Class_Initialize()
         ChromeFirstLaunch
     End If
     
-    CDP_.SetDiscoverTargets
-    CDP_.AttachToTarget basicInfo_.TargetId
+'    CDP_.SetDiscoverTargets
+    pageNum_ = 1
+'    sessionId_ = CDP_.AttachToTarget(browser_.targetId(pageNum_))
     
     WaitForActivation
     '適切に取得ができないケースあり、要改善（よってまだどこでもhwndは使用しない）
@@ -63,21 +66,18 @@ Private Sub Class_Initialize()
 End Sub
 
 Private Function StartChrome(userDataDir As String) As Long
-    Const CHROME_EXE_REG_KEY As String = "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\App Paths\chrome.exe\"
-    Const DEBUG_MODE_OPTION As String = " --remote-debugging-Port=9222"
-    Const USER_DATA_DIR_OPTION As String = " --user-data-dir="
-    Const ENABLE_AUTOMATION_OPTION As String = " --enable-automation"
-    
+
     Dim chromeExePath As String
     Dim objExec As Object
     With CreateObject("WScript.Shell")
-        chromeExePath = """" & .RegRead(CHROME_EXE_REG_KEY) & """"
+        chromeExePath = """" & .RegRead(xG.CHROME_EXE_REG_KEY) & """"
         Set objExec = .Exec( _
-                            chromeExePath & DEBUG_MODE_OPTION & ENABLE_AUTOMATION_OPTION _
-                            & USER_DATA_DIR_OPTION & "" & userDataDir & "")
+                            chromeExePath & xG.DEBUG_MODE_OPTION & xG.ENABLE_AUTOMATION_OPTION _
+                           & xG.HOME_PAGE & xG.USER_DATA_DIR_OPTION & "" & userDataDir & "")
         StartChrome = objExec.ProcessId
         Set objExec = Nothing
     End With
+
 End Function
 
 'ブラウザ起動待ち＆SetForeGroundWindowにも使用
@@ -105,24 +105,33 @@ End Sub
 
 '内部オブジェクトの生成
 Private Sub New_InnerObjects()
-    Set json_ = New a2_JSONHandler
-    Set basicInfo_ = New a3_BasicInfos: basicInfo_.Init json_
+    Set basicInfo_ = New a3_BasicInfos
+    
+    Set http_ = New a1x1_HTTPCommunicator
+    
+    'BrowserInfo生成
+    Dim json As String: json = http_.GetTargetList()
+    Set event_ = New a5_CDPEventNotifier
+    Set browser_ = New a3_BrowserInfo: browser_.Init json, event_
+    
     Set webSocket_ = New a1_WebSocketCommunicator
-    If webSocket_.Init(basicInfo_.Host, basicInfo_.WebSocketUrlPath, basicInfo_.DebuggingPort) = False Then End
+    If webSocket_.Init(http_, browser_.WebSocketPath(1)) = False Then End
     
-    Set events_ = New a5_CDPEventHandler
-    events_.Init json_, basicInfo_
     
+'    ExecuteCDP_生成（依存性注入）
     Dim msgGenerator As a4x1_CDPMessageGenerator
     Set msgGenerator = New a4x1_CDPMessageGenerator
     Dim Handler As a4x2_CDPMessageHandler
     Set Handler = New a4x2_CDPMessageHandler
-    Handler.Init webSocket_, json_, events_
+    Handler.Init webSocket_, event_
     Set CDP_ = New a4_ExecuteCDP
-    CDP_.Init msgGenerator, Handler, json_
+    CDP_.Init msgGenerator, Handler
     
     Set Helper_ = New a6_ExecuteHelperFunction
 End Sub
+
+
+
 
 'クロームの真の初回起動時の画面遷移
 Private Sub ChromeFirstLaunch()
@@ -138,19 +147,29 @@ End Sub
 
 
 
+
+
+
+
+
+
+
+
+
 '以下､インターフェイス公開メソッド
 '************************************************
 'Public
 '現在のページのURL
 Private Property Get IWebDriver_URL() As String
     CDP_.SetDiscoverTargets  'これを使ってPage情報最新化
-    Dim i As Long
-    For i = 1 To events_.PageInfos.Count
-        If events_.PageInfos(i)("targetId") = basicInfo_.TargetId Then
-            IWebDriver_URL = events_.PageInfos(i)("url")
-            Exit Property
-        End If
-    Next
+    IWebDriver_URL = browser_.URL
+'    Dim i As Long
+'    For i = 1 To browser_.PageInfosCount
+'        If event_.pageInfos(i)("targetId") = basicInfo_.TargetId Then
+'            IWebDriver_URL = events_.pageInfos(i)("url")
+'            Exit Property
+'        End If
+'    Next
 End Property
 
 
@@ -180,7 +199,7 @@ End Sub
 Private Function IWebDriver_ExecuteScript(script As String) As String
     Dim responseMsg As String
     responseMsg = CDP_.ExecuteJavaScript(script)
-    IWebDriver_ExecuteScript = json_.GetValue(responseMsg, "result")
+    IWebDriver_ExecuteScript = xJson.GetValue(responseMsg, "result")
 End Function
 
 'Public
@@ -194,7 +213,7 @@ Private Function IWebDriver_FindElementByXpath(xPath As String) As IWebElement
     If objectId = "" Then GoTo quit
     Dim findInfo As Collection: Set findInfo = Helper_.MakeFindInfo("xpath", xPath)
     Set IWebDriver_FindElementByXpath = _
-        CDP_.MakeElementObject(objectId, findInfo, basicInfo_, events_, Helper_)
+        CDP_.MakeElementObject(objectId, findInfo, basicInfo_, event_, Helper_)
 Exit Function
 
 quit:
@@ -205,19 +224,19 @@ End Function
 
 'Public
 '第1引数で指定されるIdの要素を取得し、エレメントObjectとして返却
-Private Function IWebDriver_FindElementById(Id As String) As IWebElement
-    Dim Codes As Variant: Codes = Helper_.GetIdCodes(Id)
-    Dim objectId As String: objectId = CDP_.GetObjectIdOfElementBy(Id, basicInfo_, Codes)
+Private Function IWebDriver_FindElementById(id As String) As IWebElement
+    Dim Codes As Variant: Codes = Helper_.GetIdCodes(id)
+    Dim objectId As String: objectId = CDP_.GetObjectIdOfElementBy(id, basicInfo_, Codes)
     If objectId = "" Then GoTo quit
-    Dim findInfo As Collection: Set findInfo = Helper_.MakeFindInfo("id", Id)
+    Dim findInfo As Collection: Set findInfo = Helper_.MakeFindInfo("id", id)
     Set IWebDriver_FindElementById = _
-        CDP_.MakeElementObject(objectId, findInfo, basicInfo_, events_, Helper_)
+        CDP_.MakeElementObject(objectId, findInfo, basicInfo_, event_, Helper_)
 Exit Function
 
 quit:
-Debug.Print vbCrLf & ">>見つからなかった要素" & vbCrLf & Id
+Debug.Print vbCrLf & ">>見つからなかった要素" & vbCrLf & id
 Beep
-Helper_.DisplayErrorAndEnd Helper_.MakeFindErrorMessage("Id", Id)
+Helper_.DisplayErrorAndEnd Helper_.MakeFindErrorMessage("Id", id)
 End Function
 
 'Public
@@ -229,7 +248,7 @@ Private Function IWebDriver_FindElementByName(name As String) As IWebElement
     If objectId = "" Then GoTo quit
     Dim findInfo As Collection: Set findInfo = Helper_.MakeFindInfo("name", name)
     Set IWebDriver_FindElementByName = _
-        CDP_.MakeElementObject(objectId, findInfo, basicInfo_, events_, Helper_)
+        CDP_.MakeElementObject(objectId, findInfo, basicInfo_, event_, Helper_)
 Exit Function
 
 quit:
@@ -256,7 +275,7 @@ Private Function IWebDriver_FindElementsByTag(tagName As String) As IWebElements
         objectId = CDP_.GetObjectIdOfElementBy(tagName, basicInfo_, Codes)
         Dim findInfo As Collection: Set findInfo = Helper_.MakeFindInfo("tag", tagName, Index)
         elements.add _
-            CDP_.MakeElementObject(objectId, findInfo, basicInfo_, events_, Helper_)
+            CDP_.MakeElementObject(objectId, findInfo, basicInfo_, event_, Helper_)
     Next
     
     Dim elems As c0x0_WebElements: Set elems = New c0x0_WebElements
@@ -288,7 +307,7 @@ Private Function IWebDriver_FindElementsByClassName(className As String) As IWeb
         objectId = CDP_.GetObjectIdOfElementBy(className, basicInfo_, Codes)
         Dim findInfo As Collection: Set findInfo = Helper_.MakeFindInfo("className", className, Index)
         elements.add _
-            CDP_.MakeElementObject(objectId, findInfo, basicInfo_, events_, Helper_)
+            CDP_.MakeElementObject(objectId, findInfo, basicInfo_, event_, Helper_)
     Next
     
     Dim elems As c0x0_WebElements: Set elems = New c0x0_WebElements
@@ -308,26 +327,26 @@ End Function
 '第1引数で指定される値のフレームにフレームを切替
 Private Sub IWebDriver_SwitchFrameByNameOrUrlOrIndex(value As Variant)
     Dim frameInfos As Collection
-    Dim FrameId As String
+    Dim frameId As String
     Dim Count As Long
     
     Do 'frame関連イベント発生タイミングによって情報取得に失敗するケースあり。念のため3回までループ。
         Set frameInfos = GetFrameInfos
         If IsNumeric(value) Then
             If frameInfos.Count < value Then GoTo quit
-            FrameId = json_.GetValue(frameInfos(value), "id")
+            frameId = xJson.GetValue(frameInfos(value), "id")
         Else
-            FrameId = GetTargetFrameId(frameInfos, value)
+            frameId = GetTargetFrameId(frameInfos, value)
         End If
         Count = Count + 1
-    Loop While FrameId = "" And Count < 3
+    Loop While frameId = "" And Count < 3
     
-    If FrameId = "" Then GoTo quit
+    If frameId = "" Then GoTo quit
     
     Dim ExecutionContextId As Long
-    ExecutionContextId = CDP_.CreateIsolatedFrameWorld(FrameId)
+    ExecutionContextId = CDP_.CreateIsolatedFrameWorld(frameId)
     basicInfo_.ExecutionContextId = ExecutionContextId
-    basicInfo_.IsolatedFrameId = FrameId
+    basicInfo_.IsolatedFrameId = frameId
     
 Exit Sub
 
@@ -350,16 +369,16 @@ End Sub
 Private Function GetFrameInfos() As Collection
     Dim collect As Collection: Set collect = New Collection
     Dim json As String: json = CDP_.GetFrameTree
-'    collect.add json_.GetObject(json, "result", "frameTree", "frame"))
+'    collect.add xJson.GetObject(json, "result", "frameTree", "frame"))
     
     Dim frmInfo As String, frminfo2 As String
     Dim Count As Long
     Do
         'まずchildFramesから一つのFrame情報（オブジェクト）取得
-        frmInfo = json_.GetObject(json, "result", "frameTree", "childFrames", Count)
+        frmInfo = xJson.GetObject(json, "result", "frameTree", "childFrames", Count)
         If frmInfo = "" Then Exit Do
         'そのオブジェクトの中のframeプロパティ(オブジェクト)を取得し、コレクションに加える
-        frminfo2 = json_.GetObject(frmInfo, "frame")
+        frminfo2 = xJson.GetObject(frmInfo, "frame")
         collect.add frminfo2
         'childFramesプロパティがある場合、再帰構造なので再帰関数で同様の処理を回す
         If InStr(frmInfo, "childFrames") > 0 Then
@@ -374,9 +393,9 @@ Private Sub GetChildFrameInfo(collect As Collection, json As String)
     Dim frmInfo As String, frminfo2 As String
     Dim Count As Long
     Do
-        frmInfo = json_.GetObject(json, "childFrames", Count)
+        frmInfo = xJson.GetObject(json, "childFrames", Count)
         If frmInfo = "" Then Exit Do
-        frminfo2 = json_.GetObject(frmInfo, "frame")
+        frminfo2 = xJson.GetObject(frmInfo, "frame")
         collect.add frminfo2
         If InStr(frmInfo, "childFrames") > 0 Then
             GetChildFrameInfo collect, frmInfo
@@ -389,10 +408,10 @@ Private Function GetTargetFrameId(frameInfos As Collection, value As Variant) As
     Dim frameInfo As Variant
     Dim name As String, URL As String
     For Each frameInfo In frameInfos
-        name = json_.GetValue(frameInfo, "name")
-        URL = json_.GetValue(frameInfo, "url")
+        name = xJson.GetValue(frameInfo, "name")
+        URL = xJson.GetValue(frameInfo, "url")
         If name = value Or URL = value Then
-            GetTargetFrameId = json_.GetValue(frameInfo, "id")
+            GetTargetFrameId = xJson.GetValue(frameInfo, "id")
             Exit Function
         End If
     Next
@@ -407,8 +426,8 @@ Private Sub IWebDriver_DebugPrintAccessibleFrameInfo()
     Dim i As Long
     For i = 1 To frameInfos.Count
         Debug.Print "index：" & i & _
-                           "　name：" & json_.GetValue(frameInfos(i), "name") & _
-                           "　url：" & json_.GetValue(frameInfos(i), "url")
+                           "　name：" & xJson.GetValue(frameInfos(i), "name") & _
+                           "　url：" & xJson.GetValue(frameInfos(i), "url")
     Next
 End Sub
 
@@ -416,7 +435,7 @@ End Sub
 Private Sub IWebDriver_SwitchFrameByIframeElement(IframeElement As IWebElement)
     Dim frameInfos As Collection: Set frameInfos = GetFrameInfos
     Dim elem As b0x0_WebElement: Set elem = IframeElement
-    If elem.FrameId = "" Then
+    If elem.frameId = "" Then
         Helper_.DisplayErrorAndEnd "＜SwitchFrameByIframeElement＞" & vbCrLf & _
                                       "指定されたElementがIframeではありません" & vbCrLf & vbCrLf & _
                                       "Iframe要素を引数に渡して下さい" & vbCrLf
@@ -427,10 +446,10 @@ Private Sub IWebDriver_SwitchFrameByIframeElement(IframeElement As IWebElement)
 
     'frameElementのframeIdが正当なframeIdならIsolatedWorldで対応
     Dim ExecutionContextId As Long
-    ExecutionContextId = CDP_.CreateIsolatedFrameWorld(elem.FrameId)
+    ExecutionContextId = CDP_.CreateIsolatedFrameWorld(elem.frameId)
     If ExecutionContextId <> 0 Then
         basicInfo_.ExecutionContextId = ExecutionContextId
-        basicInfo_.IsolatedFrameId = elem.FrameId
+        basicInfo_.IsolatedFrameId = elem.frameId
         Exit Sub
     Else
         Helper_.DisplayErrorAndEnd "＜SwitchFrameByIframeElement＞" & vbCrLf & _
@@ -445,13 +464,13 @@ Private Sub IWebDriver_SwitchFrameByIframeElement(IframeElement As IWebElement)
 '    Dim functionCode As String, responseMsg As String, docObjectId As String
 '    functionCode = "function(name){return  this.contentDocument;}"
 '    responseMsg = CallJavaScriptFunction(functionCode, elem.ObjectId, "")
-'    docObjectId = json_.GetValue(responseMsg, "result", "result", "objectId"))
+'    docObjectId = xJson.GetValue(responseMsg, "result", "result", "objectId"))
 '    Dim info  As String
 '    info = DescribeNode(docObjectId)
     
     
 '    frameIdがtargetIdなら接続切り替えで対応
-'    basicInfo_.Update elem.FrameId, json_, False
+'    basicInfo_.Update elem.FrameId, xJson, False
 '    isolatedFrameId_ = ""
 '
 '    webSocket_.CloseWebSocket
@@ -486,7 +505,7 @@ End Sub
 'Private Sub SwitchTargetToPageDefault()
 '    Dim newTargetId As String
 '    newTargetId = basicInfo_.PageDefaultTargetId
-'    basicInfo_.Update newTargetId, json_, False
+'    basicInfo_.Update newTargetId, xJson, False
 '
 '    webSocket_.CloseWebSocket
 '    Set webSocket_ = Nothing
@@ -509,9 +528,9 @@ Private Function IWebDriver_IsExistsElementByXpath(xPath As String) As Boolean
 End Function
 'Public
 '第1引数で指定されるIdの要素有無の確認
-Private Function IWebDriver_IsExistsElementById(Id As String) As Boolean
+Private Function IWebDriver_IsExistsElementById(id As String) As Boolean
     IWebDriver_IsExistsElementById = _
-        CDP_.IsExistsElementBy(Id, basicInfo_, Helper_.GetIdCodes(Id))
+        CDP_.IsExistsElementBy(id, basicInfo_, Helper_.GetIdCodes(id))
 End Function
 'Public
 '第1引数で指定されるNameの要素有無の確認
@@ -535,14 +554,14 @@ Private Sub IWebDriver_WaitForElementToAppearByXpath(xPath As String, maxWaitTim
 End Sub
 'Public
 'Id(第1引数)で指定されるの要素が出現するのを、最大待機時間(第2引数)待つ
-Private Sub IWebDriver_WaitForElementToAppearById(Id As String, maxWaitTime_sec As Long)
-    If CDP_.WaitForElementToAppearBy(Id, _
-        maxWaitTime_sec, basicInfo_, Helper_.GetIdCodes(Id)) = False Then
+Private Sub IWebDriver_WaitForElementToAppearById(id As String, maxWaitTime_sec As Long)
+    If CDP_.WaitForElementToAppearBy(id, _
+        maxWaitTime_sec, basicInfo_, Helper_.GetIdCodes(id)) = False Then
         
         Helper_.DisplayErrorAndEnd _
             "<WaitForElementToAppearById>" & vbCrLf & _
              maxWaitTime_sec & "秒経過しても、指定の以下要素は現れませんでした。" & vbCrLf & _
-             Id
+             id
     End If
 End Sub
 'Public
@@ -590,16 +609,16 @@ End Sub
 'タブの移動（Index指定：一番左のタブを１とする）
 Private Sub IWebDriver_SwitchTabByIndex(Index As Long)
     Dim newTargetId As String
-    newTargetId = events_.PageInfos(Index)("targetId")
-    basicInfo_.Update newTargetId, json_, True
+    newTargetId = browser_.targetId(Index)
+    basicInfo_.Update newTargetId, True
     
     webSocket_.CloseWebSocket
     Set webSocket_ = Nothing
     Set webSocket_ = New a1_WebSocketCommunicator
-    If webSocket_.Init(basicInfo_.Host, basicInfo_.WebSocketUrlPath, basicInfo_.DebuggingPort) = False Then End
+    If webSocket_.Init(http_, basicInfo_.WebSocketUrlPath) = False Then End
     
-    CDP_.ActivateTarget basicInfo_.TargetId
-    CDP_.AttachToTarget basicInfo_.TargetId
+    CDP_.ActivateTarget basicInfo_.targetId
+    CDP_.AttachToTarget basicInfo_.targetId
     CDP_.PageEnable
     CDP_.DOMEnable
     

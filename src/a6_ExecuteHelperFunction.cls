@@ -15,7 +15,7 @@ Public Sub SleepByWinAPI(ms As Long)
     Sleep ms
 End Sub
 
-''FindByXPathのJavaScriptCode(通常のコードとFunction版のコード)を返す
+'FindByXPathのJavaScriptCode(通常のコードとFunction版のコード)を返す
 Public Function GetXpathCodes(xPath As String) As Variant
     Dim Codes(1) As String
     Codes(0) = "document.evaluate('" & xPath & "', document, null, " & _
@@ -26,9 +26,9 @@ Public Function GetXpathCodes(xPath As String) As Variant
 End Function
 
 'FindByIdのJavaScriptCode(通常のコードとFunction版のコード)を返す
-Public Function GetIdCodes(Id As String) As Variant
+Public Function GetIdCodes(id As String) As Variant
     Dim Codes(1) As String
-    Codes(0) = "document.getElementById('" & Id & "');"
+    Codes(0) = "document.getElementById('" & id & "');"
     Codes(1) = "function(id){return  document.getElementById(id);}"
     GetIdCodes = Codes
 End Function

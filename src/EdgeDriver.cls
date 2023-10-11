@@ -167,6 +167,8 @@ Private Function IWebDriver_PageSource(target As TargetIs) As String
             res = CDP_.ExecuteJavaScript("document.body.outerHTML;")
         Case TargetIs.body_innerhtml
             res = CDP_.ExecuteJavaScript("document.body.innerHTML;")
+        Case TargetIs.body_innertext
+            res = CDP_.ExecuteJavaScript("document.body.innerText;")
     End Select
     
     Dim htmlSource As String

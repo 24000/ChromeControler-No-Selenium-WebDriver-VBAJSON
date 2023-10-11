@@ -15,6 +15,7 @@ Public Enum TargetIs
     html_innerhtml
     body_outerhtml
     body_innerhtml
+    body_innertext
 End Enum
 
 Public Property Get URL() As String

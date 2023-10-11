@@ -10,6 +10,13 @@ Attribute VB_Exposed = False
 Option Explicit
 '
 
+Public Enum TargetIs
+    html_outerhtml = 1
+    html_innerhtml
+    body_outerhtml
+    body_innerhtml
+End Enum
+
 Public Property Get URL() As String
 
 End Property
@@ -109,3 +116,7 @@ End Sub
 Public Sub AllowPopUpWindowForURL(targetURL As String)
 
 End Sub
+
+Public Function PageSource(target As TargetIs) As String
+
+End Function

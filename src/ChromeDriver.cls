@@ -139,6 +139,10 @@ End Sub
 
 
 
+
+
+
+
 '以下､インターフェイス公開メソッド
 '************************************************
 'Public
@@ -153,6 +157,26 @@ Private Property Get IWebDriver_URL() As String
         End If
     Next
 End Property
+
+'Public
+'現在のページのHTMLソースを取得
+Private Function IWebDriver_PageSource(target As TargetIs) As String
+    Dim res As String
+    Select Case target
+        Case TargetIs.html_outerhtml
+            res = CDP_.ExecuteJavaScript("document.all[0].outerHTML;")
+        Case TargetIs.html_innerhtml
+            res = CDP_.ExecuteJavaScript("document.all[0].innerHTML;")
+        Case TargetIs.body_outerhtml
+            res = CDP_.ExecuteJavaScript("document.body.outerHTML;")
+        Case TargetIs.body_innerhtml
+            res = CDP_.ExecuteJavaScript("document.body.innerHTML;")
+    End Select
+    
+    Dim htmlSource As String
+    htmlSource = json_.GetValue(res, "result", "result", "value")
+    IWebDriver_PageSource = htmlSource
+End Function
 
 
 'Public
@@ -181,7 +205,7 @@ End Sub
 Private Function IWebDriver_ExecuteScript(script As String) As String
     Dim responseMsg As String
     responseMsg = CDP_.ExecuteJavaScript(script)
-    IWebDriver_ExecuteScript = json_.GetValue(responseMsg, "result")
+    IWebDriver_ExecuteScript = responseMsg
 End Function
 
 'Public

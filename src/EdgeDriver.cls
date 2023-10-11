@@ -155,6 +155,26 @@ End Property
 
 
 'Public
+'現在のページのHTMLソースを取得
+Private Function IWebDriver_PageSource(target As TargetIs) As String
+    Dim res As String
+    Select Case target
+        Case TargetIs.html_outerhtml
+            res = CDP_.ExecuteJavaScript("document.all[0].outerHTML;")
+        Case TargetIs.html_innerhtml
+            res = CDP_.ExecuteJavaScript("document.all[0].innerHTML;")
+        Case TargetIs.body_outerhtml
+            res = CDP_.ExecuteJavaScript("document.body.outerHTML;")
+        Case TargetIs.body_innerhtml
+            res = CDP_.ExecuteJavaScript("document.body.innerHTML;")
+    End Select
+    
+    Dim htmlSource As String
+    htmlSource = json_.GetValue(res, "result", "result", "value")
+    IWebDriver_PageSource = htmlSource
+End Function
+
+'Public
 '第1引数で指定のURLを開く
 Private Sub IWebDriver_OpenURL(targetURL As String)
     Dim res As String

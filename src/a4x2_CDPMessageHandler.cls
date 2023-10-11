@@ -115,7 +115,7 @@ Function parseJSON(jsonString As Variant) As Object
             Set value = tempDict
         End If
         
-        If result.Count Mod 2 = 0 Then
+        If result.count Mod 2 = 0 Then
             If IsObject(value) Then
                 Set result(value("key")) = value("value")
             Else

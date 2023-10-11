@@ -70,9 +70,11 @@ End Type
 Public Http As a1x1_HTTPCommunicator
 
 
-Public Function Init(Host As String, Path As String, port As Long) As Boolean
+'websocket.create_connection(ws_url)ÇçÏê¨Ç∑ÇÈïKóvÇ†ÇËÇ©ÅH
+ 
+Public Function Init(Path As String) As Boolean
     Set Http = New a1x1_HTTPCommunicator
-    If Http.Connect(Host, Path, port) = False Then GoTo quit
+    If Http.Connect("127.0.0.1", Path, 9222) = False Then GoTo quit
     If Http.UpgradeToWebSocket() = False Then GoTo quit
     
     Init = True

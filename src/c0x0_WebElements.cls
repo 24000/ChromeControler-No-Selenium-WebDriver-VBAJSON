@@ -18,7 +18,7 @@ Public Sub Init(elements As Collection)
 End Sub
 
 Private Function IWebElements_Count() As Long
-    IWebElements_Count = elements_.Count
+    IWebElements_Count = elements_.count
 End Function
 
 Private Function IWebElements_Item(Index As Variant) As IWebElement

@@ -55,7 +55,7 @@ Public Sub GetInfo(EventInfo As String)
             Id = json_.GetValue(EventInfo, "params", "frame", "id")
         End If
         Dim isCurrentTarget As Boolean
-        isCurrentTarget = (Id = basicInfo_.TargetId)
+        isCurrentTarget = (Id = basicInfo_.targetId)
         Dim isIsolatedFrameId
         isIsolatedFrameId = (Id = basicInfo_.IsolatedFrameId)
     End If
@@ -131,38 +131,38 @@ End Sub
 
 'TargetのTypeにより､それぞれコレクションに情報を取得する｡
 Private Sub AddTargetInfo(ByVal EventInfo As String)
-    Dim tempdic As Object
-    Set tempdic = CreateObject("Scripting.Dictionary")
-    tempdic.add "targetId", json_.GetValue(EventInfo, "params", "targetInfo", "targetId")
-    tempdic.add "title", json_.GetValue(EventInfo, "params", "targetInfo", "title")
-    tempdic.add "url", json_.GetValue(EventInfo, "params", "targetInfo", "url")
-    tempdic.add "browserContextId", json_.GetValue(EventInfo, "params", "targetInfo", "browserContextId")
+    Dim tempDic As Object
+    Set tempDic = CreateObject("Scripting.Dictionary")
+    tempDic.add "targetId", json_.GetValue(EventInfo, "params", "targetInfo", "targetId")
+    tempDic.add "title", json_.GetValue(EventInfo, "params", "targetInfo", "title")
+    tempDic.add "url", json_.GetValue(EventInfo, "params", "targetInfo", "url")
+    tempDic.add "browserContextId", json_.GetValue(EventInfo, "params", "targetInfo", "browserContextId")
     
     Dim targetType As String
     targetType = json_.GetValue(EventInfo, "params", "targetInfo", "type")
     Select Case targetType
       Case "page"
-        AddInfoOf PageInfos, tempdic, EventInfo
+        AddInfoOf PageInfos, tempDic, EventInfo
       Case "iframe"
-        AddInfoOf IframeInfos, tempdic, EventInfo
+        AddInfoOf IframeInfos, tempDic, EventInfo
     End Select
 End Sub
 'Chrome上でTargetが追加されたら、各TargetTypeの情報を管理するCollectionにその情報をDictionaryとしてまとめて追加する。
-Private Sub AddInfoOf(infos As Collection, tempdic As Object, _
+Private Sub AddInfoOf(infos As Collection, tempDic As Object, _
                                     ByVal EventInfo As String)
                                         
     '本来targetInfoChangedで来るべき内容がtargetCreatedで来るケースあり。
     'SetDiscoverTarget使用すると既に開かれているPageもCreateされる模様
     Dim i As Long
-    For i = 1 To infos.Count
-        If infos(i)("targetId") = tempdic("targetId") Then
-            infos(i)("title") = tempdic("targetId")
-            infos(i)("url") = tempdic("url")
-            infos(i)("browserContextId") = tempdic("browserContextId")
+    For i = 1 To infos.count
+        If infos(i)("targetId") = tempDic("targetId") Then
+            infos(i)("title") = tempDic("targetId")
+            infos(i)("url") = tempDic("url")
+            infos(i)("browserContextId") = tempDic("browserContextId")
             Exit Sub
         End If
     Next
-    infos.add tempdic
+    infos.add tempDic
 End Sub
 
 'Chrome上でPage(タブ)の情報が変更されたら、Page情報を管理するCollection内の該当Pageの情報を変更する。
@@ -179,11 +179,11 @@ Private Sub ChangeTargetInfo(ByVal EventInfo As String)
 End Sub
 Private Sub ChangeInfoOf(infos As Collection, _
                                         ByVal EventInfo As String)
-    Dim TargetId As String
-    TargetId = json_.GetValue(EventInfo, "params", "targetInfo", "targetId")
+    Dim targetId As String
+    targetId = json_.GetValue(EventInfo, "params", "targetInfo", "targetId")
     Dim info As Variant
     For Each info In infos
-        If info("targetId") = TargetId Then
+        If info("targetId") = targetId Then
             info("title") = json_.GetValue(EventInfo, "params", "targetInfo", "title")
             info("url") = json_.GetValue(EventInfo, "params", "targetInfo", "url")
             info("browserContextId") = json_.GetValue(EventInfo, "params", "targetInfo", "browserContextId")
@@ -205,12 +205,12 @@ Private Sub RemoveTargetInfo(ByVal EventInfo As String)
 End Sub
 Private Sub RemoveInfoOf(infos As Collection, _
                                         ByVal EventInfo As String)
-    Dim TargetId As String
-    TargetId = json_.GetValue(EventInfo, "params", "targetInfo", "targetId")
+    Dim targetId As String
+    targetId = json_.GetValue(EventInfo, "params", "targetInfo", "targetId")
     
     Dim i As Long
-    For i = 1 To infos.Count
-        If infos(i)("targetId") = TargetId Then
+    For i = 1 To infos.count
+        If infos(i)("targetId") = targetId Then
             infos.Remove i
         End If
     Next
@@ -219,11 +219,11 @@ End Sub
 Public Sub ForDebug_ShowtargetInfo()
     Dim i  As Long
     Debug.Print "PageInfos↓==============="
-    For i = 1 To PageInfos.Count
+    For i = 1 To PageInfos.count
         Debug.Print i & "：" & PageInfos(i)("targetId")
     Next
     Debug.Print "IframeInfos↓==============="
-    For i = 1 To IframeInfos.Count
+    For i = 1 To IframeInfos.count
         Debug.Print i & "：" & IframeInfos(i)("targetId")
     Next
     Debug.Print "========================"

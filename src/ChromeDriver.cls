@@ -54,7 +54,7 @@ Private Sub Class_Initialize()
     End If
     
     CDP_.SetDiscoverTargets
-    CDP_.AttachToTarget basicInfo_.TargetId
+    CDP_.AttachToTarget basicInfo_.targetId
     
     WaitForActivation
     '適切に取得ができないケースあり、要改善（よってまだどこでもhwndは使用しない）
@@ -73,8 +73,9 @@ Private Function StartChrome(userDataDir As String) As Long
     With CreateObject("WScript.Shell")
         chromeExePath = """" & .RegRead(CHROME_EXE_REG_KEY) & """"
         Set objExec = .Exec( _
-                            chromeExePath & DEBUG_MODE_OPTION & ENABLE_AUTOMATION_OPTION _
+                            chromeExePath & DEBUG_MODE_OPTION & ENABLE_AUTOMATION_OPTION & " --disable-popup-blocking --no-first-run --disable-fre" _
                             & USER_DATA_DIR_OPTION & "" & userDataDir & "")
+
         StartChrome = objExec.ProcessId
         Set objExec = Nothing
     End With
@@ -108,7 +109,7 @@ Private Sub New_InnerObjects()
     Set json_ = New a2_JSONHandler
     Set basicInfo_ = New a3_BasicInfos: basicInfo_.Init json_
     Set webSocket_ = New a1_WebSocketCommunicator
-    If webSocket_.Init(basicInfo_.Host, basicInfo_.WebSocketUrlPath, basicInfo_.DebuggingPort) = False Then End
+    If webSocket_.Init(basicInfo_.webSocketURLPath) = False Then End
     
     Set events_ = New a5_CDPEventHandler
     events_.Init json_, basicInfo_
@@ -145,8 +146,8 @@ End Sub
 Private Property Get IWebDriver_URL() As String
     CDP_.SetDiscoverTargets  'これを使ってPage情報最新化
     Dim i As Long
-    For i = 1 To events_.PageInfos.Count
-        If events_.PageInfos(i)("targetId") = basicInfo_.TargetId Then
+    For i = 1 To events_.PageInfos.count
+        If events_.PageInfos(i)("targetId") = basicInfo_.targetId Then
             IWebDriver_URL = events_.PageInfos(i)("url")
             Exit Property
         End If
@@ -309,18 +310,18 @@ End Function
 Private Sub IWebDriver_SwitchFrameByNameOrUrlOrIndex(value As Variant)
     Dim frameInfos As Collection
     Dim FrameId As String
-    Dim Count As Long
+    Dim count As Long
     
     Do 'frame関連イベント発生タイミングによって情報取得に失敗するケースあり。念のため3回までループ。
         Set frameInfos = GetFrameInfos
         If IsNumeric(value) Then
-            If frameInfos.Count < value Then GoTo quit
+            If frameInfos.count < value Then GoTo quit
             FrameId = json_.GetValue(frameInfos(value), "id")
         Else
             FrameId = GetTargetFrameId(frameInfos, value)
         End If
-        Count = Count + 1
-    Loop While FrameId = "" And Count < 3
+        count = count + 1
+    Loop While FrameId = "" And count < 3
     
     If FrameId = "" Then GoTo quit
     
@@ -353,10 +354,10 @@ Private Function GetFrameInfos() As Collection
 '    collect.add json_.GetObject(json, "result", "frameTree", "frame"))
     
     Dim frmInfo As String, frminfo2 As String
-    Dim Count As Long
+    Dim count As Long
     Do
         'まずchildFramesから一つのFrame情報（オブジェクト）取得
-        frmInfo = json_.GetObject(json, "result", "frameTree", "childFrames", Count)
+        frmInfo = json_.GetObject(json, "result", "frameTree", "childFrames", count)
         If frmInfo = "" Then Exit Do
         'そのオブジェクトの中のframeプロパティ(オブジェクト)を取得し、コレクションに加える
         frminfo2 = json_.GetObject(frmInfo, "frame")
@@ -365,23 +366,23 @@ Private Function GetFrameInfos() As Collection
         If InStr(frmInfo, "childFrames") > 0 Then
             GetChildFrameInfo collect, frmInfo
         End If
-        Count = Count + 1
+        count = count + 1
     Loop
     Set GetFrameInfos = collect
 End Function
 'childFrameがある場合、再帰処理
 Private Sub GetChildFrameInfo(collect As Collection, json As String)
     Dim frmInfo As String, frminfo2 As String
-    Dim Count As Long
+    Dim count As Long
     Do
-        frmInfo = json_.GetObject(json, "childFrames", Count)
+        frmInfo = json_.GetObject(json, "childFrames", count)
         If frmInfo = "" Then Exit Do
         frminfo2 = json_.GetObject(frmInfo, "frame")
         collect.add frminfo2
         If InStr(frmInfo, "childFrames") > 0 Then
             GetChildFrameInfo collect, frmInfo
         End If
-        Count = Count + 1
+        count = count + 1
     Loop
 End Sub
 '各フレームのname,urlと指定された値を比較。一致するフレームのIdを返す。
@@ -405,7 +406,7 @@ Private Sub IWebDriver_DebugPrintAccessibleFrameInfo()
     CDP_.RuntimeEnable
     Dim frameInfos As Collection: Set frameInfos = GetFrameInfos
     Dim i As Long
-    For i = 1 To frameInfos.Count
+    For i = 1 To frameInfos.count
         Debug.Print "index：" & i & _
                            "　name：" & json_.GetValue(frameInfos(i), "name") & _
                            "　url：" & json_.GetValue(frameInfos(i), "url")
@@ -438,36 +439,6 @@ Private Sub IWebDriver_SwitchFrameByIframeElement(IframeElement As IWebElement)
                                       "※SwitchFrameByNameOrUrlOrIndexの" & vbCrLf & _
                                       "　 使用を検討してください。" & vbCrLf
     End If
-    
-    
-'    テスト
-'    Dim docElem As b0x0_WebElement
-'    Dim functionCode As String, responseMsg As String, docObjectId As String
-'    functionCode = "function(name){return  this.contentDocument;}"
-'    responseMsg = CallJavaScriptFunction(functionCode, elem.ObjectId, "")
-'    docObjectId = json_.GetValue(responseMsg, "result", "result", "objectId"))
-'    Dim info  As String
-'    info = DescribeNode(docObjectId)
-    
-    
-'    frameIdがtargetIdなら接続切り替えで対応
-'    basicInfo_.Update elem.FrameId, json_, False
-'    isolatedFrameId_ = ""
-'
-'    webSocket_.CloseWebSocket
-'    Set webSocket_ = Nothing
-'    Set webSocket_ = New a1_WebSocketCommunicator
-'    If webSocket_.Init(basicInfo_.Host, basicInfo_.WebSocketUrlPath, _
-'                                basicInfo_.DebuggingPort) = False Then
-'        DisplayErrorAndEnd "SwitchIframeに失敗しました" & vbCrLf
-'    End If
-'
-'    AttachToTarget elem.FrameId
-'    PageEnable
-'    DOMEnable
-'
-'    documentObjectId_ = GetDocumentObjectID
-'    documentNodeId_ = GetDocumentNodeID
 
 End Sub
 
@@ -483,23 +454,7 @@ Private Sub IWebDriver_SwitchFrameToDefault()
 '        SwitchTargetToPageDefault
 '    End If
 End Sub
-'Private Sub SwitchTargetToPageDefault()
-'    Dim newTargetId As String
-'    newTargetId = basicInfo_.PageDefaultTargetId
-'    basicInfo_.Update newTargetId, json_, False
-'
-'    webSocket_.CloseWebSocket
-'    Set webSocket_ = Nothing
-'    Set webSocket_ = New a1_WebSocketCommunicator
-'    If webSocket_.Init(basicInfo_.Host, basicInfo_.WebSocketUrlPath, basicInfo_.DebuggingPort) = False Then End
-'
-'    ActivateTarget basicInfo_.TargetId
-'    PageEnable
-'    DOMEnable
-'
-'    documentObjectId_ = GetDocumentObjectID
-'    documentNodeId_ = GetDocumentNodeID
-'End Sub
+
 
 'Public
 '第1引数で指定されるXpathの要素有無の確認
@@ -589,20 +544,62 @@ End Sub
 
 'タブの移動（Index指定：一番左のタブを１とする）
 Private Sub IWebDriver_SwitchTabByIndex(Index As Long)
-    Dim newTargetId As String
-    newTargetId = events_.PageInfos(Index)("targetId")
-    basicInfo_.Update newTargetId, json_, True
+    Dim res As String
+    Dim client As Object: Set client = CreateObject("MSXML2.ServerXMLHTTP")
+    client.Open "GET", "http://127.0.0.1:9222/json"
+    client.setRequestHeader "Content-Type", "application/json"
+    client.send
+    res = client.responsetext
+    Dim count As Long: count = json_.GetJsonLength(res)
+    
+    Dim tmpCollection As Collection: Set tmpCollection = New Collection
+    Dim jsObjStr As String, typeName As String
+    Dim tempDic As Object
+    Dim i As Long
+    For i = 0 To count - 1
+        jsObjStr = json_.GetObject(res, i)
+        typeName = json_.GetValue(jsObjStr, "type")
+        If typeName = "page" Then
+            Set tempDic = CreateObject("Scripting.Dictionary")
+            tempDic.add "title", json_.GetValue(jsObjStr, "title")
+            tempDic.add "targetId", json_.GetValue(jsObjStr, "id")
+            tempDic.add "webSocketDebuggerUrl", json_.GetValue(jsObjStr, "webSocketDebuggerUrl")
+            tmpCollection.add tempDic
+        End If
+    Next
+    
+    If Index > tmpCollection.count Then Err.Raise Number:=10000, Description:="指定されたIndexがタブの数を超えています。"
+    
+    'jsonの情報がタブの順と逆順のため並べ替え
+    Dim tabCollection As Collection: Set tabCollection = New Collection
+    For i = tmpCollection.count() To 1 Step -1
+        tabCollection.add tmpCollection(i)
+    Next
+    
+     Dim webSocketURLPath As String
+     webSocketURLPath = Replace(tabCollection(Index)("webSocketDebuggerUrl"), "ws://127.0.0.1:9222", "")
     
     webSocket_.CloseWebSocket
     Set webSocket_ = Nothing
+    
     Set webSocket_ = New a1_WebSocketCommunicator
-    If webSocket_.Init(basicInfo_.Host, basicInfo_.WebSocketUrlPath, basicInfo_.DebuggingPort) = False Then End
+    If webSocket_.Init(webSocketURLPath) = False Then End
+    Dim msgGenerator As a4x1_CDPMessageGenerator
+    Set msgGenerator = New a4x1_CDPMessageGenerator
+    Dim Handler As a4x2_CDPMessageHandler
+    Set Handler = New a4x2_CDPMessageHandler
+    Handler.Init webSocket_, json_, events_
+    Set CDP_ = New a4_ExecuteCDP
+    CDP_.Init msgGenerator, Handler, json_
     
-    CDP_.ActivateTarget basicInfo_.TargetId
-    CDP_.AttachToTarget basicInfo_.TargetId
-    CDP_.PageEnable
-    CDP_.DOMEnable
+    Dim targetId As String
+    targetId = tabCollection(Index)("targetId")
     
+    basicInfo_.Update targetId, json_, True
+    
+    CDP_.AttachToTarget targetId
+    CDP_.ActivateTarget targetId
+
     basicInfo_.DocumentObjectId = CDP_.GetDocumentObjectID
     basicInfo_.DocumentNodeId = CDP_.GetDocumentNodeID
 End Sub

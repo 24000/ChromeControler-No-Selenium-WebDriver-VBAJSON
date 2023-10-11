@@ -10,9 +10,14 @@ Attribute VB_Exposed = False
 Option Explicit
 
 Private id_ As Long
+Private sessionId_ As String
 
 Public Property Get Id() As Long
     Id = id_
+End Property
+
+Public Property Let SessionId(value As String)
+    sessionId_ = value
 End Property
 
 ''TargetDomain*******************************************************************
@@ -32,35 +37,35 @@ Public Function SetDiscoverTargets() As String
     SetDiscoverTargets = message
 End Function
 
-Public Function AttachToTarget(TargetId As String) As String
+Public Function AttachToTarget(targetId As String) As String
     id_ = id_ + 1
     Dim message As String
     message = "{""id"": " & id_ & ",""method"": ""Target.attachToTarget""," & _
-                      """params"": {""targetId"": """ & TargetId & """}}"
+                      """params"": {""targetId"": """ & targetId & """}}"
     AttachToTarget = message
 End Function
 
-Public Function ActivateTarget(TargetId As String) As String
+Public Function ActivateTarget(targetId As String) As String
     id_ = id_ + 1
     Dim message As String
     message = "{""id"": " & id_ & ",""method"": ""Target.activateTarget""," & _
-                      """params"": {""targetId"": """ & TargetId & """}}"
+                      """params"": {""targetId"": """ & targetId & """}}"
     ActivateTarget = message
 End Function
 
-Public Function DetachFromTarget(TargetId As String) As String
+Public Function DetachFromTarget(targetId As String) As String
     id_ = id_ + 1
     Dim message As String
     message = "{""id"": " & id_ & ",""method"": ""Target.detachFromTarget""," & _
-                      """params"": {""targetId"": """ & TargetId & """}}"
+                      """params"": {""targetId"": """ & targetId & """}}"
     DetachFromTarget = message
 End Function
 
-Public Function TargetClose(TargetId As String) As String
+Public Function TargetClose(targetId As String) As String
     id_ = id_ + 1
     Dim message As String
     message = "{""id"": " & id_ & ",""method"": ""Target.closeTarget""," & _
-                      """params"": {""targetId"": """ & TargetId & """}}"
+                      """params"": {""targetId"": """ & targetId & """}}"
     TargetClose = message
 End Function
 '利用可能なターゲットのリストを取得する。
@@ -268,8 +273,13 @@ End Function
 Public Function JavaScritpEvaluate(script As String)
     id_ = id_ + 1
     Dim message As String
-    message = "{""id"": " & id_ & ",""method"": ""Runtime.evaluate""," & _
-                      """params"": {""expression"": """ & script & """,""returnByValue"": false}}"
+'    If sessionId_ = "" Then
+        message = "{""id"": " & id_ & ",""method"": ""Runtime.evaluate""," & _
+                          """params"": {""expression"": """ & script & """,""returnByValue"": false}}"
+'    Else
+'        message = "{""id"": " & id_ & " ,""sessionId"": """ & sessionId_ & """,""method"": ""Runtime.evaluate""," & _
+'                          """params"": {""expression"": """ & script & """,""returnByValue"": false}}"
+'    End If
     JavaScritpEvaluate = message
 End Function
 
@@ -284,9 +294,16 @@ Public Function CallJavaScriptFunction(funcDeclear As String, objectId As Varian
     End If
     
     Dim message As String
-    message = "{""id"": " & id_ & ",""method"": ""Runtime.callFunctionOn""," & _
-                      """params"": " & _
-                     "{""functionDeclaration"": """ & funcDeclear & """,""arguments"": " & JavaScriptObjectArgs
+'    If sessionId_ = "" Then
+        message = "{""id"": " & id_ & ",""method"": ""Runtime.callFunctionOn""," & _
+                          """params"": " & _
+                         "{""functionDeclaration"": """ & funcDeclear & """,""arguments"": " & JavaScriptObjectArgs
+'    Else
+'        message = "{""id"": " & id_ & " ,""sessionId"": " & sessionId_ & """,""method"": ""Runtime.callFunctionOn""," & _
+'                          """params"": " & _
+'                         "{""functionDeclaration"": """ & funcDeclear & """,""arguments"": " & JavaScriptObjectArgs
+'    End If
+    
     If IsNumeric(objectId) Then
         message = message & ",""executionContextId"": " & objectId & "}}"
     Else

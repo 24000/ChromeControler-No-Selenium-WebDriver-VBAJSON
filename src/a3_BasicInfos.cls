@@ -22,9 +22,9 @@ Private Const KEY_WEBSOCKETURL As String = "webSocketDebuggerUrl"
 Public PageDefaultTargetId As String
 
 Public TargetInfoJSON As String
-Public WebSocketURL As String
-Public TargetId As String
-Public WebSocketUrlPath  As String
+Public webSocketURL As String
+Public targetId As String
+Public webSocketURLPath  As String
 Public Context As String
 
 Public DocumentNodeId As Long
@@ -46,17 +46,17 @@ End Property
 Public Sub Init(json As a2_JSONHandler)
     TargetInfoJSON = GetTragetInfoJSON
     
-    WebSocketURL = json.GetValue( _
+    webSocketURL = json.GetValue( _
                                 TargetInfoJSON, 0, KEY_WEBSOCKETURL)
                                 
-    TargetId = json.GetValue(TargetInfoJSON, 0, "id")
+    targetId = json.GetValue(TargetInfoJSON, 0, "id")
     
-    PageDefaultTargetId = TargetId
+    PageDefaultTargetId = targetId
     
-    WebSocketUrlPath = Replace(WebSocketURL, _
+    webSocketURLPath = Replace(webSocketURL, _
                                     WEBSOCKET_SCHEMA & HOST_ & ":" & DEBUGGING_PORT, "")
                                     
-    Context = Replace(WebSocketUrlPath, TargetId, "")
+    Context = Replace(webSocketURLPath, targetId, "")
 End Sub
 
 Private Function GetTragetInfoJSON() As String
@@ -83,31 +83,31 @@ Public Function Update(newTargetId As String, json As a2_JSONHandler, _
                                     isPageSwitch As Boolean) As Collection
     If isPageSwitch Then PageDefaultTargetId = newTargetId
     
-    TargetId = newTargetId
+    targetId = newTargetId
     TargetInfoJSON = GetTragetInfoJSON
-    WebSocketURL = GetWebSocketDebuggerUrl(json)
-    WebSocketUrlPath = Replace(WebSocketURL, WEBSOCKET_SCHEMA & HOST_ & ":" & DEBUGGING_PORT, "")
-    Context = Replace(WebSocketUrlPath, TargetId, "")
+    webSocketURL = GetWebSocketDebuggerUrl(json)
+    webSocketURLPath = Replace(webSocketURL, WEBSOCKET_SCHEMA & HOST_ & ":" & DEBUGGING_PORT, "")
+    Context = Replace(webSocketURLPath, targetId, "")
 End Function
 
 Private Function GetWebSocketDebuggerUrl(json As a2_JSONHandler) As String
     Dim collect As Collection: Set collect = New Collection
     Dim targetInfo As String
-    Dim Count As Long
+    Dim count As Long
     Do
-        targetInfo = json.GetObject(TargetInfoJSON, Count)
+        targetInfo = json.GetObject(TargetInfoJSON, count)
         If targetInfo = "" Then Exit Do
         collect.add targetInfo
-        Count = Count + 1
+        count = count + 1
     Loop
     
     Dim i As Long
     Dim targetType As String, Id As String
-    For i = 1 To collect.Count
+    For i = 1 To collect.count
             targetType = json.GetValue(collect(i), "type")
             If targetType <> "page" Then GoTo next_
             Id = json.GetValue(collect(i), "id")
-            If Id <> TargetId Then GoTo next_
+            If Id <> targetId Then GoTo next_
             GetWebSocketDebuggerUrl = json.GetValue(collect(i), KEY_WEBSOCKETURL)
             Exit Function
 next_:
@@ -116,7 +116,7 @@ End Function
 
 
 Public Function IsTargetPageDefault() As Boolean
-    If TargetId = PageDefaultTargetId Then
+    If targetId = PageDefaultTargetId Then
         IsTargetPageDefault = True
     Else
         IsTargetPageDefault = False

@@ -25,6 +25,7 @@ Public Sub Init(MsgGenerate As a4x1_CDPMessageGenerator, _
     Set json_ = json
 End Sub
 
+
 ''Browserån************************************************
 Public Function SessionClose() As String
     Dim sendMsg  As String
@@ -206,27 +207,30 @@ Public Function SetDiscoverTargets() As String
     SetDiscoverTargets = MsgHandler_.SendAndReceive(sendMsg)
 End Function
 
-Public Function AttachToTarget(TargetId As String) As String
-    Dim sendMsg  As String
-    sendMsg = MsgGenerate_.AttachToTarget(TargetId)
-    AttachToTarget = MsgHandler_.SendAndReceive(sendMsg)
+Public Function AttachToTarget(targetId As String) As String
+    Dim sendMsg  As String, res As String, SessionId As String
+    sendMsg = MsgGenerate_.AttachToTarget(targetId)
+    res = MsgHandler_.SendAndReceive(sendMsg)
+    SessionId = json_.GetValue(res, "result", "sessionId")
+    MsgGenerate_.SessionId = SessionId
+    AttachToTarget = res
 End Function
 
-Public Function ActivateTarget(TargetId As String) As String
+Public Function ActivateTarget(targetId As String) As String
     Dim sendMsg  As String
-    sendMsg = MsgGenerate_.ActivateTarget(TargetId)
+    sendMsg = MsgGenerate_.ActivateTarget(targetId)
     ActivateTarget = MsgHandler_.SendAndReceive(sendMsg)
 End Function
 
-Public Function DetachFromTarget(TargetId As String) As String
+Public Function DetachFromTarget(targetId As String) As String
     Dim sendMsg  As String
-    sendMsg = MsgGenerate_.DetachFromTarget(TargetId)
+    sendMsg = MsgGenerate_.DetachFromTarget(targetId)
     DetachFromTarget = MsgHandler_.SendAndReceive(sendMsg)
 End Function
 
-Public Function TargetClose(TargetId As String) As String
+Public Function TargetClose(targetId As String) As String
     Dim sendMsg  As String
-    sendMsg = MsgGenerate_.TargetClose(TargetId)
+    sendMsg = MsgGenerate_.TargetClose(targetId)
     TargetClose = MsgHandler_.SendAndReceive(sendMsg)
 End Function
 Public Function GetTargetInfo() As String
@@ -381,3 +385,5 @@ Public Function WaitForElementToAppearBy( _
         DoEvents: Sleep 500
     Loop
 End Function
+
+

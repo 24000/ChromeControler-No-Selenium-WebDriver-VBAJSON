@@ -10,7 +10,7 @@ Attribute VB_Exposed = False
 Option Explicit
 '
 
-Public Function Count() As Long
+Public Function count() As Long
 
 End Function
 

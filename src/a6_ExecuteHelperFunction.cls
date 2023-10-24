@@ -11,6 +11,65 @@ Option Explicit
 
 Private Declare PtrSafe Sub Sleep Lib "kernel32" (ByVal ms As LongPtr)
 
+Private Const MOUSE_EVENT_NAME_NUM = 17
+Private Const MOUSE_EVENT_NAMES = _
+"mousedown,mousepress,mouseup,mouseenter,mouseleave, mousemove,mouseover,mouseout," & _
+"click,dblclick," & _
+"drag,dragstart,dragend,dragenter,dragexit,dragleave,dragover,drop"
+
+
+Private Const KEYBOARD_EVENT_KEY_NUM = 51
+'5,4,4,2,10,7,7,12
+Private Const KEY_CODES = _
+"9,13,16,17,18," & _
+"27,32,33,34," & _
+"37,38,39,40," & _
+"44,46," & _
+"48,49,50,51,52,53,54,55,56,57," & _
+"65,66,67,68,69,70,71," & _
+"72,73,74,75,76,77,78," & _
+"79,80,81,82,83,84,85,86,87,88,89,90"
+
+Private Const KEY_NAMES = _
+"Tab,Enter,Shift,Control,Alt," & _
+"Escape,Space,PageUp,PageDown," & _
+"ArrowLeft,ArrowUp,ArrowRight,ArrowDown," & _
+"PrintScreen,Delete," & _
+"Digit0,Digit1,Digit2,Digit3,Digit4,Digit5,Digit6,Digit7,Digit8,Digit9," & _
+"KeyA,KeyB,KeyC,KeyD,KeyE,KeyF,KeyG," & _
+"KeyH,KeyI,KeyJ,KeyK,KeyL,KeyM,KeyN," & _
+"KeyO,KeyP,KeyQ,KeyR,KeyS,KeyT,KeyU,KeyV,KeyW,KeyX,KeyY,KeyZ"
+ 
+
+Private mouseEventNames_ As Object
+Private keyboardEventNames_ As Object
+Private keyNames_ As Object
+
+Private Sub Class_Initialize()
+    Set mouseEventNames_ = CreateObject("Scripting.Dictionary")
+    Dim mouseEventNamesString As Variant: mouseEventNamesString = Split(MOUSE_EVENT_NAMES, ",")
+    Dim num As Long
+    For num = 1 To MOUSE_EVENT_NAME_NUM
+        mouseEventNames_.add num, mouseEventNamesString(num - 1)
+    Next
+    
+    Set keyboardEventNames_ = CreateObject("Scripting.Dictionary")
+    keyboardEventNames_.add 1, "keydown"
+    keyboardEventNames_.add 2, "keypress"
+    keyboardEventNames_.add 3, "keyup"
+    
+    Set keyNames_ = CreateObject("Scripting.Dictionary")
+    Dim keyboardEventCodes As Variant: keyboardEventCodes = Split(KEY_CODES, ",")
+    Dim KeyNames As Variant: KeyNames = Split(KEY_NAMES, ",")
+    Dim i As Long, KeyCode As Long
+    Dim KeyName As String
+    For i = 0 To KEYBOARD_EVENT_KEY_NUM - 1
+        KeyCode = keyboardEventCodes(i)
+        KeyName = KeyNames(i)
+        keyNames_.add KeyCode, KeyName
+    Next
+End Sub
+
 Public Sub SleepByWinAPI(ms As Long)
     Sleep ms
 End Sub
@@ -110,11 +169,59 @@ End Function
 
 Public Function GetDispatchChangeEventCode() As String
     GetDispatchChangeEventCode = _
-    "function(value){" & _
-        "const event = new CustomEvent('change', {bubbles: false, cancelable: false});" & _
-        "this.dispatchEvent(event);" & _
+    "function(){" & _
+        "this.dispatchEvent(new CustomEvent('change', {bubbles: true}));" & _
     "}"
 End Function
+
+Public Function GetDispatchInputEventCode() As String
+    GetDispatchInputEventCode = _
+    "function(){" & _
+        "this.dispatchEvent(new CustomEvent('input', {bubbles: true}));" & _
+    "}"
+End Function
+
+Public Function GetDispatchFocusEventCode() As String
+    GetDispatchFocusEventCode = _
+    "function(){" & _
+        "this.dispatchEvent(new CustomEvent('focus', {bubbles: true}));" & _
+    "}"
+End Function
+
+Public Function GetDispatchMouseEventCode(action As JS_Mouse) As String
+    Dim eventName As String: eventName = mouseEventNames_(action)
+    
+    GetDispatchMouseEventCode = _
+    "function(){" & _
+        "this.dispatchEvent(new MouseEvent('" & eventName & "', {bubbles: true}));" & _
+    "}"
+End Function
+
+Public Function GetDispatchKeyboardEventCode(action As JS_Keyboard, KeyCode As Key, Optional alt As Boolean = False, Optional shift As Boolean = False, Optional ctrl As Boolean = False) As String
+    Dim eventActionName As String: eventActionName = keyboardEventNames_(action)
+    
+    Dim KeyName As String: KeyName = keyNames_(KeyCode)
+    
+    Dim optionArgs As String
+    optionArgs = "{keyCode: " & KeyCode & ",key: '" & KeyName & "' ,bubbles: true"
+    If alt Then optionArgs = optionArgs & ",altKey: true"
+    If shift Then optionArgs = optionArgs & ",shiftKey: true"
+    If ctrl Then optionArgs = optionArgs & ",ctrlKey: true "
+    optionArgs = optionArgs & "}"
+    
+    GetDispatchKeyboardEventCode = _
+    "function(){" & _
+        "this.dispatchEvent(new KeyboardEvent('" & eventActionName & "'," & optionArgs & "));" & _
+    "}"
+End Function
+
+'Public Function GetDispatchKeyArrowDownEventCode() As String
+'    GetDispatchKeyArrowDownEventCode = _
+'    "function(){" & _
+'        "this.dispatchEvent(new KeyboardEvent('keydown', {keyCode: 40,key: 'ArrowDown' ,bubbles: true}));" & _
+'    "}"
+'End Function
+
 
 'elementÇFindÇµÇΩï˚ñ@Ç…Ç¬Ç¢ÇƒÇÃèÓïÒÇîzóÒÇ…ÇµÇƒï‘Ç∑(çÏê¨Ç∑ÇÈElementÇ…éùÇΩÇπÇÈÇΩÇﬂÅj
 Public Function MakeFindInfo(way_string As String, way As String, Optional Index As Long = -1) As Collection
@@ -159,3 +266,5 @@ Public Function MakeFindErrorMessage(wayString As String, way As String, Optiona
     
     MakeFindErrorMessage = errMsg
 End Function
+
+

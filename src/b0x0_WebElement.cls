@@ -22,6 +22,7 @@ Private Declare PtrSafe Function FindWindowEx Lib "user32" Alias "FindWindowExA"
 Private Declare PtrSafe Function SendMessage Lib "user32" Alias "SendMessageA" ( _
         ByVal hWnd As Long, ByVal wMsg As Long, _
         ByVal wParam As Long, lParam As Any) As LongPtr
+        
 
 Private json_ As a2_JSONHandler
 Private basicInfo_ As a3_BasicInfos
@@ -36,8 +37,7 @@ Private attributes_ As Object
 Private frameId_ As String
 
 Private xpath_ As String
-Private name_
-
+'
 
 Public Sub Init(json As a2_JSONHandler, _
                        basicInfo As a3_BasicInfos, _
@@ -59,7 +59,9 @@ Public Sub Init(json As a2_JSONHandler, _
     Set findInfo_ = findInfo
     Set attributes_ = attributes
     frameId_ = FrameId
+    
 End Sub
+
 
 Public Property Get objectId() As String
     objectId = objectId_
@@ -67,6 +69,7 @@ End Property
 Public Property Get FrameId() As String
     FrameId = frameId_
 End Property
+
 
 ''CallJavaScriptFunction呼出しの共通関数
 '戻り値が"Cannot find context with specified id"となる場合、ObjectIdの再取得が必要なため共通化
@@ -95,20 +98,9 @@ Public Function ReGetObjectId()
     objectId_ = CDP_.GetObjectIdOfElementBy(findInfo_(2), basicInfo_, Codes)
 End Function
 
-'CDPMethodを呼出す場合に、引数にObjectIdを使用して呼出すMethodの共通管理のための関数
-'戻り値が"Cannot find context with specified id"となる場合に、ObjectIdの再取得が必要になるため共通化
-'現在FocusとGetGetBoxModelの呼び出しのみ
-Private Function CallObjectIdUsingMethod(methodName As String) As String
-    Dim res As String
-    res = CallByName(CDP_, methodName, VbMethod, objectId_)
 
-    If InStr(res, "Cannot find context with specified id") > 0 Then
-        basicInfo_.UpdateExecutionContextId CDP_
-        ReGetObjectId
-        res = CallByName(CDP_, methodName, VbMethod, objectId_)
-    End If
-    CallObjectIdUsingMethod = res
-End Function
+
+
 
 '***********************************************
 'Public
@@ -162,6 +154,12 @@ End Property
 
 
 
+
+
+
+
+
+
 'Public
 '要素の状態(有効or無効)を取得
 Private Property Get IWebElement_IsEnabled() As Boolean
@@ -178,7 +176,97 @@ quit:
 Helper_.DisplayErrorAndEnd "このElementはEnabledプロパティを持ちません。" & vbCrLf
 End Property
 
+'エレメントをViewPort中心になるところまでスクロールし、エレメントの中心xy座標に左クリックイベント発行
+Private Sub IWebElement_DispatchCDPMouseEvent(action As CDP_Mouse)
+  
+    ' 画面外にいるとクリックできないため、要素の位置を確認
+    Dim contentBox As Object: Set contentBox = GetContentBox()
+    Dim viewPortHeight As Long: viewPortHeight = GetViewPortHeight()
+    '画面の中心に要素がくるように、Scroll
+    CDP_.DispatchMouseEvent "mouseWheel", 0, 0, "none", 0, 0, 0, contentBox("TopLeftY") - (viewPortHeight / 2)
+    Sleep 200
+    'そのうえで、画面内の位置として再度、位置を取得。
+    Set contentBox = GetContentBox()
+    Dim x As Long: x = contentBox("CenterX")
+    Dim y As Long: y = contentBox("CenterY")
+    
+    Select Case action
+        Case CDP_Mouse.LeftClick_XY
+            CDPClick "left", x, y, 1
+        Case CDP_Mouse.LeftDoubleClick_XY
+            CDPClick "left", x, y, 2
+        Case CDP_Mouse.RightClick_XY
+            CDPClick "right", x, y, 1
+        Case CDP_Mouse.ScrollToThisElement
+            'この要素位置まで移動するだけで何もしない
+    End Select
+End Sub
 
+'Private Function IsRequireScrollingToThisElement(action As CDP_Mouse, Optional x_pixel As Long = 0, Optional y_pixel As Long = 0) As Boolean
+'    If action = CDP_Mouse.Back Or action = CDP_Mouse.Forward _
+'    Or action = CDP_Mouse.Moved Or action = CDP_Mouse.MouseWheel Then
+'        IsRequireScrollingToThisElement = False
+'    Else
+'        If x_pixel = 0 And y_pixel = 0 Then
+'            IsRequireScrollingToThisElement = True
+'        Else
+'            IsRequireScrollingToThisElement = False
+'        End If
+'    End If
+'End Function
+
+'CDPMethodを呼出す場合に、引数にObjectIdを使用して呼出すMethodの共通管理のための関数
+'戻り値が"Cannot find context with specified id"となる場合に、ObjectIdの再取得が必要になるため共通化
+'現在FocusとGetGetBoxModelの呼び出しのみ
+Private Function CallObjectIdUsingMethod(methodName As String) As String
+    Dim res As String
+    res = CallByName(CDP_, methodName, VbMethod, objectId_)
+
+    If InStr(res, "Cannot find context with specified id") > 0 Then
+        basicInfo_.UpdateExecutionContextId CDP_
+        ReGetObjectId
+        res = CallByName(CDP_, methodName, VbMethod, objectId_)
+    End If
+    CallObjectIdUsingMethod = res
+End Function
+
+'Boxmodelのcontent領域の4つの頂点のx,y,width,height,center位置のxyを辞書として取得
+Private Function GetContentBox() As Variant
+    Dim res As String: res = CallObjectIdUsingMethod("GetBoxModel")
+    Dim quadXY As Variant: quadXY = json_.GetValue(res, "result", "model", "content")
+    quadXY = Split(quadXY, ",")
+    Dim posName As Variant: posName = "TopLeftX,TopLeftY,TopRightX,TopRightY,BottomLeftX,BottomLeftY,BottomRightX,BottomRightY"
+    posName = Split(posName, ",")
+    
+    Dim contentBox As Object: Set contentBox = CreateObject("Scripting.Dictionary")
+    Dim i As Long
+    For i = LBound(posName) To UBound(posName)
+        contentBox.add posName(i), quadXY(i)
+    Next
+    
+    Dim width As Long: width = json_.GetValue(res, "result", "model", "width")
+    Dim height As Long: height = json_.GetValue(res, "result", "model", "height")
+    contentBox.add "Width", width
+    contentBox.add "Height", height
+    contentBox.add "CenterX", quadXY(0) + (width / 2)
+    contentBox.add "CenterY", quadXY(1) + (height / 2)
+    Set GetContentBox = contentBox
+End Function
+Private Function GetViewPortHeight() As Long
+    Dim res As String
+    res = CallFunction("function(){return window.innerHeight;}", "")
+    res = json_.GetValue(res, "result", "result", "value")
+    GetViewPortHeight = Int(res)
+End Function
+
+Private Sub CDPClick(button As String, x As Long, y As Long, clickNum As Long)
+    Dim result As String
+    Dim i As Long
+    For i = 1 To clickNum
+        result = CDP_.DispatchMouseEvent("mousePressed", x, y, button, 1)
+        result = CDP_.DispatchMouseEvent("mouseReleased", x, y, button, 1)
+    Next
+End Sub
 
 'Public
 'javaScriptによってクリック実行
@@ -189,7 +277,10 @@ Private Sub IWebElement_Click()
     res = CallFunction("function(){this.click();}", "")
     
     If InStr(res, "this.click is not a function") Then
-        res = CallFunction("function(){this.dispatchEvent(new MouseEvent( 'click' ));}", "")
+        res = CallFunction("function(){this.dispatchEvent(new MouseEvent( 'click',{bubbles: true} ));}", "")
+'        res = CallFunction("function(value){" & _
+                                    "this.dispatchEvent(new CustomEvent('click', {bubbles: true}));" & _
+                                    "}", "")
     End If
     
     If InStr(res, "this.dispatchEvent is not a function") Then
@@ -274,11 +365,24 @@ End Sub
 
 'Public
 '要素のValue属性に文字列を設定
+'非推奨（本来メソッド名をSetValueと命名すべきであった。→機能は全く同じでSetValueメソッドを新たに用意。過去バージョンとの互換性のために残されているメソッド）
 Private Sub IWebElement_SetText(text As String)
     FocusAndEnterKey
     Dim encodingText As String: encodingText = json_.EncodeURL(text)
     CallFunction "function(value){value = decodeURI(value);this.value = value;}", encodingText
     
+    CallFunction Helper_.GetDispatchInputEventCode, encodingText
+    CallFunction Helper_.GetDispatchChangeEventCode, encodingText
+End Sub
+
+'Public
+'要素のValue属性に文字列を設定
+Private Sub IWebElement_SetValue(value As String)
+    FocusAndEnterKey
+    Dim encodingText As String: encodingText = json_.EncodeURL(value)
+    CallFunction "function(value){value = decodeURI(value);this.value = value;}", encodingText
+    
+    CallFunction Helper_.GetDispatchInputEventCode, encodingText
     CallFunction Helper_.GetDispatchChangeEventCode, encodingText
 End Sub
 
@@ -289,8 +393,20 @@ Private Sub IWebElement_SetTextContent(text As String)
     Dim encodingText As String: encodingText = json_.EncodeURL(text)
     CallFunction "function(value){value = decodeURI(value);this.textContent  = value;}", encodingText
     
+    CallFunction Helper_.GetDispatchInputEventCode, encodingText
     CallFunction Helper_.GetDispatchChangeEventCode, encodingText
 End Sub
+
+'Public
+'要素のValue属性にPropertySetter経由で文字列を設定。
+Private Function IWebElement_SetValueViaPropertySetter(value As String) As String
+    FocusAndEnterKey
+    Dim encodingText As String: encodingText = json_.EncodeURL(value)
+    CallFunction "function(value){value = decodeURI(value);Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set.call(this, value);}", encodingText
+                                                                                    
+    CallFunction Helper_.GetDispatchInputEventCode, ""
+    CallFunction Helper_.GetDispatchChangeEventCode, ""
+End Function
 
 'Public
 'SelectBoxの選択肢を文字列で選択
@@ -404,33 +520,6 @@ Private Function IWebElement_GetSelectedTextContent() As String
     IWebElement_GetSelectedTextContent = json_.GetValue(res, "result", "result", "value")
 End Function
 
-'エレメントの中心位置のxy座標に左クリックイベント発行
-Private Sub IWebElement_DispatchLeftClickEvent()
-    Dim res As String: res = CallObjectIdUsingMethod("GetBoxModel")
-    Dim centerXY As Variant: centerXY = GetCenterPositionXY(res)
-    Dim x As Long: x = centerXY(0)
-    Dim y As Long: y = centerXY(1)
-    
-    CDP_.DispatchMouseEvent "mouseWheel", 0, 0, "none", 0, 0, 0, y - 50
-    
-    Dim result As String
-    result = CDP_.DispatchMouseEvent("mousePressed", x, y, "left", 1)
-    result = CDP_.DispatchMouseEvent("mouseReleased", x, y, "left", 1)
-End Sub
-'エレメントの中心位置のxy座標を取得
-Private Function GetCenterPositionXY(res As String)
-    Dim result As Variant
-    result = json_.GetValue(res, "result", "model", "content")
-    result = Split(result, ",")
-    Dim width As Long, height As Long
-    width = json_.GetValue(res, "result", "model", "width")
-    height = json_.GetValue(res, "result", "model", "height")
-    Dim xy(1) As Variant
-    xy(0) = result(0) + (width / 2)
-    xy(1) = result(1) + (height / 2)
-    GetCenterPositionXY = xy
-End Function
-
 'Public
 'type=fileのInputBoxへファイル設定
 Private Sub IWebElement_SetFileToFileSelectInputButton(filePath As String)
@@ -441,11 +530,11 @@ Private Sub IWebElement_SetFileToFileSelectInputButton(filePath As String)
 'CDPMethodで設定しようとしても、ファイルパスに日本語が含まれる場合、
 'エンコードして送信はできるが、クローム側でデコードしてくれない為、没
     Dim res As String: res = CallObjectIdUsingMethod("GetBoxModel")
-    Dim centerXY As Variant: centerXY = GetCenterPositionXY(res)
+    Dim contentBox As Object: Set contentBox = GetContentBox(res)
     
-    CDP_.DispatchMouseEvent "mouseWheel", 0, 0, "none", 0, 0, 0, CLng(centerXY(1)) - 50
+    CDP_.DispatchMouseEvent "mouseWheel", 0, 0, "none", 0, 0, 0, CLng(contentBox("CenterY")) - 50
     
-    IWebElement_DispatchLeftClickEvent
+    IWebElement_DispatchCDPMouseEvent LeftClick
     Sleep 1000
     ControlFileSelectDialog filePath
     Sleep 1000
@@ -477,12 +566,60 @@ End Sub
 
 'Public
 'elementの属性値を取得（属性が存在しない場合は””を返却）
-Private Function IWebElement_GetAttribute(AttributeName As String) As String
+Private Function IWebElement_GetAttribute(attributeName As String) As String
     Dim res As String
-    res = CallFunction("function(name){return this.getAttribute(name);}", AttributeName)
+    res = CallFunction("function(name){return this.getAttribute(name);}", attributeName)
     If InStr(res, """value"":null") > 0 Then
         IWebElement_GetAttribute = ""
     Else
         IWebElement_GetAttribute = json_.GetValue(res, "result", "result", "value")
     End If
 End Function
+
+'Public
+'Elementのclass属性に値を設定
+Private Sub IWebElement_SetClassName(className As String)
+    Dim funcCode As String, res As String
+    funcCode = "function(className){this.className = '" & className & "';}"
+    res = CallFunction(funcCode, className)
+    res = json_.GetValue(res, "result", "result", "value")
+End Sub
+
+
+'Private Function IWebElement_SetAttribute(attributeName As String, value As String) As String
+'    Dim funcCode As String, res As String
+'    funcCode = "function(attributeName,value){this.setAttribute( '" & attributeName & "' , '" & value & "');}"
+'    res = CallFunction(funcCode, attributeName, value)
+'    IWebElement_SetAttribute = json_.GetValue(res, "result", "result", "value")
+'End Function
+
+
+'Public
+Private Sub IWebElement_DispatchJSChangeEvent()
+    CallFunction Helper_.GetDispatchChangeEventCode, ""
+End Sub
+
+'Public
+Private Sub IWebElement_DispatchJSInputEvent()
+    CallFunction Helper_.GetDispatchInputEventCode, ""
+End Sub
+
+'Public
+Private Sub IWebElement_DispatchJSFocusEvent()
+    CallFunction Helper_.GetDispatchFocusEventCode, ""
+End Sub
+
+'Public
+Private Sub IWebElement_DispatchJSMouseEvent(action As JS_Mouse)
+    Dim jsCode As String
+    jsCode = Helper_.GetDispatchMouseEventCode(action)
+    CallFunction jsCode, ""
+End Sub
+
+' 「keyCode:」　押されたキーのキーコード番号 （Enter: 13 、Down：40 など）
+' 「altKey:」 Alt の同時押しは true, 「shiftKey:」 Shift の同時押しは true,「ctrlKey:」 Ctrl の同時押しは true
+Private Sub IWebElement_DispatchJSKeyboardEvent(action As JS_Keyboard, KeyCode As Key, Optional alt As Boolean = False, Optional shift As Boolean = False, Optional ctrl As Boolean = False)
+    Dim jsCode As String
+    jsCode = Helper_.GetDispatchKeyboardEventCode(action, KeyCode, alt, shift, ctrl)
+    CallFunction jsCode, ""
+End Sub

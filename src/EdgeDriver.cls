@@ -637,14 +637,24 @@ Private Sub IWebDriver_SetForeGroundWindow()
     WaitForActivation
 End Sub
 
-Private Sub IWebDriver_AllowPopUpWindowForURL(targetURL As String)
-    Dim chromeExe As String
-    Dim objExec As Object
-    With CreateObject("WScript.Shell")
-        .RegWrite name:="HKEY_LOCAL_MACHINE\SOFTWARE\Policies\{Google}", _
-                        value:=targetURL, _
-                        Type:="REG_SZ"
-    End With
+'Private Sub IWebDriver_AllowPopUpWindowForURL(targetURL As String)
+'    Dim chromeExe As String
+'    Dim objExec As Object
+'    With CreateObject("WScript.Shell")
+'        .RegWrite name:="HKEY_LOCAL_MACHINE\SOFTWARE\Policies\{Google}", _
+'                        value:=targetURL, _
+'                        Type:="REG_SZ"
+'    End With
+'End Sub
+
+Private Sub IWebDriver_Back()
+    Dim result As String
+    result = CDP_.DispatchMouseEvent("mousePressed", 0, 0, "back", 1)
+    result = CDP_.DispatchMouseEvent("mouseReleased", 0, 0, "back", 1)
 End Sub
 
-
+Private Sub IWebDriver_Forward()
+    Dim result As String
+    result = CDP_.DispatchMouseEvent("mousePressed", 0, 0, "forward", 1)
+    result = CDP_.DispatchMouseEvent("mouseReleased", 0, 0, "forward", 1)
+End Sub

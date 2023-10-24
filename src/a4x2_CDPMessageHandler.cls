@@ -79,7 +79,7 @@ Function parseJSON(jsonString As Variant) As Object
     Dim matches As Object
     Dim match As Object
     Dim value As Variant
-    Dim key As String
+    Dim Key As String
     
     Set regex = CreateObject("VBScript.RegExp")
     
@@ -119,10 +119,10 @@ Function parseJSON(jsonString As Variant) As Object
             If IsObject(value) Then
                 Set result(value("key")) = value("value")
             Else
-                key = value
+                Key = value
             End If
         Else
-            result(key) = value
+            result(Key) = value
         End If
     Next match
     

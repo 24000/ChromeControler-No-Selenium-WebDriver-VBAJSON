@@ -114,10 +114,22 @@ Public Sub SetForeGroundWindow()
 
 End Sub
 
-Public Sub AllowPopUpWindowForURL(targetURL As String)
-
-End Sub
+'Public Sub AllowPopUpWindowForURL(targetURL As String)
+'
+'End Sub
 
 Public Function PageSource(target As TargetIs) As String
 
 End Function
+
+Public Sub Back()
+
+End Sub
+
+Public Sub Forward()
+
+End Sub
+
+'Public Sub PointerMove(viewportX As Long, viewportY As Long)
+'
+'End Sub

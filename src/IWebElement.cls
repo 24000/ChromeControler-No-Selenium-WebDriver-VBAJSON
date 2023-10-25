@@ -50,6 +50,15 @@ Public Enum CDP_Mouse
      RightClick_XY
      ScrollToThisElement
 End Enum
+
+Public Enum ClickPoint
+    Center = 1
+    TopLeft
+    TopRight
+    BottomLeft
+    BottomRight
+End Enum
+
 'clickÇÕpressÇ∆releaseÇÃçáÇÌÇπãZ
 'middle
 '     Moved
@@ -133,7 +142,7 @@ Public Sub SetClassName(className As String)
     
 End Sub
 
-Public Sub DispatchCDPMouseEvent(action As CDP_Mouse)
+Public Sub DispatchCDPMouseEvent(action As CDP_Mouse, Optional point As ClickPoint = ClickPoint.Center)
 
 End Sub
 Public Sub DispatchJSInputEvent()

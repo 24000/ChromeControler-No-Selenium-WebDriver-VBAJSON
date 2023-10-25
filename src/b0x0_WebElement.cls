@@ -177,7 +177,7 @@ Helper_.DisplayErrorAndEnd "このElementはEnabledプロパティを持ちません。" & vbCr
 End Property
 
 'エレメントをViewPort中心になるところまでスクロールし、エレメントの中心xy座標に左クリックイベント発行
-Private Sub IWebElement_DispatchCDPMouseEvent(action As CDP_Mouse)
+Private Sub IWebElement_DispatchCDPMouseEvent(action As CDP_Mouse, Optional point As ClickPoint = ClickPoint.Center)
   
     ' 画面外にいるとクリックできないため、要素の位置を確認
     Dim contentBox As Object: Set contentBox = GetContentBox()
@@ -187,8 +187,26 @@ Private Sub IWebElement_DispatchCDPMouseEvent(action As CDP_Mouse)
     Sleep 200
     'そのうえで、画面内の位置として再度、位置を取得。
     Set contentBox = GetContentBox()
-    Dim x As Long: x = contentBox("CenterX")
-    Dim y As Long: y = contentBox("CenterY")
+    
+    Dim x As Long, y As Long
+    Select Case point
+        Case ClickPoint.Center
+            x = contentBox("CenterX")
+            y = contentBox("CenterY")
+        Case ClickPoint.TopLeft
+            x = contentBox("TopLeftX") + 2
+            y = contentBox("TopLeftY") + 2
+        Case ClickPoint.TopRight
+            x = contentBox("TopRightX") - 2
+            y = contentBox("TopRightY") + 2
+        Case ClickPoint.BottomLeft
+            x = contentBox("BottomLeftX") + 2
+            y = contentBox("BottomLeftY") - 2
+        Case ClickPoint.BottomRight
+            x = contentBox("BottomRightX") - 2
+            y = contentBox("BottomRightY") - 2
+    End Select
+
     
     Select Case action
         Case CDP_Mouse.LeftClick_XY
@@ -235,7 +253,7 @@ Private Function GetContentBox() As Variant
     Dim res As String: res = CallObjectIdUsingMethod("GetBoxModel")
     Dim quadXY As Variant: quadXY = json_.GetValue(res, "result", "model", "content")
     quadXY = Split(quadXY, ",")
-    Dim posName As Variant: posName = "TopLeftX,TopLeftY,TopRightX,TopRightY,BottomLeftX,BottomLeftY,BottomRightX,BottomRightY"
+    Dim posName As Variant: posName = "TopLeftX,TopLeftY,TopRightX,TopRightY,BottomRightX,BottomRightY,BottomLeftX,BottomLeftY"
     posName = Split(posName, ",")
     
     Dim contentBox As Object: Set contentBox = CreateObject("Scripting.Dictionary")

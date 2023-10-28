@@ -73,7 +73,7 @@ End Property
 
 ''CallJavaScriptFunction呼出しの共通関数
 '戻り値が"Cannot find context with specified id"となる場合、ObjectIdの再取得が必要なため共通化
-Private Function CallFunction(functionCode As String, args As String) As String
+Private Function CallFunction(functionCode As String, args As Variant) As String
     Dim res As String
     res = CDP_.CallJavaScriptFunction(functionCode, objectId_, args)
     If InStr(res, "Cannot find context with specified id") > 0 Then
@@ -82,6 +82,16 @@ Private Function CallFunction(functionCode As String, args As String) As String
         res = CDP_.CallJavaScriptFunction(functionCode, objectId_, args)
     End If
     CallFunction = res
+End Function
+Private Function CallFunction_ArgMultiple(functionCode As String, ParamArray args() As Variant) As String
+    Dim res As String
+    res = CDP_.CallJavaScriptFunction_ArgMultiple(functionCode, objectId_, args)
+    If InStr(res, "Cannot find context with specified id") > 0 Then
+        basicInfo_.UpdateExecutionContextId CDP_
+        ReGetObjectId
+        res = CDP_.CallJavaScriptFunction_ArgMultiple(functionCode, objectId_, args)
+    End If
+    CallFunction_ArgMultiple = res
 End Function
 Public Function ReGetObjectId()
     Dim Codes As Variant
@@ -97,6 +107,9 @@ Public Function ReGetObjectId()
     End Select
     objectId_ = CDP_.GetObjectIdOfElementBy(findInfo_(2), basicInfo_, Codes)
 End Function
+
+
+
 
 
 
@@ -143,6 +156,10 @@ quit:
 Helper_.DisplayErrorAndEnd "このElementはCheckedプロパティを持ちません。" & vbCrLf & _
                                             "※CheckedはCheckBoxで使用可能" & vbCrLf
 End Property
+
+
+
+
 
 
 
@@ -220,6 +237,7 @@ Private Sub IWebElement_DispatchCDPMouseEvent(action As CDP_Mouse, Optional poin
     End Select
 End Sub
 
+
 'Private Function IsRequireScrollingToThisElement(action As CDP_Mouse, Optional x_pixel As Long = 0, Optional y_pixel As Long = 0) As Boolean
 '    If action = CDP_Mouse.Back Or action = CDP_Mouse.Forward _
 '    Or action = CDP_Mouse.Moved Or action = CDP_Mouse.MouseWheel Then
@@ -287,6 +305,31 @@ Private Sub CDPClick(button As String, x As Long, y As Long, clickNum As Long)
 End Sub
 
 'Public
+'CDPによるキーボードイベント発行
+Private Sub IWebElement_DispatchCDPKeyEvent(action As CDP_Keyboard, KeyCode As Key, Optional alt As Boolean = False, Optional shift As Boolean = False, Optional ctrl As Boolean = False)
+    Dim actionStr As String
+    Select Case action
+        Case CDP_Keyboard.KeyDown_
+            actionStr = "keyDown"
+        Case CDP_Keyboard.KeyUp_
+            actionStr = "keyUp"
+        Case CDP_Keyboard.RawKeyDown
+            actionStr = "rawKeyDown"
+        Case CDP_Keyboard.Char
+            actionStr = "char"
+    End Select
+    
+    Dim modifiers As Long
+    If alt Then modifiers = 1
+    If ctrl Then modifiers = modifiers + 2
+    If shift Then modifiers = modifiers + 8
+    
+    Dim result As String
+    result = CDP_.DispatchKeyEvent(actionStr, modifiers, KeyCode)
+End Sub
+
+
+'Public
 'javaScriptによってクリック実行
 Private Sub IWebElement_Click()
     CallObjectIdUsingMethod "Focus"
@@ -310,8 +353,8 @@ Private Sub IWebElement_Click()
 End Sub
 Private Sub FocusAndEnterKey()
     CallObjectIdUsingMethod "Focus"
-    CDP_.DispatchKeyEvent_DOMKeyCode "keyDown", "Enter"
-    CDP_.DispatchKeyEvent_DOMKeyCode "keyUp", "Enter"
+    CDP_.DispatchKeyEvent "keyDown", 0, 13
+    CDP_.DispatchKeyEvent "keyUp", 0, 13
 End Sub
 
 
@@ -380,7 +423,6 @@ End Sub
 
 
 
-
 'Public
 '要素のValue属性に文字列を設定
 '非推奨（本来メソッド名をSetValueと命名すべきであった。→機能は全く同じでSetValueメソッドを新たに用意。過去バージョンとの互換性のために残されているメソッド）
@@ -407,7 +449,7 @@ End Sub
 'Public
 '要素のTextContentに文字列を設定
 Private Sub IWebElement_SetTextContent(text As String)
-    FocusAndEnterKey
+    CallObjectIdUsingMethod "Focus"
     Dim encodingText As String: encodingText = json_.EncodeURL(text)
     CallFunction "function(value){value = decodeURI(value);this.textContent  = value;}", encodingText
     
@@ -474,9 +516,9 @@ Private Function IWebElement_FindElementsByTag(tagName As String) As IWebElement
     If elemsCount = 0 Then GoTo quit
     
     Dim elements As Collection: Set elements = New Collection
-    Dim Index As Long
-    For Index = 0 To elemsCount - 1
-        elements.add CreateElementsItemByIndex(tagName, Index)
+    Dim index As Long
+    For index = 0 To elemsCount - 1
+        elements.add CreateElementsItemByIndex(tagName, index)
     Next
     
     Dim elems As c0x0_WebElements: Set elems = New c0x0_WebElements
@@ -495,14 +537,14 @@ Private Function GetElementsCount(tagName As String) As Long
     res = CallFunction(funcCode, tagName)
     GetElementsCount = json_.GetValue(res, "result", "result", "value")
 End Function
-Private Function CreateElementsItemByIndex(tagName As String, Index As Long) As IWebElement
+Private Function CreateElementsItemByIndex(tagName As String, index As Long) As IWebElement
     Dim funcCode As String, res As String
-    funcCode = "function(tagName){return  this.getElementsByTagName(tagName)[" & Index & "];}"
+    funcCode = "function(tagName){return  this.getElementsByTagName(tagName)[" & index & "];}"
     res = CallFunction(funcCode, tagName)
     
     Dim objectId As String
     objectId = json_.GetValue(res, "result", "result", "objectId")
-    Dim findInfoInElem As Collection: Set findInfoInElem = Helper_.MakeFindInfo("tag", tagName, Index)
+    Dim findInfoInElem As Collection: Set findInfoInElem = Helper_.MakeFindInfo("tag", tagName, index)
 
     Set CreateElementsItemByIndex = _
         CDP_.MakeElementObject(objectId, findInfoInElem, basicInfo_, events_, Helper_)
@@ -604,12 +646,18 @@ Private Sub IWebElement_SetClassName(className As String)
 End Sub
 
 
-'Private Function IWebElement_SetAttribute(attributeName As String, value As String) As String
-'    Dim funcCode As String, res As String
-'    funcCode = "function(attributeName,value){this.setAttribute( '" & attributeName & "' , '" & value & "');}"
-'    res = CallFunction(funcCode, attributeName, value)
-'    IWebElement_SetAttribute = json_.GetValue(res, "result", "result", "value")
-'End Function
+Private Function IWebElement_SetAttribute(attributeName As String, value As Variant) As String
+    Dim funcCode As String, res As String
+    ' 引数は一つしか渡せないため、↓このValueはオブジェクトとして渡し、コード内部ではオブジェクトから値を取り出すことになる
+    funcCode = "function(value){let a = value.arg1;let b = value.arg2;console.log(a,b); this.setAttribute( a , b);}"
+    ' 呼出し時にはオブジェクトに設定するプロパティ名,値・・・とセットで渡す
+    res = CallFunction_ArgMultiple(funcCode, "arg1", attributeName, "arg2", value)
+    IWebElement_SetAttribute = json_.GetValue(res, "result", "result")
+    
+    ' res = CallFunction(funcCode, "{""arg1"", " & attributeName & ", ""arg2""," & value & "}")
+    ' CallFunctionを呼出すときに第二引数に↑のようにJSオブジェクト文字列を渡す形式にすれば、CallFunction_ArgMultipleメソッドは不要。
+    ' 作った後に気づいた。
+End Function
 
 
 'Public
@@ -641,3 +689,31 @@ Private Sub IWebElement_DispatchJSKeyboardEvent(action As JS_Keyboard, KeyCode A
     jsCode = Helper_.GetDispatchKeyboardEventCode(action, KeyCode, alt, shift, ctrl)
     CallFunction jsCode, ""
 End Sub
+
+
+Private Function IWebElement_GetProperty(PropertyName As String) As Variant
+    Dim funcCode As String, res As String
+    funcCode = "function(value){return this['" & PropertyName & "'];}"
+    res = CallFunction(funcCode, "")
+    Dim returnValue As Variant
+    returnValue = json_.GetValue(res, "result", "result", "value")
+    If IsNumeric(returnValue) Then
+        IWebElement_GetProperty = CLng(returnValue)
+    ElseIf IsDate(returnValue) Then
+         IWebElement_GetProperty = CDate(returnValue)
+    ElseIf returnValue = "true" Then
+        IWebElement_GetProperty = True
+    ElseIf returnValue = "false" Then
+        IWebElement_GetProperty = False
+    Else
+        IWebElement_GetProperty = returnValue
+    End If
+End Function
+
+Private Function IWebElement_SetProperty(PropertyName As String, value As Variant) As String
+    Dim funcCode As String, res As String
+    funcCode = "function(value){return this['" & PropertyName & "'] = value ;}"
+    res = CallFunction(funcCode, value)
+    IWebElement_SetProperty = json_.GetValue(res, "result", "result")
+End Function
+

@@ -101,13 +101,20 @@ Public Function CallJavaScriptFunction(funcName As String, Id As Variant, args A
     CallJavaScriptFunction = MsgHandler_.SendAndReceive(sendMsg)
 End Function
 
+'JavaScript_Function実行(引数複数版）
+Public Function CallJavaScriptFunction_ArgMultiple(funcName As String, Id As Variant, ParamArray args() As Variant) As String
+    Dim sendMsg  As String
+    sendMsg = MsgGenerate_.CallJavaScriptFunction_ArgMultiple(funcName, Id, args)
+    CallJavaScriptFunction_ArgMultiple = MsgHandler_.SendAndReceive(sendMsg)
+End Function
+
 '************************************************
 'Input Domain*******************************************************************
 'キーイベントをページにディスパッチする。keyDown , keyUp, rawKeyDown, charのいずれか。
-Public Function DispatchKeyEvent_DOMKeyCode(eventType As String, code As String) As String
+Public Function DispatchKeyEvent(action As String, modifiers As Long, windowsVirtualKeyCode As Long) As String
     Dim sendMsg  As String
-    sendMsg = MsgGenerate_.DispatchKeyEvent_DOMKeyCode(eventType, code)
-    DispatchKeyEvent_DOMKeyCode = MsgHandler_.SendAndReceive(sendMsg)
+    sendMsg = MsgGenerate_.DispatchKeyEvent(action, modifiers, windowsVirtualKeyCode)
+    DispatchKeyEvent = MsgHandler_.SendAndReceive(sendMsg)
 End Function
 
 'マウスイベントをxy座標にディスパッチする。mousePressed, mouseReleased, mouseMoved, mouseWheelのいずれか。

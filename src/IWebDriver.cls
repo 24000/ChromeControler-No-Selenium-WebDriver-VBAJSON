@@ -82,7 +82,7 @@ Public Sub SleepByWinAPI(milliSecond As Long)
 
 End Sub
 
-Public Sub SwitchTabByIndex(Index As Long)
+Public Sub SwitchTabByIndex(index As Long)
     
 End Sub
 
@@ -133,3 +133,6 @@ End Sub
 'Public Sub PointerMove(viewportX As Long, viewportY As Long)
 '
 'End Sub
+Private Sub Class_Initialize()
+
+End Sub

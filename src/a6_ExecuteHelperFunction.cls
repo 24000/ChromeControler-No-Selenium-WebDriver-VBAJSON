@@ -101,18 +101,18 @@ Public Function GetNameCodes(name As String) As Variant
 End Function
 
 'FindByTagのJavaScriptCode(通常のコードとFunction版のコード)を返す
-Public Function GetTagCodes(tagName As String, Index As Long) As Variant
+Public Function GetTagCodes(tagName As String, index As Long) As Variant
     Dim Codes(1) As String
-    Codes(0) = "document.getElementsByTagName('" & tagName & "')[" & Index & "];"
-    Codes(1) = "function(tagName){return  document.getElementsByTagName(tagName)[" & Index & "];}"
+    Codes(0) = "document.getElementsByTagName('" & tagName & "')[" & index & "];"
+    Codes(1) = "function(tagName){return  document.getElementsByTagName(tagName)[" & index & "];}"
     GetTagCodes = Codes
 End Function
 
 'FindByClassNameのJavaScriptCode(通常のコードとFunction版のコード)を返す
-Public Function GetClassNameCodes(className As String, Index As Long) As Variant
+Public Function GetClassNameCodes(className As String, index As Long) As Variant
     Dim Codes(1) As String
-    Codes(0) = "document.getElementsByClassName('" & className & "')[" & Index & "];"
-    Codes(1) = "function(className){return  document.getElementsByClassName(tagName)[" & Index & "];}"
+    Codes(0) = "document.getElementsByClassName('" & className & "')[" & index & "];"
+    Codes(1) = "function(className){return  document.getElementsByClassName(tagName)[" & index & "];}"
     GetClassNameCodes = Codes
 End Function
 
@@ -224,11 +224,11 @@ End Function
 
 
 'elementをFindした方法についての情報を配列にして返す(作成するElementに持たせるため）
-Public Function MakeFindInfo(way_string As String, way As String, Optional Index As Long = -1) As Collection
+Public Function MakeFindInfo(way_string As String, way As String, Optional index As Long = -1) As Collection
     Dim findInfo As Collection: Set findInfo = New Collection
     findInfo.add way_string
     findInfo.add way
-    findInfo.add Index
+    findInfo.add index
     Set MakeFindInfo = findInfo
 End Function
 

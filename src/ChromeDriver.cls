@@ -281,11 +281,11 @@ Private Function IWebDriver_FindElementsByTag(tagName As String) As IWebElements
     
     Dim objectId As String
     Dim Codes As Variant
-    Dim Index As Long
-    For Index = 0 To elemsCount - 1
-        Codes = Helper_.GetTagCodes(tagName, Index)
+    Dim index As Long
+    For index = 0 To elemsCount - 1
+        Codes = Helper_.GetTagCodes(tagName, index)
         objectId = CDP_.GetObjectIdOfElementBy(tagName, basicInfo_, Codes)
-        Dim findInfo As Collection: Set findInfo = Helper_.MakeFindInfo("tag", tagName, Index)
+        Dim findInfo As Collection: Set findInfo = Helper_.MakeFindInfo("tag", tagName, index)
         elements.add _
             CDP_.MakeElementObject(objectId, findInfo, basicInfo_, events_, Helper_)
     Next
@@ -313,11 +313,11 @@ Private Function IWebDriver_FindElementsByClassName(className As String) As IWeb
     
     Dim objectId As String
     Dim Codes As Variant
-    Dim Index As Long
-    For Index = 0 To elemsCount - 1
-        Codes = Helper_.GetClassNameCodes(className, Index)
+    Dim index As Long
+    For index = 0 To elemsCount - 1
+        Codes = Helper_.GetClassNameCodes(className, index)
         objectId = CDP_.GetObjectIdOfElementBy(className, basicInfo_, Codes)
-        Dim findInfo As Collection: Set findInfo = Helper_.MakeFindInfo("className", className, Index)
+        Dim findInfo As Collection: Set findInfo = Helper_.MakeFindInfo("className", className, index)
         elements.add _
             CDP_.MakeElementObject(objectId, findInfo, basicInfo_, events_, Helper_)
     Next
@@ -573,7 +573,7 @@ End Sub
 
 
 'タブの移動（Index指定：一番左のタブを１とする）
-Private Sub IWebDriver_SwitchTabByIndex(Index As Long)
+Private Sub IWebDriver_SwitchTabByIndex(index As Long)
     Dim res As String
     Dim client As Object: Set client = CreateObject("MSXML2.ServerXMLHTTP")
     client.Open "GET", "http://127.0.0.1:9222/json"
@@ -598,7 +598,7 @@ Private Sub IWebDriver_SwitchTabByIndex(Index As Long)
         End If
     Next
     
-    If Index > tmpCollection.count Then Err.Raise Number:=10000, Description:="指定されたIndexがタブの数を超えています。"
+    If index > tmpCollection.count Then Err.Raise Number:=10000, Description:="指定されたIndexがタブの数を超えています。"
     
     'jsonの情報がタブの順と逆順のため並べ替え
     Dim tabCollection As Collection: Set tabCollection = New Collection
@@ -607,7 +607,7 @@ Private Sub IWebDriver_SwitchTabByIndex(Index As Long)
     Next
     
      Dim webSocketURLPath As String
-     webSocketURLPath = Replace(tabCollection(Index)("webSocketDebuggerUrl"), "ws://127.0.0.1:9222", "")
+     webSocketURLPath = Replace(tabCollection(index)("webSocketDebuggerUrl"), "ws://127.0.0.1:9222", "")
     
     webSocket_.CloseWebSocket
     Set webSocket_ = Nothing
@@ -623,7 +623,7 @@ Private Sub IWebDriver_SwitchTabByIndex(Index As Long)
     CDP_.Init msgGenerator, Handler, json_
     
     Dim targetId As String
-    targetId = tabCollection(Index)("targetId")
+    targetId = tabCollection(index)("targetId")
     
     basicInfo_.Update targetId, json_, True
     

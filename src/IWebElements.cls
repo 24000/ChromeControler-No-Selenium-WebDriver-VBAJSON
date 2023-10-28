@@ -14,7 +14,7 @@ Public Function count() As Long
 
 End Function
 
-Public Function Item(Index) As IWebElement
+Public Function Item(index) As IWebElement
 Attribute Item.VB_UserMemId = 0
 End Function
 

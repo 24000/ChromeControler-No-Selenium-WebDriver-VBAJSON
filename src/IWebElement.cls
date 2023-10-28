@@ -51,6 +51,13 @@ Public Enum CDP_Mouse
      ScrollToThisElement
 End Enum
 
+Public Enum CDP_Keyboard
+    KeyDown_ = 1
+    KeyUp_
+    RawKeyDown
+    Char
+End Enum
+
 Public Enum ClickPoint
     Center = 1
     TopLeft
@@ -134,9 +141,9 @@ Public Function GetAttribute(attributeName As String) As String
 
 End Function
 
-'Public Function SetAttribute(attributeName As String, value As String) As String
+Public Function SetAttribute(attributeName As String, value As Variant) As String
 '
-'End Function
+End Function
 
 Public Sub SetClassName(className As String)
     
@@ -145,6 +152,10 @@ End Sub
 Public Sub DispatchCDPMouseEvent(action As CDP_Mouse, Optional point As ClickPoint = ClickPoint.Center)
 
 End Sub
+Public Sub DispatchCDPKeyEvent(action As CDP_Keyboard, KeyCode As Key, Optional alt As Boolean = False, Optional shift As Boolean = False, Optional ctrl As Boolean = False)
+
+End Sub
+
 Public Sub DispatchJSInputEvent()
 
 End Sub
@@ -160,3 +171,11 @@ End Sub
 Public Sub DispatchJSKeyboardEvent(action As JS_Keyboard, KeyCode As Key, Optional alt As Boolean = False, Optional shift As Boolean = False, Optional ctrl As Boolean = False)
 
 End Sub
+
+Public Function GetProperty(PropertyName As String) As Variant
+
+End Function
+
+Public Function SetProperty(PropertyName As String, value As Variant) As String
+'
+End Function

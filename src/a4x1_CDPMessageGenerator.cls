@@ -122,14 +122,13 @@ End Function
 '*******************************************************************
 'Input Domain*******************************************************************
 'キーイベントをページにディスパッチする。keyDown , keyUp, rawKeyDown, charのいずれか。
-Public Function DispatchKeyEvent_DOMKeyCode(eventType As String, code As String) As String
+Public Function DispatchKeyEvent(action As String, modifiers As Long, windowsVirtualKeyCode As Long) As String
     id_ = id_ + 1
     Dim message As String
     message = "{""id"": " & id_ & ",""method"": ""Input.dispatchKeyEvent""," & _
-                      """params"": {""type"":  """ & eventType & """,""code"": """ & code & """}}"
-    DispatchKeyEvent_DOMKeyCode = message
-    
-'    windowsVirtualKeyCode
+                      """params"": {""type"":  """ & action & """,""modifiers"": " & modifiers & ",""windowsVirtualKeyCode"": " & windowsVirtualKeyCode & "}}"
+    DispatchKeyEvent = message
+
 End Function
 
 'マウスイベントをxy座標にディスパッチする。mousePressed, mouseReleased, mouseMoved, mouseWheelのいずれか。
@@ -310,6 +309,44 @@ Public Function CallJavaScriptFunction(funcDeclear As String, objectId As Varian
         message = message & ",""objectId"": """ & objectId & """}}"
     End If
     CallJavaScriptFunction = message
+End Function
+
+Public Function CallJavaScriptFunction_ArgMultiple(funcDeclear As String, objectId As Variant, ParamArray args() As Variant)
+    id_ = id_ + 1
+    Dim JavaScriptObjectArgs As String: JavaScriptObjectArgs = "[{""value"":{"
+    
+    Dim arg_arr As Variant
+    arg_arr = args(0)(0)
+    
+    Dim i As Long
+    For i = LBound(arg_arr) To UBound(arg_arr)
+        If i Mod 2 = 0 Then
+                JavaScriptObjectArgs = JavaScriptObjectArgs & """" & arg_arr(i) & """: "
+        Else
+            If arg_arr(i) = "true" Or arg_arr(i) = "false" Or IsNumeric(arg_arr(i)) Then
+                JavaScriptObjectArgs = JavaScriptObjectArgs & arg_arr(i)
+            Else
+                JavaScriptObjectArgs = JavaScriptObjectArgs & """" & arg_arr(i) & ""","
+            End If
+        End If
+        
+        If i = UBound(arg_arr) Then JavaScriptObjectArgs = Left(JavaScriptObjectArgs, Len(JavaScriptObjectArgs) - 1)
+    Next
+    
+    JavaScriptObjectArgs = JavaScriptObjectArgs & "}}]"
+    
+    Dim message As String
+        message = "{""id"": " & id_ & ",""method"": ""Runtime.callFunctionOn""," & _
+                          """params"": " & _
+                         "{""functionDeclaration"": """ & funcDeclear & """,""arguments"": " & JavaScriptObjectArgs
+
+    
+    If IsNumeric(objectId) Then
+        message = message & ",""executionContextId"": " & objectId & "}}"
+    Else
+        message = message & ",""objectId"": """ & objectId & """}}"
+    End If
+    CallJavaScriptFunction_ArgMultiple = message
 End Function
 '*******************************************************************
 

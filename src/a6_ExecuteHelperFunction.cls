@@ -50,13 +50,13 @@ Private Sub Class_Initialize()
     Dim mouseEventNamesString As Variant: mouseEventNamesString = Split(MOUSE_EVENT_NAMES, ",")
     Dim num As Long
     For num = 1 To MOUSE_EVENT_NAME_NUM
-        mouseEventNames_.add num, mouseEventNamesString(num - 1)
+        mouseEventNames_.Add num, mouseEventNamesString(num - 1)
     Next
     
     Set keyboardEventNames_ = CreateObject("Scripting.Dictionary")
-    keyboardEventNames_.add 1, "keydown"
-    keyboardEventNames_.add 2, "keypress"
-    keyboardEventNames_.add 3, "keyup"
+    keyboardEventNames_.Add 1, "keydown"
+    keyboardEventNames_.Add 2, "keypress"
+    keyboardEventNames_.Add 3, "keyup"
     
     Set keyNames_ = CreateObject("Scripting.Dictionary")
     Dim keyboardEventCodes As Variant: keyboardEventCodes = Split(KEY_CODES, ",")
@@ -66,7 +66,7 @@ Private Sub Class_Initialize()
     For i = 0 To KEYBOARD_EVENT_KEY_NUM - 1
         KeyCode = keyboardEventCodes(i)
         KeyName = KeyNames(i)
-        keyNames_.add KeyCode, KeyName
+        keyNames_.Add KeyCode, KeyName
     Next
 End Sub
 
@@ -116,7 +116,7 @@ Public Function GetClassNameCodes(className As String, index As Long) As Variant
     GetClassNameCodes = Codes
 End Function
 
-'FindByTagのJavaScriptCode(通常のコードとFunction版のコード)を返す
+'FindElementsByTagの要素数を取得するJavaScriptCode(通常のコードとFunction版のコード)を返す
 Public Function GetTagCountCodes(tagName As String) As Variant
     Dim countCodes(1) As String
     countCodes(0) = "document.getElementsByTagName('" & tagName & "').length;"
@@ -124,12 +124,74 @@ Public Function GetTagCountCodes(tagName As String) As Variant
     GetTagCountCodes = countCodes
 End Function
 
-'FindByClassのJavaScriptCode(通常のコードとFunction版のコード)を返す
+'FindElementsByClassの要素数を取得するJavaScriptCode(通常のコードとFunction版のコード)を返す
 Public Function GetClassNameCountCodes(className As String) As Variant
     Dim countCodes(1) As String
     countCodes(0) = "document.getElementsByClassName('" & className & "').length;"
     countCodes(1) = "function(className){return  document.getElementsByClassName('" & className & "').length;}"
     GetClassNameCountCodes = countCodes
+End Function
+
+'FindElementsByXPathの要素数を取得するJavaScriptCode(通常のコードとFunction版のコード)を返す
+Public Function GetXPathCountCodes(xPath As String)
+    Dim Codes(1) As String
+    Codes(0) = "result = document.evaluate('" & xPath & "', document, null, " & _
+                        "XPathResult.ORDERED_NODE_ITERATOR_TYPE, null );" & _
+                     "ary = [];" & _
+                     "thisNode = result.iterateNext();" & _
+                     "while (thisNode) {" & _
+                         "ary.push(thisNode);" & _
+                         "thisNode = result.iterateNext();" & _
+                     "}" & _
+                     "ary.length;"
+                     
+    Codes(1) = "function(xpath){" & _
+                            "result = document.evaluate(xpath, document, null, " & _
+                                "XPathResult.ORDERED_NODE_ITERATOR_TYPE, null );" & _
+                            "ary = [];" & _
+                            "thisNode = result.iterateNext();" & _
+                            "while (thisNode) {" & _
+                                "ary.push(thisNode);" & _
+                                "thisNode = result.iterateNext();" & _
+                            "}" & _
+                            "return  ary.length;" & _
+                        "}"
+                            
+    GetXPathCountCodes = Codes
+End Function
+
+'FindElementsByXPathの要素をIndexで判断し取得するJavaScriptCode(通常のコードとFunction版のコード)を返す
+Public Function GetXPathResultCodes(xPath As String, index As Long)
+    Dim Codes(1) As String
+    Codes(0) = "result = document.evaluate('" & xPath & "', document, null, " & _
+                        "XPathResult.ORDERED_NODE_ITERATOR_TYPE, null );" & _
+                     "count = 0;" & _
+                     "thisNode = result.iterateNext();" & _
+                     "while (thisNode) {" & _
+                         "if(count === " & index & "){" & _
+                             "break;" & _
+                         "}" & _
+                         "thisNode = result.iterateNext();" & _
+                         "count ++;" & _
+                     "}" & _
+                     "thisNode;"
+                     
+    Codes(1) = "function(xpath){" & _
+                            "result = document.evaluate(xpath, document, null, " & _
+                                "XPathResult.ORDERED_NODE_ITERATOR_TYPE, null );" & _
+                            "count = 0;" & _
+                            "thisNode = result.iterateNext();" & _
+                            "while (thisNode) {" & _
+                                "if(count === " & index & "){" & _
+                                    "break;" & _
+                                "}" & _
+                                "thisNode = result.iterateNext();" & _
+                                "count ++;" & _
+                            "}" & _
+                            "return  thisNode;" & _
+                        "}"
+                            
+    GetXPathResultCodes = Codes
 End Function
 
 
@@ -226,9 +288,9 @@ End Function
 'elementをFindした方法についての情報を配列にして返す(作成するElementに持たせるため）
 Public Function MakeFindInfo(way_string As String, way As String, Optional index As Long = -1) As Collection
     Dim findInfo As Collection: Set findInfo = New Collection
-    findInfo.add way_string
-    findInfo.add way
-    findInfo.add index
+    findInfo.Add way_string
+    findInfo.Add way
+    findInfo.Add index
     Set MakeFindInfo = findInfo
 End Function
 

@@ -147,6 +147,8 @@ End Sub
 
 
 
+
+
 '以下､インターフェイス公開メソッド
 '************************************************
 'Public
@@ -286,7 +288,7 @@ Private Function IWebDriver_FindElementsByTag(tagName As String) As IWebElements
         Codes = Helper_.GetTagCodes(tagName, index)
         objectId = CDP_.GetObjectIdOfElementBy(tagName, basicInfo_, Codes)
         Dim findInfo As Collection: Set findInfo = Helper_.MakeFindInfo("tag", tagName, index)
-        elements.add _
+        elements.Add _
             CDP_.MakeElementObject(objectId, findInfo, basicInfo_, events_, Helper_)
     Next
     
@@ -318,7 +320,7 @@ Private Function IWebDriver_FindElementsByClassName(className As String) As IWeb
         Codes = Helper_.GetClassNameCodes(className, index)
         objectId = CDP_.GetObjectIdOfElementBy(className, basicInfo_, Codes)
         Dim findInfo As Collection: Set findInfo = Helper_.MakeFindInfo("className", className, index)
-        elements.add _
+        elements.Add _
             CDP_.MakeElementObject(objectId, findInfo, basicInfo_, events_, Helper_)
     Next
     
@@ -332,6 +334,38 @@ quit:
 Debug.Print vbCrLf & ">>見つからなかった要素" & vbCrLf & className
 Beep
 Helper_.DisplayErrorAndEnd Helper_.MakeFindErrorMessage("className", className, "○○")
+End Function
+
+Private Function IWebDriver_FindElementsByXPath(xPath As String) As IWebElements
+    If InStr(xPath, """") > 0 Then xPath = Replace(xPath, """", "\""")
+    
+    Dim countCodes As Variant: countCodes = Helper_.GetXPathCountCodes(xPath)
+    Dim elemsCount As Long: elemsCount = CDP_.GetElementsCountBy(xPath, basicInfo_, countCodes)
+    If elemsCount = 0 Then GoTo quit
+    
+    Dim elements As Collection: Set elements = New Collection
+    
+    Dim objectId As String
+    Dim Codes As Variant
+    Dim index As Long
+    For index = 0 To elemsCount - 1
+        Codes = Helper_.GetXPathResultCodes(xPath, index)
+        objectId = CDP_.GetObjectIdOfElementBy(xPath, basicInfo_, Codes)
+        Dim findInfo As Collection: Set findInfo = Helper_.MakeFindInfo("xpath", xPath, index)
+        elements.Add _
+            CDP_.MakeElementObject(objectId, findInfo, basicInfo_, events_, Helper_)
+    Next
+    
+    Dim elems As c0x0_WebElements: Set elems = New c0x0_WebElements
+    elems.Init elements
+    
+    Set IWebDriver_FindElementsByXPath = elems
+Exit Function
+
+quit:
+Debug.Print vbCrLf & ">>見つからなかった要素" & vbCrLf & xPath
+Beep
+Helper_.DisplayErrorAndEnd Helper_.MakeFindErrorMessage("XPath", xPath, "○○")
 End Function
 
 
@@ -391,7 +425,7 @@ Private Function GetFrameInfos() As Collection
         If frmInfo = "" Then Exit Do
         'そのオブジェクトの中のframeプロパティ(オブジェクト)を取得し、コレクションに加える
         frminfo2 = json_.GetObject(frmInfo, "frame")
-        collect.add frminfo2
+        collect.Add frminfo2
         'childFramesプロパティがある場合、再帰構造なので再帰関数で同様の処理を回す
         If InStr(frmInfo, "childFrames") > 0 Then
             GetChildFrameInfo collect, frmInfo
@@ -408,7 +442,7 @@ Private Sub GetChildFrameInfo(collect As Collection, json As String)
         frmInfo = json_.GetObject(json, "childFrames", count)
         If frmInfo = "" Then Exit Do
         frminfo2 = json_.GetObject(frmInfo, "frame")
-        collect.add frminfo2
+        collect.Add frminfo2
         If InStr(frmInfo, "childFrames") > 0 Then
             GetChildFrameInfo collect, frmInfo
         End If
@@ -591,10 +625,10 @@ Private Sub IWebDriver_SwitchTabByIndex(index As Long)
         typeName = json_.GetValue(jsObjStr, "type")
         If typeName = "page" Then
             Set tempDic = CreateObject("Scripting.Dictionary")
-            tempDic.add "title", json_.GetValue(jsObjStr, "title")
-            tempDic.add "targetId", json_.GetValue(jsObjStr, "id")
-            tempDic.add "webSocketDebuggerUrl", json_.GetValue(jsObjStr, "webSocketDebuggerUrl")
-            tmpCollection.add tempDic
+            tempDic.Add "title", json_.GetValue(jsObjStr, "title")
+            tempDic.Add "targetId", json_.GetValue(jsObjStr, "id")
+            tempDic.Add "webSocketDebuggerUrl", json_.GetValue(jsObjStr, "webSocketDebuggerUrl")
+            tmpCollection.Add tempDic
         End If
     Next
     
@@ -603,7 +637,7 @@ Private Sub IWebDriver_SwitchTabByIndex(index As Long)
     'jsonの情報がタブの順と逆順のため並べ替え
     Dim tabCollection As Collection: Set tabCollection = New Collection
     For i = tmpCollection.count() To 1 Step -1
-        tabCollection.add tmpCollection(i)
+        tabCollection.Add tmpCollection(i)
     Next
     
      Dim webSocketURLPath As String

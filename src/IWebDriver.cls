@@ -45,6 +45,9 @@ End Function
 Public Function FindElementsByTag(tagName As String) As IWebElements
 
 End Function
+Public Function FindElementsByXPath(xPath As String) As IWebElements
+
+End Function
 
 Public Function FindElementsByClassName(className As String) As IWebElements
 

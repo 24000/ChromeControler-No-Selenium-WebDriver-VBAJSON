@@ -515,6 +515,9 @@ End Sub
 'Public
 '第1引数で指定されるXpathの要素有無の確認
 Private Function IWebDriver_IsExistsElementByXpath(xPath As String) As Boolean
+    '属性指定時に日本語が含まれるとエラーになるため要エンコード
+    xPath = json_.EncodeURL(xPath)
+    
     IWebDriver_IsExistsElementByXpath = _
         CDP_.IsExistsElementBy(xPath, basicInfo_, Helper_.GetXpathCodes(xPath))
 End Function
@@ -535,6 +538,9 @@ End Function
 'Public
 'Xpath(第1引数)で指定されるの要素が出現するのを、最大待機時間(第2引数)待つ
 Private Sub IWebDriver_WaitForElementToAppearByXpath(xPath As String, maxWaitTime_sec As Long)
+    '属性指定時に日本語が含まれるとエラーになるため要エンコード
+    xPath = json_.EncodeURL(xPath)
+    
     If CDP_.WaitForElementToAppearBy(xPath, _
         maxWaitTime_sec, basicInfo_, Helper_.GetXpathCodes(xPath)) = False Then
         

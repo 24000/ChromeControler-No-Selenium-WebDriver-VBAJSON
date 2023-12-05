@@ -77,9 +77,9 @@ End Sub
 ''FindByXPathのJavaScriptCode(通常のコードとFunction版のコード)を返す
 Public Function GetXpathCodes(xPath As String) As Variant
     Dim Codes(1) As String
-    Codes(0) = "document.evaluate('" & xPath & "', document, null, " & _
+    Codes(0) = "document.evaluate(decodeURIComponent('" & xPath & "'), document, null, " & _
                         "XPathResult.FIRST_ORDERED_NODE_TYPE, null ).singleNodeValue;"
-    Codes(1) = "function(xpath){return  document.evaluate(xpath, document, null, " & _
+    Codes(1) = "function(xpath){return  document.evaluate(decodeURIComponent(xpath), document, null, " & _
                             "XPathResult.FIRST_ORDERED_NODE_TYPE, null ).singleNodeValue;}"
     GetXpathCodes = Codes
 End Function
@@ -135,7 +135,7 @@ End Function
 'FindElementsByXPathの要素数を取得するJavaScriptCode(通常のコードとFunction版のコード)を返す
 Public Function GetXPathCountCodes(xPath As String)
     Dim Codes(1) As String
-    Codes(0) = "result = document.evaluate('" & xPath & "', document, null, " & _
+    Codes(0) = "result = document.evaluate(decodeURIComponent('" & xPath & "'), document, null, " & _
                         "XPathResult.ORDERED_NODE_ITERATOR_TYPE, null );" & _
                      "ary = [];" & _
                      "thisNode = result.iterateNext();" & _
@@ -146,7 +146,7 @@ Public Function GetXPathCountCodes(xPath As String)
                      "ary.length;"
                      
     Codes(1) = "function(xpath){" & _
-                            "result = document.evaluate(xpath, document, null, " & _
+                            "result = document.evaluate(decodeURIComponent('" & xPath & "'), document, null, " & _
                                 "XPathResult.ORDERED_NODE_ITERATOR_TYPE, null );" & _
                             "ary = [];" & _
                             "thisNode = result.iterateNext();" & _
@@ -163,7 +163,7 @@ End Function
 'FindElementsByXPathの要素をIndexで判断し取得するJavaScriptCode(通常のコードとFunction版のコード)を返す
 Public Function GetXPathResultCodes(xPath As String, index As Long)
     Dim Codes(1) As String
-    Codes(0) = "result = document.evaluate('" & xPath & "', document, null, " & _
+    Codes(0) = "result = document.evaluate(decodeURIComponent('" & xPath & "'), document, null, " & _
                         "XPathResult.ORDERED_NODE_ITERATOR_TYPE, null );" & _
                      "count = 0;" & _
                      "thisNode = result.iterateNext();" & _
@@ -177,7 +177,7 @@ Public Function GetXPathResultCodes(xPath As String, index As Long)
                      "thisNode;"
                      
     Codes(1) = "function(xpath){" & _
-                            "result = document.evaluate(xpath, document, null, " & _
+                            "result = document.evaluate(decodeURIComponent('" & xPath & "'), document, null, " & _
                                 "XPathResult.ORDERED_NODE_ITERATOR_TYPE, null );" & _
                             "count = 0;" & _
                             "thisNode = result.iterateNext();" & _

@@ -220,7 +220,8 @@ End Function
 '第1引数で指定されるXpathの要素を取得し、エレメントObjectとして返却
 Private Function IWebDriver_FindElementByXpath(xPath As String) As IWebElement
     
-    If InStr(xPath, """") > 0 Then xPath = Replace(xPath, """", "\""")
+    '属性指定時に日本語が含まれるとエラーになるため要エンコード
+    xPath = json_.EncodeURL(xPath)
     
     Dim Codes As Variant: Codes = Helper_.GetXpathCodes(xPath)
     Dim objectId As String: objectId = CDP_.GetObjectIdOfElementBy(xPath, basicInfo_, Codes)
@@ -337,7 +338,8 @@ Helper_.DisplayErrorAndEnd Helper_.MakeFindErrorMessage("className", className, 
 End Function
 
 Private Function IWebDriver_FindElementsByXPath(xPath As String) As IWebElements
-    If InStr(xPath, """") > 0 Then xPath = Replace(xPath, """", "\""")
+    '属性指定時に日本語が含まれるとエラーになるため要エンコード
+    xPath = json_.EncodeURL(xPath)
     
     Dim countCodes As Variant: countCodes = Helper_.GetXPathCountCodes(xPath)
     Dim elemsCount As Long: elemsCount = CDP_.GetElementsCountBy(xPath, basicInfo_, countCodes)

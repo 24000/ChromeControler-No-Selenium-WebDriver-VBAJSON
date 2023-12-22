@@ -87,16 +87,16 @@ End Function
 'FindByIdのJavaScriptCode(通常のコードとFunction版のコード)を返す
 Public Function GetIdCodes(Id As String) As Variant
     Dim Codes(1) As String
-    Codes(0) = "document.getElementById('" & Id & "');"
-    Codes(1) = "function(id){return  document.getElementById(id);}"
+    Codes(0) = "document.getElementById(decodeURIComponent('" & Id & "'));"
+    Codes(1) = "function(id){return  document.getElementById(decodeURIComponent(id));}"
     GetIdCodes = Codes
 End Function
 
 'FindByNameのJavaScriptCode(通常のコードとFunction版のコード)を返す
 Public Function GetNameCodes(name As String) As Variant
     Dim Codes(1) As String
-    Codes(0) = "document.getElementsByName('" & name & "')[0];"
-    Codes(1) = "function(name){return  document.getElementsByName(name)[0];}"
+    Codes(0) = "document.getElementsByName(decodeURIComponent('" & name & "'))[0];"
+    Codes(1) = "function(name){return  document.getElementsByName(decodeURIComponent(name))[0];}"
     GetNameCodes = Codes
 End Function
 

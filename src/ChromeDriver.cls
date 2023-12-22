@@ -240,6 +240,9 @@ End Function
 'Public
 '第1引数で指定されるIdの要素を取得し、エレメントObjectとして返却
 Private Function IWebDriver_FindElementById(Id As String) As IWebElement
+    ' id指定に日本語が含まれるとエラーになるため要エンコード
+    Id = json_.EncodeURL(Id)
+    
     Dim Codes As Variant: Codes = Helper_.GetIdCodes(Id)
     Dim objectId As String: objectId = CDP_.GetObjectIdOfElementBy(Id, basicInfo_, Codes)
     If objectId = "" Then GoTo quit
@@ -257,7 +260,9 @@ End Function
 'Public
 '第1引数で指定されるNameの要素を取得し、エレメントObjectとして返却
 Private Function IWebDriver_FindElementByName(name As String) As IWebElement
-
+    'name指定に日本語が含まれるとエラーになるため要エンコード
+    name = json_.EncodeURL(name)
+    
     Dim Codes As Variant: Codes = Helper_.GetNameCodes(name)
     Dim objectId As String: objectId = CDP_.GetObjectIdOfElementBy(name, basicInfo_, Codes)
     If objectId = "" Then GoTo quit

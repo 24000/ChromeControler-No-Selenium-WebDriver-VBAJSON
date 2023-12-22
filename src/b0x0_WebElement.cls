@@ -200,7 +200,8 @@ Private Sub IWebElement_DispatchCDPMouseEvent(action As CDP_Mouse, Optional poin
     Dim contentBox As Object: Set contentBox = GetContentBox()
     Dim viewPortHeight As Long: viewPortHeight = GetViewPortHeight()
     '画面の中心に要素がくるように、Scroll
-    CDP_.DispatchMouseEvent "mouseWheel", 0, 0, "none", 0, 0, 0, contentBox("TopLeftY") - (viewPortHeight / 2)
+'    CDP_.DispatchMouseEvent "mouseWheel", 0, 0, "none", 0, 0, 0, contentBox("TopLeftY") - (viewPortHeight / 2)
+    CDP_.DispatchMouseEvent "mouseWheel", 0, 0, "none", 0, 0, 0, contentBox("TopLeftY") - (contentBox("Height") / 2)
     Sleep 200
     'そのうえで、画面内の位置として再度、位置を取得。
     Set contentBox = GetContentBox()
@@ -277,15 +278,15 @@ Private Function GetContentBox() As Variant
     Dim contentBox As Object: Set contentBox = CreateObject("Scripting.Dictionary")
     Dim i As Long
     For i = LBound(posName) To UBound(posName)
-        contentBox.add posName(i), quadXY(i)
+        contentBox.Add posName(i), quadXY(i)
     Next
     
     Dim width As Long: width = json_.GetValue(res, "result", "model", "width")
     Dim height As Long: height = json_.GetValue(res, "result", "model", "height")
-    contentBox.add "Width", width
-    contentBox.add "Height", height
-    contentBox.add "CenterX", quadXY(0) + (width / 2)
-    contentBox.add "CenterY", quadXY(1) + (height / 2)
+    contentBox.Add "Width", width
+    contentBox.Add "Height", height
+    contentBox.Add "CenterX", quadXY(0) + (width / 2)
+    contentBox.Add "CenterY", quadXY(1) + (height / 2)
     Set GetContentBox = contentBox
 End Function
 Private Function GetViewPortHeight() As Long
@@ -488,9 +489,12 @@ End Sub
 
 'Public
 Private Function IWebElement_FindElementByName(name As String) As IWebElement
-    Dim funcCode As String, res As String
-    funcCode = "function(name){return  this.getElementsByName(name)[0];}"
-    res = CallFunction(funcCode, name)
+    'name指定に日本語が含まれるとエラーになるため要エンコード
+    name = json_.EncodeURL(name)
+    
+    Dim Codes As Variant: Codes = Helper_.GetNameCodes(name)
+    Dim funcCode As String: funcCode = Codes(1)
+    Dim res As String: res = CallFunction(funcCode, name)
     
     Dim objectId As String
     objectId = json_.GetValue(res, "result", "result", "objectId")
@@ -518,7 +522,7 @@ Private Function IWebElement_FindElementsByTag(tagName As String) As IWebElement
     Dim elements As Collection: Set elements = New Collection
     Dim index As Long
     For index = 0 To elemsCount - 1
-        elements.add CreateElementsItemByIndex(tagName, index)
+        elements.Add CreateElementsItemByIndex(tagName, index)
     Next
     
     Dim elems As c0x0_WebElements: Set elems = New c0x0_WebElements

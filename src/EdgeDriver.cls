@@ -21,9 +21,13 @@ Private Declare PtrSafe Function FindWindow Lib "user32" Alias "FindWindowA" ( _
 '
 
 Private Declare PtrSafe Function GetWindowThreadProcessId Lib "USER32.DLL" ( _
-        ByVal hWnd As LongPtr, ByRef ProcessId As Long) As Long
+        ByVal hwnd As LongPtr, ByRef ProcessId As Long) As Long
 
 Private Declare PtrSafe Sub SetForeGroundWindow Lib "user32" Alias "SetForegroundWindow" (ByVal ms As LongPtr)
+
+Private Declare PtrSafe Function GetForegroundWindow Lib "user32" () As LongPtr
+
+Private Declare PtrSafe Function ShowWindow Lib "user32" (ByVal hwnd As LongPtr, ByVal nCmdShow As Long) As LongPtr
 
 
 Private webSocket_ As a1_WebSocketCommunicator
@@ -59,9 +63,7 @@ Private Sub Class_Initialize()
     
     WaitForActivation
     
-    '適切に取得ができないケースあり、要改善（よってまだどこでもhwndは使用しない）
-'    chromeHwnd_ = FindWindow(CLASS_NAME, CAPTION_NAME)
-    
+    chromeHwnd_ = GetForegroundWindow
 End Sub
 
 Private Function StartEdge(userDataDir As String) As Long
@@ -794,4 +796,15 @@ Public Function IWebDriver_ScreenShotPasteToSheet( _
 End Function
 
 
-
+' Public
+' Windowサイズ変更
+Private Sub IWebDriver_ShowWindow(size As WindowSize)
+    Select Case size
+        Case WindowSize.normal
+            ShowWindow chromeHwnd_, WindowSize.normal
+        Case WindowSize.minimize
+            ShowWindow chromeHwnd_, WindowSize.minimize
+        Case WindowSize.maximize
+            ShowWindow chromeHwnd_, WindowSize.maximize
+    End Select
+End Sub

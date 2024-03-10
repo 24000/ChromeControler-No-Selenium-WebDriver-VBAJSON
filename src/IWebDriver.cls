@@ -24,6 +24,12 @@ Public Enum Image
     webp
 End Enum
 
+Public Enum WindowSize
+    normal = 1
+    minimize
+    maximize
+End Enum
+
 Public Property Get URL() As String
 
 End Property
@@ -159,4 +165,6 @@ Public Function ScreenShotPasteToSheet( _
 
 End Function
 
+Public Sub ShowWindow(size As WindowSize)
 
+End Sub

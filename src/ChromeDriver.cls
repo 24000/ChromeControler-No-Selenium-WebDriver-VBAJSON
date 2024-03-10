@@ -20,9 +20,13 @@ Private Const CAPTION_NAME As String = "新しいタブ - Google Chrome" '"data:, - G
 '
 
 Private Declare PtrSafe Function GetWindowThreadProcessId Lib "USER32.DLL" ( _
-        ByVal hWnd As LongPtr, ByRef ProcessId As Long) As Long
+        ByVal hwnd As LongPtr, ByRef ProcessId As Long) As Long
 
 Private Declare PtrSafe Sub SetForeGroundWindow Lib "user32" Alias "SetForegroundWindow" (ByVal ms As LongPtr)
+
+Private Declare PtrSafe Function GetForegroundWindow Lib "user32" () As LongPtr
+
+Private Declare PtrSafe Function ShowWindow Lib "user32" (ByVal hwnd As LongPtr, ByVal nCmdShow As Long) As LongPtr
 
 
 Private webSocket_ As a1_WebSocketCommunicator
@@ -46,6 +50,7 @@ Private Sub Class_Initialize()
     End If
     
     processId_ = StartChrome(userDataDir)
+    
     New_InnerObjects
     
     If isFirst Then  'この位置で判定必要（CloseWindowするため通信確立後）
@@ -57,8 +62,8 @@ Private Sub Class_Initialize()
     CDP_.AttachToTarget basicInfo_.targetId
     
     WaitForActivation
-    '適切に取得ができないケースあり、要改善（よってまだどこでもhwndは使用しない）
-    chromeHwnd_ = FindWindow(CLASS_NAME, CAPTION_NAME)
+
+    chromeHwnd_ = GetForegroundWindow
     
 End Sub
 
@@ -136,6 +141,8 @@ Private Sub ChromeFirstLaunch()
                 vbInformation, "Chrome初回起動メッセージ"
     End
 End Sub
+
+
 
 
 
@@ -807,3 +814,15 @@ Public Function IWebDriver_ScreenShotPasteToSheet( _
     Set IWebDriver_ScreenShotPasteToSheet = shp
 End Function
 
+' Public
+' Windowサイズ変更
+Private Sub IWebDriver_ShowWindow(size As WindowSize)
+    Select Case size
+        Case WindowSize.normal
+            ShowWindow chromeHwnd_, WindowSize.normal
+        Case WindowSize.minimize
+            ShowWindow chromeHwnd_, WindowSize.minimize
+        Case WindowSize.maximize
+            ShowWindow chromeHwnd_, WindowSize.maximize
+    End Select
+End Sub

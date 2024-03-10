@@ -214,6 +214,14 @@ Public Function SetDiscoverTargets() As String
     SetDiscoverTargets = MsgHandler_.SendAndReceive(sendMsg)
 End Function
 
+Public Function CaptureScreenshot(formatName As String) As String
+    Dim sendMsg  As String, resMsg As String
+    sendMsg = MsgGenerate_.CaptureScreenshot(formatName)
+    resMsg = MsgHandler_.SendAndReceive(sendMsg)
+
+    CaptureScreenshot = json_.GetValue(resMsg, "result", "data")
+End Function
+
 Public Function AttachToTarget(targetId As String) As String
     Dim sendMsg  As String, res As String, SessionId As String
     sendMsg = MsgGenerate_.AttachToTarget(targetId)
@@ -339,7 +347,7 @@ Private Function MakeAttributesDic(attributes As String) As Object
     Dim i As Long
     For i = LBound(ary) To UBound(ary) - 1 Step 2
         If attributesDic.exists(ary(i)) = False Then
-            attributesDic.add ary(i), ary(i + 1)
+            attributesDic.Add ary(i), ary(i + 1)
         End If
     Next
     Set MakeAttributesDic = attributesDic

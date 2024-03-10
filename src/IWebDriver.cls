@@ -18,6 +18,12 @@ Public Enum TargetIs
     body_innertext
 End Enum
 
+Public Enum Image
+    jpeg = 1
+    png
+    webp
+End Enum
+
 Public Property Get URL() As String
 
 End Property
@@ -136,6 +142,21 @@ End Sub
 'Public Sub PointerMove(viewportX As Long, viewportY As Long)
 '
 'End Sub
-Private Sub Class_Initialize()
 
-End Sub
+
+
+Public Function ScreenShotSaveAsFile( _
+    Optional folderPath As String = "", _
+    Optional fileName As String = "", _
+    Optional imageFormat As Image = Image.png) As String
+
+End Function
+
+Public Function ScreenShotPasteToSheet( _
+    left As Single, top As Single, Optional width As Single = 0, Optional height As Single = 0, _
+    Optional sheetName As String = "", _
+    Optional imageFormat As Image = Image.png) As Shape
+
+End Function
+
+

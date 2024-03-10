@@ -149,6 +149,14 @@ End Sub
 
 
 
+
+
+
+
+
+
+
+
 '以下､インターフェイス公開メソッド
 '************************************************
 'Public
@@ -613,11 +621,12 @@ quit:
                                    "※このメソッドはAlertが表示される場合に使用します。" & vbCrLf
 End Sub
 
+'Public
 Private Sub IWebDriver_SleepByWinAPI(milliSecond As Long)
     Helper_.SleepByWinAPI milliSecond
 End Sub
 
-
+'Public
 'タブの移動（Index指定：一番左のタブを１とする）
 Private Sub IWebDriver_SwitchTabByIndex(index As Long)
     Dim res As String
@@ -680,14 +689,17 @@ Private Sub IWebDriver_SwitchTabByIndex(index As Long)
     basicInfo_.DocumentNodeId = CDP_.GetDocumentNodeID
 End Sub
 
+'Public
 Private Sub IWebDriver_CloseWindow()
     CDP_.SessionClose
 End Sub
 
+'Public
 Private Sub IWebDriver_ScrollWindow(yPixel As Long, Optional xPixel As Long = 0&)
     CDP_.DispatchMouseEvent "mouseWheel", 0, 0, "none", 0, 0, xPixel, yPixel
 End Sub
 
+'Public
 Private Sub IWebDriver_SetForeGroundWindow()
     WaitForActivation
 End Sub
@@ -702,12 +714,14 @@ End Sub
 '    End With
 'End Sub
 
+'Public
 Private Sub IWebDriver_Back()
     Dim result As String
     result = CDP_.DispatchMouseEvent("mousePressed", 0, 0, "back", 1)
     result = CDP_.DispatchMouseEvent("mouseReleased", 0, 0, "back", 1)
 End Sub
 
+'Public
 Private Sub IWebDriver_Forward()
     Dim result As String
     result = CDP_.DispatchMouseEvent("mousePressed", 0, 0, "forward", 1)
@@ -718,4 +732,78 @@ End Sub
 '    Dim result As String
 '    result = CDP_.DispatchMouseEvent("mouseMoved", viewportX, viewportY, "none", 0)
 'End Sub
+
+'Public
+' Screenshotを取り、画像ファイルとして保存し、保存先パスを返す。
+Private Function IWebDriver_ScreenShotSaveAsFile( _
+    Optional folderPath As String = "", _
+    Optional fileName As String = "", _
+    Optional imageFormat As Image = Image.png) As String
+    
+    ' 保存フォルダ指定ありの場合、存在チェック
+    If folderPath <> "" Then
+        If Dir(folderPath, vbDirectory) = "" Then Helper_.DisplayErrorAndEnd "指定されたフォルダが存在しません"
+    End If
+    ' ファイル名指定ありの場合、NG文字が含まれていないかチェック
+    If fileName <> "" Then
+        If Helper_.IncludeNGCharInFileName(fileName) Then Helper_.DisplayErrorAndEnd "指定されたファイル名に使用不可の文字が含まれています"
+    End If
+    
+    ' Screenshot取得し、Base64デコード
+    Dim formatName As String: formatName = Helper_.GetFormatName(imageFormat)
+    Dim base64EncodedImageData As String, decodedImageData As Variant
+    base64EncodedImageData = CDP_.CaptureScreenshot(formatName)
+    decodedImageData = Helper_.DecodeBase64(base64EncodedImageData)
+    
+    ' 画像ファイルとして保存
+    If folderPath = "" Then
+        folderPath = ThisWorkbook.Path
+    Else
+        If Right(folderPath, 1) = "\" Then folderPath = left(folderPath, Len(folderPath) - 1)
+    End If
+    If fileName = "" Then fileName = "screenshot" & Helper_.GetFileNumber(folderPath, formatName)
+    Dim fullPath As String: fullPath = folderPath & "\" & fileName & "." & formatName
+    With CreateObject("ADODB.Stream")
+        .Type = 1  ' 1 = adTypeBinary
+        .Open
+        .Write decodedImageData
+        .SaveToFile fullPath, 2  ' 2= adSaveCreateOverWrite
+        .Close
+    End With
+    
+    IWebDriver_ScreenShotSaveAsFile = fullPath
+End Function
+
+
+
+
+' Public
+' Screenshotを取り、ワークシートに貼り付け。
+Public Function IWebDriver_ScreenShotPasteToSheet( _
+    left As Single, top As Single, _
+    Optional width As Single = 0, Optional height As Single = 0, _
+    Optional sheetName As String = "", _
+    Optional imageFormat As Image = Image.png) As Shape
+
+    If sheetName <> "" And Helper_.ExistsSheetName(sheetName) = False Then
+        Helper_.DisplayErrorAndEnd "指定されたシート名のワークシートが存在しません"
+    End If
+    
+    
+    Dim imageFilePath As String
+    imageFilePath = IWebDriver_ScreenShotSaveAsFile(, , imageFormat)
+    Dim shp As Shape
+    If sheetName <> "" Then
+        Set shp = ThisWorkbook.Worksheets(sheetName).Shapes.AddPicture(imageFilePath, False, True, left, top, width, height)
+    Else
+        Set shp = ThisWorkbook.ActiveSheet.Shapes.AddPicture(imageFilePath, False, True, left, top, width, height)
+    End If
+    
+    If width = 0 Then shp.ScaleWidth 1#, msoTrue
+    If height = 0 Then shp.ScaleHeight 1#, msoTrue
+ 
+    Kill imageFilePath
+    
+    Set IWebDriver_ScreenShotPasteToSheet = shp
+End Function
 

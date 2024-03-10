@@ -119,6 +119,14 @@ Public Function CreateIsolatedFrameWorld(FrameId As String) As String
     CreateIsolatedFrameWorld = message
 End Function
 
+Public Function CaptureScreenshot(format As String) As String
+    id_ = id_ + 1
+    Dim message As String
+    message = "{""id"": " & id_ & ",""method"": ""Page.captureScreenshot""," & _
+                     """params"": {""format"": """ & format & """}}"
+    CaptureScreenshot = message
+End Function
+
 '*******************************************************************
 'Input Domain*******************************************************************
 'キーイベントをページにディスパッチする。keyDown , keyUp, rawKeyDown, charのいずれか。
@@ -330,7 +338,7 @@ Public Function CallJavaScriptFunction_ArgMultiple(funcDeclear As String, object
             End If
         End If
         
-        If i = UBound(arg_arr) Then JavaScriptObjectArgs = Left(JavaScriptObjectArgs, Len(JavaScriptObjectArgs) - 1)
+        If i = UBound(arg_arr) Then JavaScriptObjectArgs = left(JavaScriptObjectArgs, Len(JavaScriptObjectArgs) - 1)
     Next
     
     JavaScriptObjectArgs = JavaScriptObjectArgs & "}}]"

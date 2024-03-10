@@ -44,6 +44,8 @@ Private Const KEY_NAMES = _
 Private mouseEventNames_ As Object
 Private keyboardEventNames_ As Object
 Private keyNames_ As Object
+Private imageFormatNames_ As Object
+Private ngCharsAsFileName_ As Object
 
 Private Sub Class_Initialize()
     Set mouseEventNames_ = CreateObject("Scripting.Dictionary")
@@ -68,6 +70,22 @@ Private Sub Class_Initialize()
         KeyName = KeyNames(i)
         keyNames_.Add KeyCode, KeyName
     Next
+    
+    Set imageFormatNames_ = CreateObject("Scripting.Dictionary")
+    imageFormatNames_.Add 1, "jpeg"
+    imageFormatNames_.Add 2, "png"
+    imageFormatNames_.Add 3, "webp"
+    
+    Set ngCharsAsFileName_ = CreateObject("Scripting.Dictionary")
+    ngCharsAsFileName_.Add "\", ""
+    ngCharsAsFileName_.Add "/", ""
+    ngCharsAsFileName_.Add ":", ""
+    keyboardEventNames_.Add "*", ""
+    keyboardEventNames_.Add "?", ""
+    keyboardEventNames_.Add """", ""
+    keyboardEventNames_.Add ">", ""
+    keyboardEventNames_.Add "<", ""
+    keyboardEventNames_.Add "|", ""
 End Sub
 
 Public Sub SleepByWinAPI(ms As Long)
@@ -329,4 +347,53 @@ Public Function MakeFindErrorMessage(wayString As String, way As String, Optiona
     MakeFindErrorMessage = errMsg
 End Function
 
+' 列挙体を画像フォーマット文字列へ変換
+Public Function GetFormatName(imageFormat As Image) As String
+    GetFormatName = imageFormatNames_(imageFormat)
+End Function
 
+' Base64文字列のデコードし、binary配列で返す
+Public Function DecodeBase64(s As String) As Byte()
+    Dim elm As Object: Set elm = CreateObject("MSXML2.DOMDocument").createElement("base64")
+    elm.DataType = "bin.base64"
+    elm.text = s
+    DecodeBase64 = elm.nodeTypedValue
+End Function
+
+Public Function IncludeNGCharInFileName(fileName As String) As Boolean
+    Dim i As Long
+    For i = 1 To Len(fileName)
+        If ngCharsAsFileName_.exists(Mid(fileName, i, 1)) Then
+            IncludeNGCharInFileName = True
+            Exit Function
+        End If
+    Next
+    
+    IncludeNGCharInFileName = False
+End Function
+
+' 画像ファイル名につけるインクリメント番号を取得
+Public Function GetFileNumber(folderPath As String, formatName As String) As Long
+    Dim fileName As String
+    Dim num As Long: num = 1
+    Do
+        fileName = folderPath & "\screenshot" & num & "." & formatName
+        If Dir(fileName) = "" Then
+            GetFileNumber = num
+            Exit Function
+        Else
+            num = num + 1
+        End If
+    Loop
+End Function
+
+Public Function ExistsSheetName(sheetName As String) As Boolean
+    Dim ws As Worksheet
+    For Each ws In ThisWorkbook.Worksheets
+        If ws.name = sheetName Then
+            ExistsSheetName = True
+            Exit Function
+        End If
+    Next
+    ExistsSheetName = False
+End Function

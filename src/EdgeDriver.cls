@@ -38,7 +38,7 @@ Private events_ As a5_CDPEventHandler
 Private Helper_ As a6_ExecuteHelperFunction
 
 Private processId_ As Long
-'Private chromeHwnd_ As LongPtr
+Private chromeHwnd_ As LongPtr
 
 Private Sub Class_Initialize()
     Dim userDataDir As String

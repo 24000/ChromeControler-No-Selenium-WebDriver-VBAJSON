@@ -130,7 +130,7 @@ End Function
 Public Function GetClassNameCodes(className As String, index As Long) As Variant
     Dim Codes(1) As String
     Codes(0) = "document.getElementsByClassName('" & className & "')[" & index & "];"
-    Codes(1) = "function(className){return  document.getElementsByClassName(tagName)[" & index & "];}"
+    Codes(1) = "function(className){return  document.getElementsByClassName(className)[" & index & "];}"
     GetClassNameCodes = Codes
 End Function
 

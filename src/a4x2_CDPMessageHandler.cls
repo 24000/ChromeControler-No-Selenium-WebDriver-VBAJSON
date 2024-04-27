@@ -54,8 +54,6 @@ Public Function SendAndReceive(sendMsg As String) As String
     
     SendAndReceive = res
     
-    Dim resobj As Object
-    Set resobj = parseJSON(res)
 Exit Function
 
 quit:
@@ -73,58 +71,3 @@ End
 End Function
 
 
-Function parseJSON(jsonString As Variant) As Object
-    Dim result As Object
-    Dim regex As Object
-    Dim matches As Object
-    Dim match As Object
-    Dim value As Variant
-    Dim Key As String
-    
-    Set regex = CreateObject("VBScript.RegExp")
-    
-    regex.Pattern = "(?:\{[^\[\]\{\}\:\,]*\})|(?:\[[^\[\]\{\}\:\,]*\])|(?:[^\[\]\{\}\:\,]+)"
-    Set matches = regex.Execute(jsonString)
-    Set result = CreateObject("Scripting.Dictionary")
-    
-    For Each match In matches
-        value = match
-        If Left(value, 1) = """" And Right(value, 1) = """" Then
-            value = Mid(value, 2, Len(value) - 2)
-        ElseIf IsNumeric(value) Then
-            value = CDbl(value)
-        ElseIf value = "true" Then
-            value = True
-        ElseIf value = "false" Then
-            value = False
-        ElseIf value = "null" Then
-            value = Null
-        End If
-        
-        If IsObject(value) Then
-            Set value = parseJSON(value)
-        End If
-        
-        If IsArray(value) Then
-            Dim i As Long
-            Dim tempDict As Object
-            Set tempDict = CreateObject("Scripting.Dictionary")
-            For i = 0 To UBound(value)
-                tempDict.add i, value(i)
-            Next i
-            Set value = tempDict
-        End If
-        
-        If result.count Mod 2 = 0 Then
-            If IsObject(value) Then
-                Set result(value("key")) = value("value")
-            Else
-                Key = value
-            End If
-        Else
-            result(Key) = value
-        End If
-    Next match
-    
-    Set parseJSON = result
-End Function

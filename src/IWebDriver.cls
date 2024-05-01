@@ -34,6 +34,14 @@ Public Property Get URL() As String
 
 End Property
 
+Public Property Get QueryString() As Object
+    
+End Property
+
+Public Function GetValueFromQueryString(KeyName As String) As String
+    
+End Function
+
 Public Sub OpenURL(targetURL As String)
 
 End Sub
@@ -168,3 +176,19 @@ End Function
 Public Sub ShowWindow(size As WindowSize)
 
 End Sub
+
+Public Function GetSecureRandomNumber(count As Long) As Variant
+    
+End Function
+
+Public Function GetURLSafeRundomString(charNum As Long) As String
+
+End Function
+
+Public Function GetBase64URLEncodedSHA256(str As String) As String
+
+End Function
+
+Public Function EncodeURIConpornent(str As String) As String
+    
+End Function

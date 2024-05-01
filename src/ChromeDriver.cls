@@ -41,7 +41,7 @@ Private chromeHwnd_ As LongPtr
 
 Private Sub Class_Initialize()
     Dim userDataDir As String
-    userDataDir = CreateObject("Shell.Application").Namespace("shell:Downloads").Self.Path & "\マクロ実行専用UserDataフォルダForChrome\"
+    userDataDir = createObject("Shell.Application").Namespace("shell:Downloads").Self.Path & "\マクロ実行専用UserDataフォルダForChrome\"
     
     Dim isFirst As Boolean
     If Dir(userDataDir, vbDirectory) = "" Then
@@ -71,14 +71,14 @@ Private Function StartChrome(userDataDir As String) As Long
     Const CHROME_EXE_REG_KEY As String = "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\App Paths\chrome.exe\"
     Const DEBUG_MODE_OPTION As String = " --remote-debugging-Port=9222"
     Const USER_DATA_DIR_OPTION As String = " --user-data-dir="
-    Const ENABLE_AUTOMATION_OPTION As String = " --enable-automation"
+'    Const ENABLE_AUTOMATION_OPTION As String = " --enable-automation"　’OAuthでこれが原因で弾かれるケースがあるため不使用
     
     Dim chromeExePath As String
     Dim objExec As Object
-    With CreateObject("WScript.Shell")
+    With createObject("WScript.Shell")
         chromeExePath = """" & .RegRead(CHROME_EXE_REG_KEY) & """"
         Set objExec = .Exec( _
-                            chromeExePath & DEBUG_MODE_OPTION & ENABLE_AUTOMATION_OPTION & " --disable-popup-blocking --no-first-run --disable-fre" _
+                            chromeExePath & DEBUG_MODE_OPTION & " --disable-popup-blocking --no-first-run --disable-fre" _
                             & USER_DATA_DIR_OPTION & "" & userDataDir & "")
 
         StartChrome = objExec.ProcessId
@@ -100,7 +100,7 @@ recheck:
                         "処理を終了します"
             End
         End If
-        Debug.Print Err.Number & ":" & Err.Description
+        Debug.Print Err.Number & ":" & Err.description
         Helper_.SleepByWinAPI 500
         Err.Number = 0
         GoTo recheck
@@ -164,6 +164,16 @@ End Sub
 
 
 
+
+
+
+
+
+
+
+
+
+
 '以下､インターフェイス公開メソッド
 '************************************************
 'Public
@@ -178,6 +188,44 @@ Private Property Get IWebDriver_URL() As String
         End If
     Next
 End Property
+
+'Public
+'現在のページのURLのクエリ文字列を辞書で返す
+Private Property Get IWebDriver_QueryString() As Object
+    Dim currentURL As String: currentURL = IWebDriver_URL
+    Dim QueryString As String: QueryString = CDP_.GetQueryStringFrom(currentURL)
+    If QueryString = "" Then
+        IWebDriver_QueryString = Nothing
+    End If
+    
+    ' クエリ文字列内のkey,valueペアを辞書に変換
+    If left(QueryString, 1) = "?" Then QueryString = Mid(QueryString, 2)
+    Dim key_values As Variant: key_values = Split(QueryString, "&")
+    Dim queryStringDic As Object: Set queryStringDic = createObject("Scripting.Dictionary")
+    Dim i As Long
+    Dim key_value As Variant
+    For i = LBound(key_values) To UBound(key_values)
+        key_value = Split(key_values(i), "=")
+        queryStringDic.Add key_value(0), key_value(1)
+    Next
+    Set IWebDriver_QueryString = queryStringDic
+End Property
+
+' Public
+' クエリ文字列のキー指定による値取得
+Private Function IWebDriver_GetValueFromQueryString(KeyName As String) As String
+    Dim queryStringDic As Object
+    Set queryStringDic = IWebDriver_QueryString()
+    If queryStringDic Is Nothing Then
+        IWebDriver_GetValueFromQueryString = ""
+    Else
+        If queryStringDic.exists(KeyName) Then
+            IWebDriver_GetValueFromQueryString = queryStringDic(KeyName)
+        Else
+            IWebDriver_GetValueFromQueryString = ""
+        End If
+    End If
+End Function
 
 'Public
 '現在のページのHTMLソースを取得
@@ -564,6 +612,8 @@ Private Function IWebDriver_IsExistsElementByName(name As String) As Boolean
 End Function
 
 
+
+
 'Public
 'Xpath(第1引数)で指定されるの要素が出現するのを、最大待機時間(第2引数)待つ
 Private Sub IWebDriver_WaitForElementToAppearByXpath(xPath As String, maxWaitTime_sec As Long)
@@ -637,11 +687,11 @@ End Sub
 'タブの移動（Index指定：一番左のタブを１とする）
 Private Sub IWebDriver_SwitchTabByIndex(index As Long)
     Dim res As String
-    Dim client As Object: Set client = CreateObject("MSXML2.ServerXMLHTTP")
+    Dim client As Object: Set client = createObject("MSXML2.ServerXMLHTTP")
     client.Open "GET", "http://127.0.0.1:9222/json"
     client.setRequestHeader "Content-Type", "application/json"
     client.send
-    res = client.responsetext
+    res = client.responseText
     Dim count As Long: count = json_.GetJsonLength(res)
     
     Dim tmpCollection As Collection: Set tmpCollection = New Collection
@@ -652,7 +702,7 @@ Private Sub IWebDriver_SwitchTabByIndex(index As Long)
         jsObjStr = json_.GetObject(res, i)
         typeName = json_.GetValue(jsObjStr, "type")
         If typeName = "page" Then
-            Set tempDic = CreateObject("Scripting.Dictionary")
+            Set tempDic = createObject("Scripting.Dictionary")
             tempDic.Add "title", json_.GetValue(jsObjStr, "title")
             tempDic.Add "targetId", json_.GetValue(jsObjStr, "id")
             tempDic.Add "webSocketDebuggerUrl", json_.GetValue(jsObjStr, "webSocketDebuggerUrl")
@@ -660,7 +710,7 @@ Private Sub IWebDriver_SwitchTabByIndex(index As Long)
         End If
     Next
     
-    If index > tmpCollection.count Then Err.Raise Number:=10000, Description:="指定されたIndexがタブの数を超えています。"
+    If index > tmpCollection.count Then Err.Raise Number:=10000, description:="指定されたIndexがタブの数を超えています。"
     
     'jsonの情報がタブの順と逆順のため並べ替え
     Dim tabCollection As Collection: Set tabCollection = New Collection
@@ -770,7 +820,7 @@ Private Function IWebDriver_ScreenShotSaveAsFile( _
     End If
     If fileName = "" Then fileName = "screenshot" & Helper_.GetFileNumber(folderPath, formatName)
     Dim fullPath As String: fullPath = folderPath & "\" & fileName & "." & formatName
-    With CreateObject("ADODB.Stream")
+    With createObject("ADODB.Stream")
         .Type = 1  ' 1 = adTypeBinary
         .Open
         .Write decodedImageData
@@ -826,3 +876,68 @@ Private Sub IWebDriver_ShowWindow(size As WindowSize)
             ShowWindow chromeHwnd_, WindowSize.maximize
     End Select
 End Sub
+
+' Public
+' 暗号論的擬似乱数を取得
+Private Function IWebDriver_GetSecureRandomNumber(count As Long) As Variant
+    If count = 0 Then
+        IWebDriver_GetSecureRandomNumber = Nothing
+        Exit Function
+    End If
+
+    Dim randomNums As String: randomNums = CDP_.GetSecureRondomNumber(count)
+    
+    Dim result As Collection: Set result = New Collection
+    If count = 1 Then
+        result.Add CLngLng(randomNums)
+    Else
+        Dim tmpArray As Variant: tmpArray = Split(randomNums, ",")
+        Dim i As Long
+        For i = LBound(tmpArray) To UBound(tmpArray)
+            result.Add CLngLng(tmpArray(i))
+        Next
+    End If
+    
+    Set IWebDriver_GetSecureRandomNumber = result
+End Function
+
+' Public
+' 暗号論的擬似乱数を元にランダム文字列を取得
+Private Function IWebDriver_GetURLSafeRundomString(charNum As Long) As String
+    Dim chars As String: chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~"
+    Dim length As Long: length = Len(chars)
+    Dim charsArray() As Variant: ReDim charsArray(length - 1)
+    
+    Dim i As Long
+    For i = 1 To length
+        charsArray(i - 1) = Mid(chars, i, 1)
+    Next
+    
+    Dim rondomNums As Collection: Set rondomNums = IWebDriver_GetSecureRandomNumber(charNum)
+    Dim rondomString As String
+    Dim rondomNum As Variant
+    Dim index As Long
+    For Each rondomNum In rondomNums
+        index = rondomNum Mod (length)
+        rondomString = rondomString & charsArray(index)
+    Next
+    IWebDriver_GetURLSafeRundomString = rondomString
+End Function
+
+' Public
+' Base64URLエンコードされたSHA256の値を取得
+Private Function IWebDriver_GetBase64URLEncodedSHA256(str As String) As String
+    Dim base64EncodedSHA256 As String: base64EncodedSHA256 = CDP_.GetBase64EncodedSHA256(str)
+    
+    Dim URLEncoded As String
+    URLEncoded = Replace(base64EncodedSHA256, "=", "")
+    URLEncoded = Replace(URLEncoded, "+", "-")
+    URLEncoded = Replace(URLEncoded, "/", "_")
+    IWebDriver_GetBase64URLEncodedSHA256 = URLEncoded
+End Function
+
+' Public
+' URIコンポーネントエンコードした値を取得
+Private Function IWebDriver_EncodeURIConpornent(str As String) As String
+    IWebDriver_EncodeURIConpornent = json_.EncodeURLCompornent(str)
+End Function

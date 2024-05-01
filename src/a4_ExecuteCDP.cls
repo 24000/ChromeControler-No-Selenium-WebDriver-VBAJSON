@@ -343,7 +343,7 @@ End Function
 'elementの属性情報を辞書にして返す。
 Private Function MakeAttributesDic(attributes As String) As Object
     Dim ary As Variant: ary = Split(attributes, ",")
-    Dim attributesDic As Object: Set attributesDic = CreateObject("Scripting.Dictionary")
+    Dim attributesDic As Object: Set attributesDic = createObject("Scripting.Dictionary")
     Dim i As Long
     For i = LBound(ary) To UBound(ary) - 1 Step 2
         If attributesDic.exists(ary(i)) = False Then
@@ -402,3 +402,41 @@ Public Function WaitForElementToAppearBy( _
 End Function
 
 
+' クエリ文字列部を取得
+Public Function GetQueryStringFrom(URL As String) As String
+    Dim javaScriptCode As String, responseMsg As String, result As String
+    javaScriptCode = "var url = new URL('" & URL & "');" & _
+                             "url.search;"
+    responseMsg = ExecuteJavaScript(javaScriptCode)
+    result = json_.GetValue(responseMsg, "result", "result", "value")
+    GetQueryStringFrom = result
+End Function
+
+
+' 暗号論的乱数取得
+Public Function GetSecureRondomNumber(count As Long) As String
+    Dim javaScriptCode As String, responseMsg As String, result As String
+    javaScriptCode = "var crpt =  Array.from( crypto.getRandomValues(new Uint32Array(" & count & ")) );" & _
+                             "var s = '';" & _
+                             "crpt.forEach(function(value){s += value + ',';});" & _
+                             "s.slice(0,-1)"
+    responseMsg = ExecuteJavaScript(javaScriptCode)
+    result = json_.GetValue(responseMsg, "result", "result", "value")
+    GetSecureRondomNumber = result
+End Function
+
+Public Function GetBase64EncodedSHA256(str As String) As String
+    Dim javaScriptCode As String, responseMsg As String, result As String
+    javaScriptCode = "var encoder = new TextEncoder();" & _
+                             "var data = encoder.encode('" & str & "');" & _
+                             "var base64urlHash = '';" & _
+                             "window.crypto.subtle.digest('SHA-256', data).then(hash => {" & _
+                             "var bytes = new Uint8Array(hash);" & _
+                             "for (let i = 0; i < bytes.byteLength; i++) {base64urlHash += String.fromCharCode(bytes[i]);}" & _
+                             "base64urlHash = btoa(base64urlHash);});"
+    responseMsg = ExecuteJavaScript(javaScriptCode)
+    javaScriptCode = "base64urlHash"
+    responseMsg = ExecuteJavaScript(javaScriptCode)
+    result = json_.GetValue(responseMsg, "result", "result", "value")
+    GetBase64EncodedSHA256 = result
+End Function

@@ -46,8 +46,14 @@ End Property
 Public Sub Init(json As a2_JSONHandler)
     TargetInfoJSON = GetTragetInfoJSON
     
-    webSocketURL = json.GetValue( _
-                                TargetInfoJSON, 0, KEY_WEBSOCKETURL)
+    Dim i As Long
+    For i = 0 To json.GetJsonLength(TargetInfoJSON)
+        If json.GetValue(TargetInfoJSON, i, "type") = "page" _
+        And json.GetValue(TargetInfoJSON, i, "title") = "êVÇµÇ¢É^Éu" Then
+                webSocketURL = json.GetValue(TargetInfoJSON, i, KEY_WEBSOCKETURL)
+                Exit For
+        End If
+    Next
                                 
     targetId = json.GetValue(TargetInfoJSON, 0, "id")
     
@@ -69,7 +75,7 @@ Do_:
     client.Open "GET", HTTP_SCHEMA & HOST_ & ":" & DEBUGGING_PORT & RESOURCE_PATH
     client.setRequestHeader "Content-Type", "application/json"
     client.send
-    GetTragetInfoJSON = client.responsetext
+    GetTragetInfoJSON = client.responseText
     Exit Function
 Loop_:
 DoEvents
@@ -97,7 +103,7 @@ Private Function GetWebSocketDebuggerUrl(json As a2_JSONHandler) As String
     Do
         targetInfo = json.GetObject(TargetInfoJSON, count)
         If targetInfo = "" Then Exit Do
-        collect.add targetInfo
+        collect.Add targetInfo
         count = count + 1
     Loop
     

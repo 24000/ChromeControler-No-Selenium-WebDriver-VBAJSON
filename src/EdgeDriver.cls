@@ -41,22 +41,8 @@ Private processId_ As Long
 Private chromeHwnd_ As LongPtr
 
 Private Sub Class_Initialize()
-    Dim userDataDir As String
-    userDataDir = createObject("Shell.Application").Namespace("shell:Downloads").Self.Path & "\マクロ実行専用UserDataフォルダForEdge\"
-    
-    Dim isFirst As Boolean
-    If Dir(userDataDir, vbDirectory) = "" Then
-        MkDir userDataDir
-        isFirst = True
-    End If
-    
-    processId_ = StartEdge(userDataDir)
+    processId_ = StartEdge()
     New_InnerObjects
-    
-    If isFirst Then  'この位置で判定必要（CloseWindowするため通信確立後）
-        CDP_.SessionClose
-        EdgeFirstLaunch
-    End If
     
     CDP_.SetDiscoverTargets
     CDP_.AttachToTarget basicInfo_.targetId
@@ -66,19 +52,19 @@ Private Sub Class_Initialize()
     chromeHwnd_ = GetForegroundWindow
 End Sub
 
-Private Function StartEdge(userDataDir As String) As Long
+Private Function StartEdge() As Long
     Const EDGE_EXE_REG_KEY As String = "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\App Paths\msedge.exe\"
-    Const DEBUG_MODE_OPTION As String = " --remote-debugging-Port=9222"
-    Const USER_DATA_DIR_OPTION As String = " --user-data-dir="
-'    Const ENABLE_AUTOMATION_OPTION As String = " --enable-automation"　’OAuthでこれが原因で弾かれるケースがあるため不使用
-'
+    
+    Dim userDataDir As String
+    userDataDir = CreateObject("Shell.Application").Namespace("shell:Downloads").Self.Path & "\マクロ実行専用UserDataフォルダForEdge\"
     Dim edgeExePath As String
     Dim objExec As Object
-    With createObject("WScript.Shell")
+    With CreateObject("WScript.Shell")
         edgeExePath = """" & .RegRead(EDGE_EXE_REG_KEY) & """"
-        Set objExec = .Exec( _
-                            edgeExePath & DEBUG_MODE_OPTION & " --disable-popup-blocking --no-first-run --disable-fre" _
-                            & USER_DATA_DIR_OPTION & "" & userDataDir & "")
+        Set objExec = .Exec(edgeExePath & "--remote-debugging-Port=9222 --disable-popup-blocking --no-first-run --disable-fre " _
+                            & " --user-data-dir=" & "" & userDataDir & "")
+                            ' --enable-automation"　’OAuthでこれが原因で弾かれるケースがあるため不使用
+                            
         StartEdge = objExec.ProcessId
         Set objExec = Nothing
     End With
@@ -127,17 +113,6 @@ Private Sub New_InnerObjects()
     Set Helper_ = New a6_ExecuteHelperFunction
 End Sub
 
-'クロームの真の初回起動時の画面遷移
-Private Sub EdgeFirstLaunch()
-    MsgBox "今回、初回起動のため、DownLoadフォルダ内に" & vbCrLf & _
-                "マクロ実行専用のUserDataフォルダを作成しました。" & vbCrLf & vbCrLf & _
-                "お手数ですが、再度マクロを実行してください。" & vbCrLf & _
-                "※次回以降、このメッセージは表示されません。" & vbCrLf & _
-                "※作成されたフォルダは削除しても問題ありませんが、" & vbCrLf & _
-                "   マクロ再実行時には再作成されます。", _
-                vbInformation, "Edge初回起動メッセージ"
-    End
-End Sub
 
 
 
@@ -175,7 +150,7 @@ Private Property Get IWebDriver_QueryString() As Object
     ' クエリ文字列内のkey,valueペアを辞書に変換
     If left(QueryString, 1) = "?" Then QueryString = Mid(QueryString, 2)
     Dim key_values As Variant: key_values = Split(QueryString, "&")
-    Dim queryStringDic As Object: Set queryStringDic = createObject("Scripting.Dictionary")
+    Dim queryStringDic As Object: Set queryStringDic = CreateObject("Scripting.Dictionary")
     Dim i As Long
     Dim key_value As Variant
     For i = LBound(key_values) To UBound(key_values)
@@ -660,7 +635,7 @@ End Sub
 'タブの移動（Index指定：一番左のタブを１とする）
 Private Sub IWebDriver_SwitchTabByIndex(index As Long)
     Dim res As String
-    Dim client As Object: Set client = createObject("MSXML2.ServerXMLHTTP")
+    Dim client As Object: Set client = CreateObject("MSXML2.ServerXMLHTTP")
     client.Open "GET", "http://127.0.0.1:9222/json"
     client.setRequestHeader "Content-Type", "application/json"
     client.send
@@ -675,7 +650,7 @@ Private Sub IWebDriver_SwitchTabByIndex(index As Long)
         jsObjStr = json_.GetObject(res, i)
         typeName = json_.GetValue(jsObjStr, "type")
         If typeName = "page" Then
-            Set tempDic = createObject("Scripting.Dictionary")
+            Set tempDic = CreateObject("Scripting.Dictionary")
             tempDic.Add "title", json_.GetValue(jsObjStr, "title")
             tempDic.Add "targetId", json_.GetValue(jsObjStr, "id")
             tempDic.Add "webSocketDebuggerUrl", json_.GetValue(jsObjStr, "webSocketDebuggerUrl")
@@ -789,7 +764,7 @@ Private Function IWebDriver_ScreenShotSaveAsFile( _
     End If
     If fileName = "" Then fileName = "screenshot" & Helper_.GetFileNumber(folderPath, formatName)
     Dim fullPath As String: fullPath = folderPath & "\" & fileName & "." & formatName
-    With createObject("ADODB.Stream")
+    With CreateObject("ADODB.Stream")
         .Type = 1  ' 1 = adTypeBinary
         .Open
         .Write decodedImageData

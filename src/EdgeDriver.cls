@@ -229,6 +229,12 @@ Private Function IWebDriver_ExecuteScript(script As String) As String
 End Function
 
 'Public
+'第1引数のCDPメソッドのコードの実行
+Private Function IWebDriver_ExecuteCDP(CDPMethodJson As String) As String
+    IWebDriver_ExecuteCDP = CDP_.ExecuteDirect(CDPMethodJson)
+End Function
+
+'Public
 '第1引数で指定されるXpathの要素を取得し、エレメントObjectとして返却
 Private Function IWebDriver_FindElementByXpath(xPath As String) As IWebElement
     

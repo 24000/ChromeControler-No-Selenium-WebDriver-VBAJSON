@@ -192,3 +192,7 @@ End Function
 Public Function EncodeURIConpornent(str As String) As String
     
 End Function
+
+Public Function ExecuteCDP(CDPMethodJson As String) As String
+
+End Function

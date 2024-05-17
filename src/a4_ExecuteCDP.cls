@@ -343,7 +343,7 @@ End Function
 'element‚Ì‘®«î•ñ‚ğ«‘‚É‚µ‚Ä•Ô‚·B
 Private Function MakeAttributesDic(attributes As String) As Object
     Dim ary As Variant: ary = Split(attributes, ",")
-    Dim attributesDic As Object: Set attributesDic = createObject("Scripting.Dictionary")
+    Dim attributesDic As Object: Set attributesDic = CreateObject("Scripting.Dictionary")
     Dim i As Long
     For i = LBound(ary) To UBound(ary) - 1 Step 2
         If attributesDic.exists(ary(i)) = False Then
@@ -439,4 +439,9 @@ Public Function GetBase64EncodedSHA256(str As String) As String
     responseMsg = ExecuteJavaScript(javaScriptCode)
     result = json_.GetValue(responseMsg, "result", "result", "value")
     GetBase64EncodedSHA256 = result
+End Function
+
+Public Function ExecuteDirect(CDPMethodJson As String) As String
+        Dim sendMsg  As String
+        ExecuteDirect = MsgHandler_.SendAndReceive(CDPMethodJson)
 End Function

@@ -135,6 +135,8 @@ Private Sub New_InnerObjects()
 End Sub
 
 
+
+
 'Private Sub Class_Terminate()
 '    Dim fso As Object: Set fso = CreateObject("Scripting.FileSystemObject")
 '    If fso.FolderExists(userDataDir_) Then fso.DeleteFolder userDataDir_, True
@@ -277,6 +279,12 @@ Private Function IWebDriver_ExecuteScript(script As String) As String
     Dim responseMsg As String
     responseMsg = CDP_.ExecuteJavaScript(script)
     IWebDriver_ExecuteScript = responseMsg
+End Function
+
+'Public
+'第1引数のCDPメソッドのコードの実行
+Private Function IWebDriver_ExecuteCDP(CDPMethodJson As String) As String
+    IWebDriver_ExecuteCDP = CDP_.ExecuteDirect(CDPMethodJson)
 End Function
 
 'Public
@@ -941,3 +949,6 @@ End Function
 Private Function IWebDriver_EncodeURIConpornent(str As String) As String
     IWebDriver_EncodeURIConpornent = json_.EncodeURLCompornent(str)
 End Function
+
+
+
